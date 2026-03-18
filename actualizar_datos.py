@@ -60,7 +60,7 @@ def descargar_excel(url: str) -> bytes:
     content_type = r.headers.get("Content-Type", "")
     content = r.content
 
-    if b"PK" not in content[:4] and b"xlsx" not in content_type:
+    if b"PK" not in content[:4] and "xlsx" not in content_type and "spreadsheet" not in content_type:
         # Puede necesitar URL de descarga directa
         # Intentar con parámetro download=1
         download_url = url + "&download=1" if "?" in url else url + "?download=1"
