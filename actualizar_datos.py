@@ -41,14 +41,34 @@ GITHUB_FILE  = os.getenv("GITHUB_FILE",  "data/dashboard_data.json")
 # PASO 1: Descargar Excel desde OneDrive
 # ============================================================
 
- if content[:4] != b"PK\x03\x04":
+def descargar_excel(url: str) -> bytes:
+    print("📥 Descargando Excel desde OneDrive...")
+
+    # Convertir URL compartida a URL de descarga directa
+    # Formato 1drv.ms → download directo
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    }
+
+    # Primer request para seguir redirecciones y obtener URL final
+    r = requests.get(url, headers=headers, allow_redirects=True, timeout=30)
+
+    if r.status_code != 200:
+        raise Exception(f"Error descargando archivo: HTTP {r.status_code}")
+
+    content = r.content
+
+    # Si no es un ZIP válido (los xlsx son ZIPs), intentar con download=1
+    if content[:4] != b"PK\x03\x04":
         download_url = (url + "&download=1") if "?" in url else (url + "?download=1")
         r2 = requests.get(download_url, headers=headers, allow_redirects=True, timeout=30)
         if r2.status_code == 200 and r2.content[:4] == b"PK\x03\x04":
             content = r2.content
         else:
-            raise Exception("No se pudo obtener el archivo Excel. Verifica que el link sea público.")
+            raise Exception("No se pudo obtener el archivo Excel. Verifica que el link sea publico.")
 
+    print(f"   ✓ Archivo descargado ({len(content)/1024:.0f} KB)")
+    return content
 
 
 # ============================================================
