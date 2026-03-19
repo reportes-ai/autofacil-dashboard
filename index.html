@@ -826,6 +826,26 @@ function buildRentabTable() {
       <td>${fN(tot.seg)}</td>
       <td>${fN(tot.ig)}</td><td><span class="${pClass(parseFloat(tIgPct))}">${tIgPct}%</span></td>
     </tr></tfoot>`;
+
+  // ── Actualizar KPIs con totales de filas filtradas ──
+  const totOpsF = rows.length;
+  const avgPlazoF = totOpsF ? Math.round(rows.reduce((a,r)=>a+r.plazo,0)/totOpsF) : 0;
+  const avgFinF   = totOpsF ? Math.round(tot.fin/totOpsF) : 0;
+  document.getElementById('kpi2').innerHTML = `
+    <div class="kpi-box"><div class="kpi-label">Total Financiado</div><div class="kpi-val big">${fM(tot.fin)}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Operaciones Otorgadas</div><div class="kpi-val big">${totOpsF}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Com. Dealer</div><div class="kpi-val big">${fM(tot.cd)}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Com. Parque</div><div class="kpi-val big">${fM(tot.par)}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Ing. AutoFácil</div><div class="kpi-val big">${fM(tot.afa)}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Com. Seguros</div><div class="kpi-val big">${fM(tot.seg)}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Ingreso Bruto</div><div class="kpi-val big">${fM(tot.ig)}</div></div>`;
+  document.getElementById('r-saldo').textContent = fM(tot.sal);
+  document.getElementById('r-totcd').textContent = fM(tot.cd + tot.par);
+  document.getElementById('r-totcd-pct').textContent = tot.fin ? ((tot.cd+tot.par)/tot.fin*100).toFixed(1)+'%' : '';
+  document.getElementById('r-ingnet').textContent = fM(tot.afa);
+  document.getElementById('r-ingnet-pct').textContent = tot.fin ? (tot.afa/tot.fin*100).toFixed(1)+'%' : '';
+  document.getElementById('r-plazo').textContent = avgPlazoF + 'm';
+  document.getElementById('r-finprom').textContent = fM(avgFinF);
 }
 
 // ======== VISTA 3 ========
