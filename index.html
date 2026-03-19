@@ -654,7 +654,8 @@ function buildV1() {
 // ======== VISTA 2 ========
 function buildV2() {
   const D = window.DASH;
-  const det = D.detalle_v2;
+  // SIEMPRE leer desde DASH.feb que se actualiza en aplicarFiltro
+  const det = (D.feb && D.feb.detalle_v2) ? D.feb.detalle_v2 : (D.detalle_v2 || []);
   const f = D.feb;
 
   // Actualizar título con período actual
@@ -754,7 +755,8 @@ function buildV2() {
 }
 
 function buildRentabTable() {
-  const det = window.DASH.detalle_v2;
+  const D = window.DASH;
+  const det = (D.feb && D.feb.detalle_v2) ? D.feb.detalle_v2 : (D.detalle_v2 || []);
   let rows = det;
   if(fil.mm) rows = rows.filter(r=>r.mm===fil.mm);
   if(fil.ccs) rows = rows.filter(r=>r.ccs===fil.ccs);
@@ -1093,7 +1095,15 @@ async function cargarDatos() {
       selHasta.value = ultimoMes;
     }
 
-    // Aplicar filtro con el último mes
+    // Aplicar filtro con el último mes disponible en los datos
+    const mesKeys = datos.ej_perf?.meses || [];
+    const ultimoMesKey = mesKeys[mesKeys.length - 1];
+    if (ultimoMesKey) {
+      const selD = document.getElementById('sel-desde');
+      const selH = document.getElementById('sel-hasta');
+      if (selD) selD.value = ultimoMesKey;
+      if (selH) selH.value = ultimoMesKey;
+    }
     window.aplicarFiltro();
 
     // Actualizar badge de período
@@ -1143,9 +1153,10 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
       ds.innerHTML += `<option value="${m}">${meses_labels[m]}</option>`;
       hs.innerHTML += `<option value="${m}">${meses_labels[m]}</option>`;
     });
-    // Defaults: feb 2026
-    ds.value = '2026-02';
-    hs.value = '2026-02';
+    // Default: último mes disponible
+    const ultimoMes = meses_orden[meses_orden.length - 1];
+    ds.value = ultimoMes;
+    hs.value = ultimoMes;
   }
 
   // Calcular resumen de un mes/rango desde RAW_DATA
