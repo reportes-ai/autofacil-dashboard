@@ -1,0 +1,27 @@
+name: Actualizar datos dashboard
+
+on:
+  schedule:
+    - cron: '0 12 * * 1-5'  # 9am Chile (UTC-3), lunes a viernes
+  workflow_dispatch:          # permite correrlo manualmente con un botón
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependencias
+        run: pip install requests openpyxl
+
+      - name: Ejecutar actualizador
+        env:
+          GITHUB_TOKEN: ${{ secrets.DATOS_TOKEN }}
+          GITHUB_REPO: reportes-ai/autofacil-dashboard
+          ONEDRIVE_URL: ${{ secrets.ONEDRIVE_URL }}
+        run: python actualizar_datos.py
