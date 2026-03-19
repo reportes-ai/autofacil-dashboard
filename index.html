@@ -436,7 +436,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
       </div>
     </div>
     <div class="card">
-      <div class="card-head">Detalle Operaciones Otorgadas — Feb 2026</div>
+      <div class="card-head" id="titulo-detalle-v2">Detalle Operaciones Otorgadas</div>
       <div class="scroll-t" style="max-height:620px">
         <table class="tbl" id="t-rentab"></table>
       </div>
@@ -542,7 +542,7 @@ function buildV1() {
 
   document.getElementById('kpi1').innerHTML = `
     <div class="kpi-box"><div class="kpi-label">Total a Financiar</div><div class="kpi-val big">${fM(totSaldo)}</div></div>
-    <div class="kpi-box"><div class="kpi-label">Operaciones Aprobadas</div><div class="kpi-val big">${totOps}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Operaciones Otorgadas</div><div class="kpi-val big">${totOps}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Com. Dealer</div><div class="kpi-val big">${fM(totCD)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Ingreso AutoFácil</div><div class="kpi-val big">${fM(totAFA)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Com. Seguros</div><div class="kpi-val big">${fM(totSeg)}</div></div>`;
@@ -656,6 +656,11 @@ function buildV2() {
   const det = D.detalle_v2;
   const f = D.feb;
 
+  // Actualizar título con período actual
+  const lbl = document.getElementById('periodo-label')?.textContent || '';
+  const tituloEl = document.getElementById('titulo-detalle-v2');
+  if (tituloEl) tituloEl.textContent = 'Detalle Operaciones Otorgadas — ' + lbl;
+
   const totFin = det.reduce((a,r)=>a+r.total_a_financiar,0);
   const totSal = det.reduce((a,r)=>a+r.saldo_precio,0);
   const totAFA = det.reduce((a,r)=>a+r.ing_autofacil,0);
@@ -670,7 +675,7 @@ function buildV2() {
 
   document.getElementById('kpi2').innerHTML = `
     <div class="kpi-box"><div class="kpi-label">Total Financiado</div><div class="kpi-val big">${fM(totFin)}</div></div>
-    <div class="kpi-box"><div class="kpi-label">Operaciones Aprobadas</div><div class="kpi-val big">${totOps}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Operaciones Otorgadas</div><div class="kpi-val big">${totOps}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Com. Dealer</div><div class="kpi-val big">${fM(totCD)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Com. Parque</div><div class="kpi-val big">${fM(totPar)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Ing. AutoFácil</div><div class="kpi-val big">${fM(totAFA)}</div></div>
@@ -735,6 +740,11 @@ function buildV2() {
   });
 
   // Populate ccs filter
+  // Resetear filtros al reconstruir v2
+  fil.mm=''; fil.fin=''; fil.ccs='';
+  document.querySelectorAll('#v2 .pill').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#v2 .pill:first-child').forEach(p=>p.classList.add('active'));
+
   const ccsUniq = [...new Set(det.map(r=>r.ccs))].sort();
   document.getElementById('fil-ccs').innerHTML = '<option value="">Todos</option>' + ccsUniq.map(c=>`<option value="${c}">${c}</option>`).join('');
   document.getElementById('fil-ccs').onchange = function(){ fil.ccs=this.value; buildRentabTable(); };
@@ -889,7 +899,7 @@ function buildV1b() {
 
   document.getElementById('kpi1b').innerHTML = `
     <div class="kpi-box"><div class="kpi-label">Total a Financiar</div><div class="kpi-val big">${fM(totFin)}</div></div>
-    <div class="kpi-box"><div class="kpi-label">Operaciones Aprobadas</div><div class="kpi-val big">${totOps}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Operaciones Otorgadas</div><div class="kpi-val big">${totOps}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Com. Dealer</div><div class="kpi-val big">${fM(totCD)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Ingreso AutoFácil</div><div class="kpi-val big">${fM(totAFA)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Com. Seguros</div><div class="kpi-val big">${fM(totSeg)}</div></div>
@@ -1007,17 +1017,27 @@ window.DASH_INLINE = {"feb": {"total_ops": 485, "total_saldo": 3630315840.0, "to
 (function() {
   const opMap = {};
   (window.RAW_DATA||[]).forEach(r => { opMap[r.op] = r; });
+  // Función para derivar institución desde producto (igual que Python)
+  const derInst = (r) => {
+    const fin = (r.financiera||'').toUpperCase();
+    const prod = (r.producto||r.PRODUCTO||'').toUpperCase();
+    if (fin==='AUTOFIN' || prod.startsWith('AUTOFIN') || prod.startsWith('AUTOFACIL')) return 'AUTOFIN';
+    if (fin.includes('UNIDAD') || prod.startsWith('UNIDAD')) return 'UNIDAD';
+    if (r.institucion === 'AUTOFIN' || r.institucion === 'UNIDAD DE CREDITO')
+      return r.institucion === 'AUTOFIN' ? 'AUTOFIN' : 'UNIDAD';
+    return null; // NO APLICA — no incluir en rentabilidades
+  };
   (window.DASH_INLINE.feb.detalle_v2||[]).forEach(d => {
     const r = opMap[d.op];
     if (r) {
-      d.financiera = (r.institucion||r.financiera) === 'AUTOFIN' ? 'AUTOFIN' : 'UNIDAD';
+      d.financiera = derInst(r) || 'AUTOFIN';
       d.ejecutivo  = r.ejecutivo || '';
     }
   });
   (window.DASH_INLINE.jan.detalle_v2||[]).forEach(d => {
     const r = opMap[d.op];
     if (r) {
-      d.financiera = (r.institucion||r.financiera) === 'AUTOFIN' ? 'AUTOFIN' : 'UNIDAD';
+      d.financiera = derInst(r) || 'AUTOFIN';
       d.ejecutivo  = r.ejecutivo || '';
     }
   });
@@ -1192,7 +1212,7 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
       return {
         op: r.op, mm: r.mayor_menor.includes('MAYOR') ? '>' : '<',
         ccs: r.automotora, ejecutivo: r.ejecutivo || '',
-        financiera: r.institucion === 'AUTOFIN' ? 'AUTOFIN' : 'UNIDAD',
+        financiera: (r.institucion === 'AUTOFIN' || r.financiera === 'AUTOFIN') ? 'AUTOFIN' : 'UNIDAD',
         saldo_precio: r.saldo_precio, total_a_financiar: r.monto_financiado,
         plazo: r.plazo, ing_autofacil: r.rentab_afa, pct_a,
         com_dealer: r.com_dealer, pct_d, com_par: r.com_parque, pct_p: 0,
@@ -1289,7 +1309,7 @@ function buildV4() {
 
   document.getElementById('kpi4').innerHTML = `
     <div class="kpi-box"><div class="kpi-label">Total a Financiar</div><div class="kpi-val big">${fM(totSaldo)}</div></div>
-    <div class="kpi-box"><div class="kpi-label">Operaciones Aprobadas</div><div class="kpi-val big">${totOps}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Operaciones Otorgadas</div><div class="kpi-val big">${totOps}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Com. Dealer</div><div class="kpi-val big">${fM(totCD)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Ingreso AutoFácil</div><div class="kpi-val big">${fM(totAFA)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Com. Seguros</div><div class="kpi-val big">${fM(totSeg)}</div></div>
