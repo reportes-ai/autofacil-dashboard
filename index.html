@@ -132,8 +132,8 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
   <span id="periodo-label" style="color:#4fc3f7;font-size:11px;font-weight:600"></span>
 </div>
   <div class="tabs">
-    <div class="tab active" onclick="showV('v1',this)">📊 Seguimiento Aprobados</div>
-    <div class="tab" onclick="showV('v1b',this)">✅ Seguimiento Otorgados</div>
+    <div class="tab active" onclick="showV('v1b',this)">✅ Seguimiento Otorgados</div>
+    <div class="tab" onclick="showV('v1',this)">📊 Seguimiento Aprobados</div>
     <div class="tab" onclick="showV('v2',this)">💰 Rentabilidades</div>
     <div class="tab" onclick="showV('v3',this)">📈 Tendencia Anual</div>
     <div class="tab" onclick="showV('v5',this)">👤 Desempeño Ejecutivos</div>
@@ -141,7 +141,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
 </div>
 
 <!-- ============================================================ VISTA 1 ============================================================ -->
-<div id="v1" class="view active">
+<div id="v1" class="view">
   <div class="dash-header">
     <div>
       <div class="dash-title">Seguimiento Créditos Aprobados</div>
@@ -220,7 +220,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
 
 
 <!-- ============================================================ VISTA 1b: OTORGADOS ============================================================ -->
-<div id="v1b" class="view">
+<div id="v1b" class="view active">
   <div class="dash-header">
     <div>
       <div class="dash-title">Seguimiento Créditos Otorgados</div>
@@ -375,7 +375,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
     <div class="kpi-box" style="flex:0 0 100px"><div class="kpi-label">Finanz. Prom.</div><div class="kpi-val" id="r-finprom">—</div></div>
   </div>
 
-  <div class="g3565">
+  <div class="g3565" style="align-items:stretch">
     <div style="display:flex;flex-direction:column;gap:10px">
       <div class="card">
         <div class="card-head light">Ingresos AutoFácil</div>
@@ -437,7 +437,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
     </div>
     <div class="card">
       <div class="card-head" id="titulo-detalle-v2">Detalle Operaciones Otorgadas</div>
-      <div class="scroll-t" style="max-height:calc(100vh - 340px)">
+      <div class="scroll-t" style="max-height:980px;overflow-y:auto">
         <table class="tbl" id="t-rentab"></table>
       </div>
     </div>
@@ -513,7 +513,11 @@ function showV(id, el) {
   document.getElementById(id).classList.add('active');
   el.classList.add('active');
   if(id==='v1b') { buildV1b(); window._v1b=true; }
-  if(id==='v2')  { destroyCharts(); buildV2(); window._v2=true; }
+  if(id==='v2') {
+    destroyCharts();
+    buildV2();
+    window._v2=true;
+  }
   if(id==='v3'&&!window._v3) { buildV3(); window._v3=true; }
   if(id==='v4') { buildV4(); window._v4=true; }
   if(id==='v5'&&!window._v5) { buildV5(); window._v5=true; }
@@ -1105,6 +1109,7 @@ async function cargarDatos() {
       if (selH) selH.value = ultimoMesKey;
     }
     window.aplicarFiltro();
+    window._v2 = false; // forzar rebuild de v2 con datos frescos
 
     // Actualizar badge de período
     document.querySelectorAll('#badge-periodo').forEach(el => {
@@ -1115,7 +1120,7 @@ async function cargarDatos() {
   } catch(e) {
     console.warn('No se pudo cargar JSON externo, usando datos embebidos:', e.message);
     window.DASH = window.DASH_INLINE;
-    buildV1();
+    buildV1(); buildV1b();
   } finally {
     if (loadingEl) loadingEl.style.display = 'none';
   }
@@ -1304,10 +1309,15 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
   // Inicializar al cargar
   document.addEventListener('DOMContentLoaded', function() {
     initSelects();
-    // El buildV1 inicial ya lo hace el código existente con los datos embebidos
-    // Solo actualizar el label
-    document.querySelectorAll('#badge-periodo').forEach(el => el.textContent = '📅 Feb 2026');
-    document.getElementById('periodo-label').textContent = 'Feb 2026';
+    // Aplicar filtro para poblar DASH.feb.detalle_v2 desde el inicio
+    setTimeout(() => {
+      // Asegurarse que los selects tienen valor antes de aplicar
+      const sd = document.getElementById('sel-desde');
+      const sh = document.getElementById('sel-hasta');
+      if (sd && sd.value && sh && sh.value) {
+        window.aplicarFiltro();
+      }
+    }, 300);
   });
 })();
 
