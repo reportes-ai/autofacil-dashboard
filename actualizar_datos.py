@@ -135,6 +135,7 @@ def procesar_excel(contenido: bytes) -> dict:
             "com_parque":  n(row[83]),  # CF = COM PARQUE (no CG=COM PARQUE REAL que está vacío)
             "plazo":       int(row[72]) if row[72] and isinstance(row[72], (int, float)) else 0,
             "mayor_menor": s(row[97]),
+        "estado_sp":   s(row[36]),   # AK = ESTADO SP
         })
 
     print(f"   ✓ {len(all_data)} registros procesados")
