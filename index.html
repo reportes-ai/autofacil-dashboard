@@ -512,10 +512,11 @@ function showV(id, el) {
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   el.classList.add('active');
-  if(id==='v1b'&&!window._v1b) { buildV1b(); window._v1b=true; }
-  if(id==='v2'&&!window._v2) { buildV2(); window._v2=true; }
+  if(id==='v1b') { buildV1b(); window._v1b=true; }
+  if(id==='v2')  { destroyCharts(); buildV2(); window._v2=true; }
   if(id==='v3'&&!window._v3) { buildV3(); window._v3=true; }
-  if(id==='v4'&&!window._v4) { buildV4(); window._v4=true; }
+  if(id==='v4') { buildV4(); window._v4=true; }
+  if(id==='v5'&&!window._v5) { buildV5(); window._v5=true; }
 }
 
 // ======== FILTERS v2 ========
@@ -1212,7 +1213,14 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
       return {
         op: r.op, mm: r.mayor_menor.includes('MAYOR') ? '>' : '<',
         ccs: r.automotora, ejecutivo: r.ejecutivo || '',
-        financiera: (r.institucion === 'AUTOFIN' || r.financiera === 'AUTOFIN') ? 'AUTOFIN' : 'UNIDAD',
+        financiera: (() => {
+          if (r.institucion === 'AUTOFIN' || r.financiera === 'AUTOFIN') return 'AUTOFIN';
+          if (r.institucion === 'UNIDAD DE CREDITO' || r.financiera === 'UNIDAD DE CREDITO') return 'UNIDAD';
+          const prod = (r.producto||'').toUpperCase();
+          if (prod.startsWith('AUTOFIN') || prod.startsWith('AUTOFACIL')) return 'AUTOFIN';
+          if (prod.startsWith('UNIDAD')) return 'UNIDAD';
+          return 'AUTOFIN';
+        })(),
         saldo_precio: r.saldo_precio, total_a_financiar: r.monto_financiado,
         plazo: r.plazo, ing_autofacil: r.rentab_afa, pct_a,
         com_dealer: r.com_dealer, pct_d, com_par: r.com_parque, pct_p: 0,
