@@ -132,7 +132,7 @@ def procesar_excel(contenido: bytes) -> dict:
             "com_dealer":  n(row[46]),
             "rentab_afa":  n(row[52]),
             "com_seguros": com_seg,
-            "com_parque":  n(row[84]),
+            "com_parque":  n(row[83]),  # CF = COM PARQUE (no CG=COM PARQUE REAL que está vacío)
             "plazo":       int(row[72]) if row[72] and isinstance(row[72], (int, float)) else 0,
             "mayor_menor": s(row[97]),
         })
