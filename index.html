@@ -204,25 +204,79 @@ function checkLogin() {
 
   <!-- Fila 1: Instituciones + Donut + Resumen Mes Anterior -->
   <div class="g6535">
-    <div class="card">
-      <div class="card-head">Instituciones
-        <span id="pct-prom1" style="background:#1565C0;padding:3px 10px;border-radius:3px;font-size:11px"></span>
-        <span id="pct-prom2" style="background:#4CAF50;padding:3px 10px;border-radius:3px;font-size:11px;margin-left:4px"></span>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="card">
+        <div class="card-head">Instituciones
+          <span id="pct-prom1" style="background:#1565C0;padding:3px 10px;border-radius:3px;font-size:11px"></span>
+          <span id="pct-prom2" style="background:#4CAF50;padding:3px 10px;border-radius:3px;font-size:11px;margin-left:4px"></span>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div class="scroll-t" style="max-height:160px">
+            <table class="tbl" id="t-fin"></table>
+          </div>
+        </div>
       </div>
-      <div class="card-body" style="padding:0">
-        <div class="scroll-t" style="max-height:160px">
-          <table class="tbl" id="t-fin"></table>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+        <div class="card">
+          <div class="card-head light" style="font-size:10px;padding:5px 8px">Composición 200UF</div>
+          <div class="donut-section" style="padding:6px">
+            <div class="donut-wrap" style="width:70px;height:70px"><canvas id="ch-d1-mm"></canvas>
+              <div class="donut-center"><div class="donut-center-val" id="d1-mm-pct" style="font-size:11px">—</div><div class="donut-center-lbl" style="font-size:7px">MAYOR</div></div>
+            </div>
+            <div class="donut-legend-list" id="d1-mm-leg" style="font-size:10px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head light" style="font-size:10px;padding:5px 8px">Plazo Prom. por Institución</div>
+          <div class="donut-section" style="padding:6px">
+            <div class="donut-wrap" style="width:70px;height:70px"><canvas id="ch-d1-plazo"></canvas>
+              <div class="donut-center"><div class="donut-center-val" id="d1-plazo-pct" style="font-size:11px">—</div><div class="donut-center-lbl" style="font-size:7px">m</div></div>
+            </div>
+            <div class="donut-legend-list" id="d1-plazo-leg" style="font-size:10px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head light" style="font-size:10px;padding:5px 8px">Monto Prom. por Institución</div>
+          <div class="donut-section" style="padding:6px">
+            <div class="donut-wrap" style="width:70px;height:70px"><canvas id="ch-d1-monto"></canvas>
+              <div class="donut-center"><div class="donut-center-val" id="d1-monto-pct" style="font-size:11px">—</div><div class="donut-center-lbl" style="font-size:7px">M$</div></div>
+            </div>
+            <div class="donut-legend-list" id="d1-monto-leg" style="font-size:10px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head light" style="font-size:10px;padding:5px 8px">Ing. AFA por Institución</div>
+          <div class="donut-section" style="padding:6px">
+            <div class="donut-wrap" style="width:70px;height:70px"><canvas id="ch-d1-afa"></canvas>
+              <div class="donut-center"><div class="donut-center-val" id="d1-afa-pct" style="font-size:11px">—</div><div class="donut-center-lbl" style="font-size:7px">AUTOFIN</div></div>
+            </div>
+            <div class="donut-legend-list" id="d1-afa-leg" style="font-size:10px"></div>
+          </div>
         </div>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <div class="card">
         <div class="card-head light">Participación % por Institución</div>
-        <div class="donut-section">
-          <div class="donut-wrap"><canvas id="ch-donut"></canvas>
-            <div class="donut-center"><div class="donut-center-val" id="donut-pct">—</div><div class="donut-center-lbl">AUTOFIN</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px">
+          <div>
+            <div style="font-size:9px;color:#888;text-align:center;margin-bottom:4px;text-transform:uppercase">Saldo Precio</div>
+            <div class="donut-section" style="padding:0">
+              <div class="donut-wrap" style="width:80px;height:80px"><canvas id="ch-donut"></canvas>
+                <div class="donut-center"><div class="donut-center-val" id="donut-pct" style="font-size:12px">—</div><div class="donut-center-lbl" style="font-size:7px">AUTOFIN</div></div>
+              </div>
+              <div class="donut-legend-list" id="donut-leg"></div>
+            </div>
           </div>
-          <div class="donut-legend-list" id="donut-leg"></div>
+          <div>
+            <div style="font-size:9px;color:#888;text-align:center;margin-bottom:4px;text-transform:uppercase">Operaciones</div>
+            <div class="donut-section" style="padding:0">
+              <div class="donut-wrap" style="width:80px;height:80px"><canvas id="ch-donut-ops"></canvas>
+                <div class="donut-center"><div class="donut-center-val" id="donut-ops-pct" style="font-size:12px">—</div><div class="donut-center-lbl" style="font-size:7px">AUTOFIN</div></div>
+              </div>
+              <div class="donut-legend-list" id="donut-ops-leg"></div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="card">
@@ -708,9 +762,96 @@ function buildV1() {
   });
   document.getElementById('donut-leg').innerHTML = ['AUTOFIN','UNIDAD'].map((l,i)=>`
     <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,'#ff7043'][i]}"></div>
-    <span class="dleg-name">${l}</span>
-    <span class="dleg-val">${fM(dv[i])}</span>
-    <span class="dleg-pct"> ${(dv[i]/dtot*100).toFixed(1)}%</span></div>`).join('');
+    <div><div style="font-size:9px;color:#555">${l}</div>
+    <span class="dleg-val" style="font-size:11px">${fM(dv[i])}</span>
+    <div style="font-size:10px;color:#888">${dtot?(dv[i]/dtot*100).toFixed(1):0}%</div></div></div>`).join('');
+
+  // Donut Operaciones Aprobadas
+  const dvOps1 = ['AUTOFIN','UNIDAD'].map(k => f.financieras[k]?.ops||0);
+  const dtotOps1 = dvOps1.reduce((a,b)=>a+b,0);
+  document.getElementById('donut-ops-pct').textContent = dtotOps1?(dvOps1[0]/dtotOps1*100).toFixed(1)+'%':'—';
+  const existDOps = Chart.getChart(document.getElementById('ch-donut-ops'));
+  if (existDOps) existDOps.destroy();
+  new Chart(document.getElementById('ch-donut-ops'),{
+    type:'doughnut',
+    data:{labels:['AUTOFIN','UNIDAD'],datasets:[{data:dvOps1,backgroundColor:[C.blue,'#ff7043'],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw} ops (${(ctx.raw/(dtotOps1||1)*100).toFixed(1)}%)`}}},animation:{duration:500},responsive:true,maintainAspectRatio:false}
+  });
+  document.getElementById('donut-ops-leg').innerHTML = ['AUTOFIN','UNIDAD'].map((l,i)=>`
+    <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,'#ff7043'][i]}"></div>
+    <div><div style="font-size:9px;color:#555">${l}</div>
+    <span class="dleg-val" style="font-size:11px">${dvOps1[i]}</span>
+    <div style="font-size:10px;color:#888">${dtotOps1?(dvOps1[i]/dtotOps1*100).toFixed(1):0}%</div></div></div>`).join('');
+
+  // 4 donuts adicionales v1 — usando RAW_DATA aprobados del período
+  const aprobados1 = window.RAW_DATA.filter(r => {
+    const desde = document.getElementById('sel-desde')?.value||'';
+    const hasta  = document.getElementById('sel-hasta')?.value||'';
+    return r.mes >= desde && r.mes <= hasta &&
+           !['RECHAZADO','ANULADO'].includes(r.estado_eval) &&
+           (r.institucion==='AUTOFIN'||r.institucion==='UNIDAD DE CREDITO');
+  });
+  const finAp = {};
+  aprobados1.forEach(r => {
+    const k = r.institucion==='AUTOFIN'?'AUTOFIN':'UNIDAD';
+    if(!finAp[k]) finAp[k]={ops:0,saldo:0,fin:0,plazo_sum:0,afa:0,mayor:0,menor:0};
+    finAp[k].ops++; finAp[k].saldo+=r.saldo_precio; finAp[k].fin+=r.monto_financiado;
+    finAp[k].plazo_sum+=r.plazo; finAp[k].afa+=r.rentab_afa;
+    if((r.mayor_menor||'').includes('MAYOR')) finAp[k].mayor++;
+    else finAp[k].menor++;
+  });
+  const totAp = aprobados1.length;
+  const mayorAp = aprobados1.filter(r=>(r.mayor_menor||'').includes('MAYOR')).length;
+  const menorAp = aprobados1.length - mayorAp;
+
+  // Donut 1: Composición 200UF
+  const dvMM1 = [mayorAp, menorAp], dtMM1 = dvMM1[0]+dvMM1[1];
+  document.getElementById('d1-mm-pct').textContent = dtMM1?(dvMM1[0]/dtMM1*100).toFixed(1)+'%':'—';
+  ['ch-d1-mm'].forEach(id=>{const c=Chart.getChart(document.getElementById(id));if(c)c.destroy();});
+  new Chart(document.getElementById('ch-d1-mm'),{type:'doughnut',
+    data:{labels:['MAYOR 200UF','MENOR 200UF'],datasets:[{data:dvMM1,backgroundColor:[C.blue,'#ff7043'],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} ops (${(ctx.raw/(dtMM1||1)*100).toFixed(1)}%)`}}},animation:{duration:300},responsive:true,maintainAspectRatio:false}});
+  document.getElementById('d1-mm-leg').innerHTML = [['MAYOR 200UF',mayorAp],['MENOR 200UF',menorAp]].map(([l,v],i)=>`
+    <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,'#ff7043'][i]};width:8px;height:8px"></div>
+    <div><div style="font-size:9px">${l}</div><span style="font-size:10px;font-weight:600">${v}</span>
+    <span style="font-size:9px;color:#888"> ${dtMM1?(v/dtMM1*100).toFixed(1):0}%</span></div></div>`).join('');
+
+  // Donut 2: Plazo prom por institución
+  const plazos1 = ['AUTOFIN','UNIDAD'].map(k=>finAp[k]&&finAp[k].ops?Math.round(finAp[k].plazo_sum/finAp[k].ops):0);
+  const plazoTot1 = totAp?Math.round(aprobados1.reduce((a,r)=>a+r.plazo,0)/totAp):0;
+  document.getElementById('d1-plazo-pct').textContent = plazoTot1+'m';
+  ['ch-d1-plazo'].forEach(id=>{const c=Chart.getChart(document.getElementById(id));if(c)c.destroy();});
+  new Chart(document.getElementById('ch-d1-plazo'),{type:'doughnut',
+    data:{labels:['AUTOFIN','UNIDAD'],datasets:[{data:plazos1,backgroundColor:[C.blue,'#ff7043'],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw}m`}}},animation:{duration:300},responsive:true,maintainAspectRatio:false}});
+  document.getElementById('d1-plazo-leg').innerHTML = ['AUTOFIN','UNIDAD'].map((l,i)=>`
+    <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,'#ff7043'][i]};width:8px;height:8px"></div>
+    <div><div style="font-size:9px">${l}</div><span style="font-size:10px;font-weight:600">${plazos1[i]}m</span></div></div>`).join('');
+
+  // Donut 3: Monto prom por institución
+  const montos1 = ['AUTOFIN','UNIDAD'].map(k=>finAp[k]&&finAp[k].ops?finAp[k].fin/finAp[k].ops:0);
+  const montoTot1 = totAp?aprobados1.reduce((a,r)=>a+r.monto_financiado,0)/totAp:0;
+  document.getElementById('d1-monto-pct').textContent = fM(montoTot1);
+  ['ch-d1-monto'].forEach(id=>{const c=Chart.getChart(document.getElementById(id));if(c)c.destroy();});
+  new Chart(document.getElementById('ch-d1-monto'),{type:'doughnut',
+    data:{labels:['AUTOFIN','UNIDAD'],datasets:[{data:montos1,backgroundColor:[C.blue,'#ff7043'],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fM(ctx.raw)}`}}},animation:{duration:300},responsive:true,maintainAspectRatio:false}});
+  document.getElementById('d1-monto-leg').innerHTML = ['AUTOFIN','UNIDAD'].map((l,i)=>`
+    <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,'#ff7043'][i]};width:8px;height:8px"></div>
+    <div><div style="font-size:9px">${l}</div><span style="font-size:10px;font-weight:600">${fM(montos1[i])}</span></div></div>`).join('');
+
+  // Donut 4: Ing AFA por institución
+  const afas1 = ['AUTOFIN','UNIDAD'].map(k=>finAp[k]?.afa||0);
+  const afaTot1 = afas1.reduce((a,b)=>a+b,0);
+  document.getElementById('d1-afa-pct').textContent = afaTot1?(afas1[0]/afaTot1*100).toFixed(1)+'%':'—';
+  ['ch-d1-afa'].forEach(id=>{const c=Chart.getChart(document.getElementById(id));if(c)c.destroy();});
+  new Chart(document.getElementById('ch-d1-afa'),{type:'doughnut',
+    data:{labels:['AUTOFIN','UNIDAD'],datasets:[{data:afas1,backgroundColor:[C.blue,'#ff7043'],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fM(ctx.raw)} (${(ctx.raw/(afaTot1||1)*100).toFixed(1)}%)`}}},animation:{duration:300},responsive:true,maintainAspectRatio:false}});
+  document.getElementById('d1-afa-leg').innerHTML = ['AUTOFIN','UNIDAD'].map((l,i)=>`
+    <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,'#ff7043'][i]};width:8px;height:8px"></div>
+    <div><div style="font-size:9px">${l}</div><span style="font-size:10px;font-weight:600">${fM(afas1[i])}</span>
+    <span style="font-size:9px;color:#888"> ${afaTot1?(afas1[i]/afaTot1*100).toFixed(1):0}%</span></div></div>`).join('');
 
   // Resumen mes anterior (enero)
   const jaf = j.financieras?.AUTOFIN||{}, jun = j.financieras?.UNIDAD||{};
@@ -1529,7 +1670,7 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
   };
 
   function destroyCharts() {
-    ['ch-donut','ch-evol','ch-donut1b','ch-donut1b-ops','ch-evol1b','ch-d1b-mm','ch-d1b-plazo','ch-d1b-monto','ch-d1b-afa','ch-donut2','ch-donut3','ch-mm','ch-com','ch-qmes','ch-t1','ch-t2','ch-t3','ch-t4'].forEach(id => {
+    ['ch-donut','ch-donut-ops','ch-d1-mm','ch-d1-plazo','ch-d1-monto','ch-d1-afa','ch-evol','ch-donut1b','ch-donut1b-ops','ch-evol1b','ch-d1b-mm','ch-d1b-plazo','ch-d1b-monto','ch-d1b-afa','ch-donut2','ch-donut3','ch-mm','ch-com','ch-qmes','ch-t1','ch-t2','ch-t3','ch-t4'].forEach(id => {
       const el = document.getElementById(id);
       if (el) { const ex = Chart.getChart(el); if (ex) ex.destroy(); }
     });
