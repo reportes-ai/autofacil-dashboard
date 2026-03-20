@@ -183,6 +183,7 @@ function checkLogin() {
     <div class="tab" onclick="showV('v2',this)">💰 Rentabilidades</div>
     <div class="tab" onclick="showV('v3',this)">📈 Tendencia</div>
     <div class="tab" onclick="showV('v5',this)">👤 Ejecutivos</div>
+    <div class="tab" onclick="showV('v7',this)">🔻 Funnel</div>
     <div class="tab" onclick="showV('v6',this)">💳 Saldo Precio</div>
   </div>
 </div>
@@ -687,6 +688,7 @@ function showV(id, el) {
   if(id==='v3'&&!window._v3) { buildV3(); window._v3=true; }
   if(id==='v4') { buildV4(); window._v4=true; }
   if(id==='v5'&&!window._v5) { buildV5(); window._v5=true; }
+  if(id==='v7') { const sd7=document.getElementById('sel-desde'); if(!sd7?.value) window.aplicarFiltro(); buildV7(); window._v7=true; }
   if(id==='v6') {
     const sd = document.getElementById('sel-desde');
     if (!sd?.value) window.aplicarFiltro();
@@ -1660,13 +1662,14 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
 
     // Rebuild vistas activas
     destroyCharts();
-    window._v2 = false; window._v3 = false; window._v4 = false; window._v1b = false; window._v5 = false; window._v6 = false; window._v6_filtro = null;
+    window._v2 = false; window._v3 = false; window._v4 = false; window._v1b = false; window._v5 = false; window._v6 = false; window._v6_filtro = null; window._v7 = false;
     buildV1();
     if (document.getElementById('v1b').classList.contains('active')) { buildV1b(); window._v1b=true; }
     if (document.getElementById('v2').classList.contains('active')) { buildV2(); window._v2 = true; }
     if (document.getElementById('v3').classList.contains('active')) { buildV3(); window._v3 = true; }
     if (document.getElementById('v4').classList.contains('active')) { buildV4(); window._v4 = true; }
     if (document.getElementById('v6') && document.getElementById('v6').classList.contains('active')) { buildV6(); window._v6 = true; }
+    if (document.getElementById('v7') && document.getElementById('v7').classList.contains('active')) { buildV7(); window._v7 = true; }
   };
 
   function destroyCharts() {
@@ -2184,6 +2187,233 @@ function renderTablaV6(ot, colsSP, bysp, totOps, totSaldo) {
       ${totalCells}
     </tr></tfoot>`;
 
+}
+
+</script>
+
+<!-- VISTA 7: FUNNEL DE CONVERSIÓN -->
+<div id="v7" class="view">
+  <div class="dash-header">
+    <div class="dash-title">Funnel de Conversión por Ejecutivo</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="period-badge" id="badge-periodo">📅 —</div>
+      <div class="logo-block"><div class="logo-text">Auto<span>Fácil</span></div><div class="logo-sub">Crédito Automotriz</div></div>
+    </div>
+  </div>
+
+  <!-- KPIs resumen equipo -->
+  <div class="kpi-strip" id="kpi7"></div>
+
+  <!-- Contenido principal -->
+  <div style="display:grid;grid-template-columns:1fr 340px;gap:10px;margin-top:10px">
+
+    <!-- Tabla funnel por ejecutivo -->
+    <div class="card">
+      <div class="card-head" id="titulo-v7">Embudo por Ejecutivo</div>
+      <div style="overflow-x:auto;max-height:980px;overflow-y:auto">
+        <table id="t-funnel" style="width:100%;border-collapse:collapse;font-size:11px"></table>
+      </div>
+    </div>
+
+    <!-- Panel derecho: gráfico barras + leyenda -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="card">
+        <div class="card-head light">Dónde se pierde cada ejecutivo</div>
+        <div class="ch" style="height:320px;padding:8px"><canvas id="ch-funnel-bar"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head light">Tasa de Conversión Total</div>
+        <div class="ch" style="height:200px;padding:8px"><canvas id="ch-funnel-tc"></canvas></div>
+      </div>
+      <div class="card" style="padding:12px">
+        <div class="card-head light" style="margin-bottom:8px">Referencia</div>
+        <div style="font-size:10px;line-height:1.8;color:#555">
+          <div><span style="display:inline-block;width:10px;height:10px;background:#2196F3;border-radius:2px;margin-right:6px"></span><b>TA</b> Tasa Aprobación = Apro / Ingresados</div>
+          <div><span style="display:inline-block;width:10px;height:10px;background:#43a047;border-radius:2px;margin-right:6px"></span><b>TC</b> Tasa Conversión = Otorgados / Aprobados</div>
+          <div style="margin-top:8px;color:#888">El semáforo compara cada ejecutivo contra el promedio del equipo en el período.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+
+// ======== VISTA 7: FUNNEL DE CONVERSIÓN ========
+const SP_SANO = ['PAGADO','LIBERADO A PAGO','FONDOS RECIBIDOS','FUNDANTE EN PROCESO','FUNDANTE PENDIENTE'];
+
+function fPct(n,d) { return d ? (n/d*100).toFixed(1)+'%' : '—'; }
+function pctColor(p, thresholds) {
+  // thresholds: [bad, warn, ok] valores de corte
+  if (p >= thresholds[2]) return '#43a047';
+  if (p >= thresholds[1]) return '#fb8c00';
+  return '#e53935';
+}
+
+function buildV7() {
+  const desde = document.getElementById('sel-desde')?.value || '';
+  const hasta  = document.getElementById('sel-hasta')?.value  || '';
+  const lbl = document.getElementById('periodo-label')?.textContent || '';
+  document.getElementById('titulo-v7').textContent = 'Embudo por Ejecutivo — ' + lbl;
+
+  // Calcular funnel por ejecutivo
+  const rows = window.RAW_DATA.filter(r =>
+    r.mes >= desde && r.mes <= hasta && r.ejecutivo
+  );
+
+  const ejMap = {};
+  rows.forEach(r => {
+    const ej = r.ejecutivo;
+    if (!ejMap[ej]) ejMap[ej] = {ing:0,apro:0,ot:0,sp_sano:0,rec:0,saldo_ot:0};
+    const d = ejMap[ej];
+    d.ing++;
+    const est = r.estado_eval || '';
+    if (!['RECHAZADO','ANULADO'].includes(est)) d.apro++;
+    if (est === 'OTORGADO') {
+      d.ot++;
+      d.saldo_ot += r.saldo_precio || 0;
+      if (SP_SANO.includes(r.estado_sp || '')) d.sp_sano++;
+    }
+    if (est === 'RECHAZADO') d.rec++;
+  });
+
+  // Ordenar por otorgados desc
+  const ejs = Object.entries(ejMap)
+    .filter(([,v]) => v.ing > 0)
+    .sort((a,b) => b[1].ot - a[1].ot);
+
+  // KPIs equipo
+  const totIng  = ejs.reduce((a,[,v])=>a+v.ing,0);
+  const totApro = ejs.reduce((a,[,v])=>a+v.apro,0);
+  const totOt   = ejs.reduce((a,[,v])=>a+v.ot,0);
+  const totSP   = ejs.reduce((a,[,v])=>a+v.sp_sano,0);
+  document.getElementById('kpi7').innerHTML = `
+    <div class="kpi-box"><div class="kpi-label">Ingresados</div><div class="kpi-val big">${totIng}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Aprobados</div><div class="kpi-val big">${totApro}</div><div class="kpi-sub">${fPct(totApro,totIng)} TA</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Otorgados</div><div class="kpi-val big">${totOt}</div><div class="kpi-sub">${fPct(totOt,totApro)} TC</div></div>
+    <div class="kpi-box"><div class="kpi-label">Caída Aprobación</div><div class="kpi-val big" style="color:#e53935">${totIng-totApro}</div><div class="kpi-sub">${fPct(totIng-totApro,totIng)} rechazados</div></div>
+    <div class="kpi-box"><div class="kpi-label">Caída Conversión</div><div class="kpi-val big" style="color:#fb8c00">${totApro-totOt}</div><div class="kpi-sub">${fPct(totApro-totOt,totApro)} apro no otorgados</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Tasa Global</div><div class="kpi-val big">${fPct(totOt,totIng)}</div><div class="kpi-sub">Ing → Otorgado</div></div>`;
+
+  // Tabla funnel
+  const taTeam  = totApro/totIng*100;
+  const tcTeam  = totOt/totApro*100;
+  const tspTeam = totSP/totOt*100;
+
+  const thead = `<thead><tr style="background:#1a3a6a;color:#fff;font-size:10px">
+    <th style="padding:6px 8px;text-align:left;position:sticky;left:0;background:#1a3a6a;min-width:160px">Ejecutivo</th>
+    <th style="padding:6px;text-align:center;min-width:55px">Ing.</th>
+    <th style="padding:6px;text-align:center;min-width:55px">Apro.</th>
+    <th style="padding:6px;text-align:center;min-width:55px" title="Tasa Aprobación">TA%</th>
+    <th style="padding:6px;text-align:center;min-width:55px">Ot.</th>
+    <th style="padding:6px;text-align:center;min-width:55px" title="Tasa Conversión">TC%</th>
+    <th style="padding:6px;text-align:center;min-width:55px">Rec.</th>
+    <th style="padding:6px;text-align:center;min-width:120px">Barra de caída</th>
+    <th style="padding:6px;text-align:center;min-width:70px">Prob. clave</th>
+  </tr></thead>`;
+
+  const tbRows = ejs.map(([ej, v]) => {
+    const ta  = v.ing  ? v.apro/v.ing*100  : 0;
+    const tc  = v.apro ? v.ot/v.apro*100   : 0;
+    // Colores semáforo vs promedio equipo
+    const taC  = ta  >= taTeam*0.9  ? '#43a047' : ta  >= taTeam*0.7  ? '#fb8c00' : '#e53935';
+    const tcC  = tc  >= tcTeam*0.9  ? '#43a047' : tc  >= tcTeam*0.7  ? '#fb8c00' : '#e53935';
+
+    // Barra visual del funnel (proporcional a ing=100%)
+    const pApro = v.ing ? v.apro/v.ing*100 : 0;
+    const pOt   = v.ing ? v.ot/v.ing*100   : 0;
+    const pSP   = v.ing ? v.sp_sano/v.ing*100 : 0;
+
+    // Diagnóstico principal
+    let diag = '', diagC = '#666';
+    if (ta < taTeam*0.7)       { diag = '⚠ Aprobación'; diagC = '#e53935'; }
+    else if (tc < tcTeam*0.7)  { diag = '⚠ Conversión'; diagC = '#fb8c00'; }
+    else                       { diag = '✓ OK';           diagC = '#43a047'; }
+
+    const nombre = ej.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
+
+    return `<tr style="border-bottom:1px solid #f0f2f5">
+      <td style="padding:5px 8px;font-weight:600;font-size:10px;position:sticky;left:0;background:#fff">${nombre}</td>
+      <td style="text-align:center;padding:4px 6px">${v.ing}</td>
+      <td style="text-align:center;padding:4px 6px">${v.apro}</td>
+      <td style="text-align:center;padding:4px 6px;font-weight:700;color:${taC}">${ta.toFixed(1)}%</td>
+      <td style="text-align:center;padding:4px 6px">${v.ot}</td>
+      <td style="text-align:center;padding:4px 6px;font-weight:700;color:${tcC}">${tc.toFixed(1)}%</td>
+      <td style="text-align:center;padding:4px 6px;color:#e53935">${v.rec}</td>
+      <td style="padding:4px 8px">
+        <div style="position:relative;height:14px;background:#f0f2f5;border-radius:3px;overflow:hidden">
+          <div style="position:absolute;left:0;top:0;height:100%;width:100%;background:#e8edf5;border-radius:3px"></div>
+          <div style="position:absolute;left:0;top:0;height:100%;width:${pApro.toFixed(1)}%;background:#2196F355;border-radius:3px"></div>
+          <div style="position:absolute;left:0;top:0;height:100%;width:${pOt.toFixed(1)}%;background:#1565C0;border-radius:3px"></div>
+        </div>
+      </td>
+      <td style="text-align:center;padding:4px 6px;font-weight:700;font-size:10px;color:${diagC}">${diag}</td>
+    </tr>`;
+  }).join('');
+
+  const tfootRow = `<tfoot><tr style="background:#e8edf5;font-weight:700;font-size:10px;border-top:2px solid #1a3a6a">
+    <td style="padding:5px 8px;position:sticky;left:0;background:#e8edf5">TOTAL EQUIPO</td>
+    <td style="text-align:center;padding:4px 6px">${totIng}</td>
+    <td style="text-align:center;padding:4px 6px">${totApro}</td>
+    <td style="text-align:center;padding:4px 6px;color:#2196F3">${taTeam.toFixed(1)}%</td>
+    <td style="text-align:center;padding:4px 6px">${totOt}</td>
+    <td style="text-align:center;padding:4px 6px;color:#43a047">${tcTeam.toFixed(1)}%</td>
+    <td style="text-align:center;padding:4px 6px;color:#e53935">${ejs.reduce((a,[,v])=>a+v.rec,0)}</td>
+    <td></td><td></td>
+  </tr></tfoot>`;
+
+  document.getElementById('t-funnel').innerHTML = thead + '<tbody>' + tbRows + '</tbody>' + tfootRow;
+
+  // Gráfico barras horizontales — caída en cada etapa
+  const labels = ejs.slice(0,15).map(([ej])=>ej.split(' ').slice(0,2).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' '));
+  const dataTA  = ejs.slice(0,15).map(([,v])=>v.ing?+(v.apro/v.ing*100).toFixed(1):0);
+  const dataTC  = ejs.slice(0,15).map(([,v])=>v.apro?+(v.ot/v.apro*100).toFixed(1):0);
+
+  const existBar = Chart.getChart(document.getElementById('ch-funnel-bar'));
+  if (existBar) existBar.destroy();
+  new Chart(document.getElementById('ch-funnel-bar'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'TA% (Aprobación)', data: dataTA, backgroundColor: '#2196F3aa', borderRadius: 3 },
+        { label: 'TC% (Conversión)', data: dataTC, backgroundColor: '#43a047aa', borderRadius: 3 },
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { font: { size: 10 } } }, tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.raw}%` } } },
+      scales: {
+        x: { min: 0, max: 100, ticks: { callback: v => v+'%', font: { size: 9 } }, grid: { color: '#f0f2f5' } },
+        y: { ticks: { font: { size: 9 } } }
+      }
+    }
+  });
+
+  // Gráfico TC% línea por ejecutivo
+  const existTC = Chart.getChart(document.getElementById('ch-funnel-tc'));
+  if (existTC) existTC.destroy();
+  const tcVals = ejs.slice(0,15).map(([,v])=>v.apro?+(v.ot/v.apro*100).toFixed(1):0);
+  const tcAvg  = tcTeam.toFixed(1);
+  new Chart(document.getElementById('ch-funnel-tc'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'TC%', data: tcVals,
+           backgroundColor: tcVals.map(v => v>=tcTeam ? '#43a047cc' : v>=tcTeam*0.7 ? '#fb8c00cc' : '#e53935cc'),
+           borderRadius: 3 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` TC: ${ctx.raw}% (prom: ${tcAvg}%)` } } },
+      scales: {
+        x: { ticks: { font: { size: 8 } } },
+        y: { min: 0, max: 100, ticks: { callback: v=>v+'%', font:{size:9} }, grid:{color:'#f0f2f5'} }
+      }
+    }
+  });
 }
 
 </script>
