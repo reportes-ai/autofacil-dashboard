@@ -424,13 +424,24 @@ function checkLogin() {
 
   <div class="g3565" style="align-items:stretch">
     <div style="display:flex;flex-direction:column;gap:10px">
-      <div class="card">
-        <div class="card-head light">Ingresos AutoFácil</div>
-        <div class="donut-section" style="padding:8px">
-          <div class="donut-wrap" style="width:110px;height:110px"><canvas id="ch-donut2"></canvas>
-            <div class="donut-center"><div class="donut-center-val" id="donut2-pct">—</div><div class="donut-center-lbl">MAYOR</div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="card">
+          <div class="card-head light">Ingresos AutoFácil</div>
+          <div class="donut-section" style="padding:8px">
+            <div class="donut-wrap" style="width:100px;height:100px"><canvas id="ch-donut2"></canvas>
+              <div class="donut-center"><div class="donut-center-val" id="donut2-pct">—</div><div class="donut-center-lbl">MAYOR</div></div>
+            </div>
+            <div class="donut-legend-list" id="donut2-leg"></div>
           </div>
-          <div class="donut-legend-list" id="donut2-leg"></div>
+        </div>
+        <div class="card">
+          <div class="card-head" style="background:#00838f">Composición Colocaciones</div>
+          <div class="donut-section" style="padding:8px">
+            <div class="donut-wrap" style="width:100px;height:100px"><canvas id="ch-donut3"></canvas>
+              <div class="donut-center"><div class="donut-center-val" id="donut3-pct">—</div><div class="donut-center-lbl">MAYOR</div></div>
+            </div>
+            <div class="donut-legend-list" id="donut3-leg"></div>
+          </div>
         </div>
       </div>
       <!-- Filtros -->
@@ -759,10 +770,31 @@ function buildV2() {
     data:{labels:['MAYOR','MENOR'],datasets:[{data:dv2,backgroundColor:[C.blue,C.teal],borderWidth:2,borderColor:'#fff'}]},
     options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fM(ctx.raw)}}},animation:{duration:500},responsive:true,maintainAspectRatio:false}
   });
-  document.getElementById('donut2-leg').innerHTML = ['MAYOR','MENOR'].map((l,i)=>`
+  document.getElementById('donut2-leg').innerHTML = ['MAYOR 200UF','MENOR 200UF'].map((l,i)=>`
     <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,C.teal][i]}"></div>
-    <span class="dleg-name">${l}</span><span class="dleg-val">${fM(dv2[i])}</span>
-    <span class="dleg-pct"> ${dt2?(dv2[i]/dt2*100).toFixed(1):0}%</span></div>`).join('');
+    <div><div style="font-size:10px;color:#555">${l}</div>
+    <span class="dleg-val">${fM(dv2[i])}</span>
+    <div style="font-size:11px;color:#888">${dt2?(dv2[i]/dt2*100).toFixed(1):0}%</div></div></div>`).join('');
+
+  // ── Donut 3: Composición Colocaciones por N° Ops y Monto ──
+  const dv3ops = [mayor.length, menor.length];
+  const dv3sal = [mayor.reduce((a,r)=>a+r.saldo_precio,0), menor.reduce((a,r)=>a+r.saldo_precio,0)];
+  const dt3 = dv3ops.reduce((a,b)=>a+b,0);
+  const dt3sal = dv3sal.reduce((a,b)=>a+b,0);
+  document.getElementById('donut3-pct').textContent = dt3?(dv3ops[0]/dt3*100).toFixed(1)+'%':'—';
+  const existingDonut3 = Chart.getChart(document.getElementById('ch-donut3'));
+  if (existingDonut3) existingDonut3.destroy();
+  new Chart(document.getElementById('ch-donut3'),{
+    type:'doughnut',
+    data:{labels:['MAYOR 200UF','MENOR 200UF'],datasets:[{data:dv3ops,backgroundColor:[C.blue,C.teal],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw} ops (${(ctx.raw/(dt3||1)*100).toFixed(1)}%)`}}},animation:{duration:500},responsive:true,maintainAspectRatio:false}
+  });
+  document.getElementById('donut3-leg').innerHTML = ['MAYOR 200UF','MENOR 200UF'].map((l,i)=>`
+    <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,C.teal][i]}"></div>
+    <div><div style="font-size:10px;color:#555">${l}</div>
+    <span class="dleg-val">${dv3ops[i]} ops</span>
+    <span class="dleg-pct"> ${dt3?(dv3ops[i]/dt3*100).toFixed(1):0}%</span>
+    <div style="font-size:10px;color:#888">${fM(dv3sal[i])}</div></div></div>`).join('');
 
   // Estado eval riesgo
   document.getElementById('t-estado2').innerHTML = `
@@ -1373,7 +1405,7 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
   };
 
   function destroyCharts() {
-    ['ch-donut','ch-evol','ch-donut1b','ch-evol1b','ch-donut2','ch-mm','ch-com','ch-qmes','ch-t1','ch-t2','ch-t3','ch-t4'].forEach(id => {
+    ['ch-donut','ch-evol','ch-donut1b','ch-evol1b','ch-donut2','ch-donut3','ch-mm','ch-com','ch-qmes','ch-t1','ch-t2','ch-t3','ch-t4'].forEach(id => {
       const el = document.getElementById(id);
       if (el) { const ex = Chart.getChart(el); if (ex) ex.destroy(); }
     });
