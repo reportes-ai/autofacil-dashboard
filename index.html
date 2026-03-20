@@ -279,20 +279,74 @@ function checkLogin() {
   </div>
   <div class="kpi-strip" id="kpi1b"></div>
   <div class="g6535">
-    <div class="card">
-      <div class="card-head">Instituciones — Solo Otorgados</div>
-      <div class="card-body" style="padding:0">
-        <table class="tbl" id="t-fin1b"></table>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="card">
+        <div class="card-head">Instituciones — Solo Otorgados</div>
+        <div class="card-body" style="padding:0">
+          <table class="tbl" id="t-fin1b"></table>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+        <div class="card">
+          <div class="card-head light" style="font-size:10px;padding:5px 8px">Composición 200UF</div>
+          <div class="donut-section" style="padding:6px">
+            <div class="donut-wrap" style="width:70px;height:70px"><canvas id="ch-d1b-mm"></canvas>
+              <div class="donut-center"><div class="donut-center-val" id="d1b-mm-pct" style="font-size:11px">—</div><div class="donut-center-lbl" style="font-size:7px">MAYOR</div></div>
+            </div>
+            <div class="donut-legend-list" id="d1b-mm-leg" style="font-size:10px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head light" style="font-size:10px;padding:5px 8px">Plazo Prom. por Institución</div>
+          <div class="donut-section" style="padding:6px">
+            <div class="donut-wrap" style="width:70px;height:70px"><canvas id="ch-d1b-plazo"></canvas>
+              <div class="donut-center"><div class="donut-center-val" id="d1b-plazo-pct" style="font-size:11px">—</div><div class="donut-center-lbl" style="font-size:7px">m</div></div>
+            </div>
+            <div class="donut-legend-list" id="d1b-plazo-leg" style="font-size:10px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head light" style="font-size:10px;padding:5px 8px">Monto Prom. por Institución</div>
+          <div class="donut-section" style="padding:6px">
+            <div class="donut-wrap" style="width:70px;height:70px"><canvas id="ch-d1b-monto"></canvas>
+              <div class="donut-center"><div class="donut-center-val" id="d1b-monto-pct" style="font-size:11px">—</div><div class="donut-center-lbl" style="font-size:7px">M$</div></div>
+            </div>
+            <div class="donut-legend-list" id="d1b-monto-leg" style="font-size:10px"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head light" style="font-size:10px;padding:5px 8px">Ing. AFA por Institución</div>
+          <div class="donut-section" style="padding:6px">
+            <div class="donut-wrap" style="width:70px;height:70px"><canvas id="ch-d1b-afa"></canvas>
+              <div class="donut-center"><div class="donut-center-val" id="d1b-afa-pct" style="font-size:11px">—</div><div class="donut-center-lbl" style="font-size:7px">AUTOFIN</div></div>
+            </div>
+            <div class="donut-legend-list" id="d1b-afa-leg" style="font-size:10px"></div>
+          </div>
+        </div>
       </div>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
       <div class="card">
         <div class="card-head light">Participación % por Institución</div>
-        <div class="donut-section">
-          <div class="donut-wrap"><canvas id="ch-donut1b"></canvas>
-            <div class="donut-center"><div class="donut-center-val" id="donut1b-pct">—</div><div class="donut-center-lbl">AUTOFIN</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px">
+          <div>
+            <div style="font-size:9px;color:#888;text-align:center;margin-bottom:4px;text-transform:uppercase">Saldo Precio</div>
+            <div class="donut-section" style="padding:0">
+              <div class="donut-wrap" style="width:80px;height:80px"><canvas id="ch-donut1b"></canvas>
+                <div class="donut-center"><div class="donut-center-val" id="donut1b-pct" style="font-size:12px">—</div><div class="donut-center-lbl" style="font-size:7px">AUTOFIN</div></div>
+              </div>
+              <div class="donut-legend-list" id="donut1b-leg"></div>
+            </div>
           </div>
-          <div class="donut-legend-list" id="donut1b-leg"></div>
+          <div>
+            <div style="font-size:9px;color:#888;text-align:center;margin-bottom:4px;text-transform:uppercase">Operaciones</div>
+            <div class="donut-section" style="padding:0">
+              <div class="donut-wrap" style="width:80px;height:80px"><canvas id="ch-donut1b-ops"></canvas>
+                <div class="donut-center"><div class="donut-center-val" id="donut1b-ops-pct" style="font-size:12px">—</div><div class="donut-center-lbl" style="font-size:7px">AUTOFIN</div></div>
+              </div>
+              <div class="donut-legend-list" id="donut1b-ops-leg"></div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="card">
@@ -1043,10 +1097,80 @@ function buildV1b() {
     data:{labels:['AUTOFIN','UNIDAD'],datasets:[{data:dv,backgroundColor:[C.blue,'#ff7043'],borderWidth:2,borderColor:'#fff'}]},
     options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fM(ctx.raw)+' ('+((ctx.raw/(dtot||1))*100).toFixed(1)+'%)'}}},animation:{duration:500},responsive:true,maintainAspectRatio:false}
   });
+  // Donut 1: Saldo Precio por institución
   document.getElementById('donut1b-leg').innerHTML = ['AUTOFIN','UNIDAD'].map((l,i)=>`
     <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,'#ff7043'][i]}"></div>
-    <span class="dleg-name">${l}</span><span class="dleg-val">${fM(dv[i])}</span>
-    <span class="dleg-pct"> ${dtot?(dv[i]/dtot*100).toFixed(1):0}%</span></div>`).join('');
+    <div><div style="font-size:9px;color:#555">${l}</div>
+    <span class="dleg-val" style="font-size:11px">${fM(dv[i])}</span>
+    <div style="font-size:10px;color:#888">${dtot?(dv[i]/dtot*100).toFixed(1):0}%</div></div></div>`).join('');
+
+  // Donut 2: Operaciones por institución
+  const dvOps = ['AUTOFIN','UNIDAD'].map(k => finOt[k]?.ops||0);
+  const dtotOps = dvOps.reduce((a,b)=>a+b,0);
+  document.getElementById('donut1b-ops-pct').textContent = dtotOps?(dvOps[0]/dtotOps*100).toFixed(1)+'%':'—';
+  const existD1bOps = Chart.getChart(document.getElementById('ch-donut1b-ops'));
+  if (existD1bOps) existD1bOps.destroy();
+  new Chart(document.getElementById('ch-donut1b-ops'),{
+    type:'doughnut',
+    data:{labels:['AUTOFIN','UNIDAD'],datasets:[{data:dvOps,backgroundColor:[C.blue,'#ff7043'],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw} ops (${(ctx.raw/(dtotOps||1)*100).toFixed(1)}%)`}}},animation:{duration:500},responsive:true,maintainAspectRatio:false}
+  });
+  document.getElementById('donut1b-ops-leg').innerHTML = ['AUTOFIN','UNIDAD'].map((l,i)=>`
+    <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,'#ff7043'][i]}"></div>
+    <div><div style="font-size:9px;color:#555">${l}</div>
+    <span class="dleg-val" style="font-size:11px">${dvOps[i]}</span>
+    <div style="font-size:10px;color:#888">${dtotOps?(dvOps[i]/dtotOps*100).toFixed(1):0}%</div></div></div>`).join('');
+
+  // ── 4 Donuts adicionales ──
+  // 1. Composición 200UF (ops)
+  const mayor1b = det.filter(r=>r.mm==='>'), menor1b = det.filter(r=>r.mm==='<');
+  const dvMM = [mayor1b.length, menor1b.length], dtMM = dvMM[0]+dvMM[1];
+  document.getElementById('d1b-mm-pct').textContent = dtMM?(dvMM[0]/dtMM*100).toFixed(1)+'%':'—';
+  ['ch-d1b-mm'].forEach(id => { const c=Chart.getChart(document.getElementById(id)); if(c) c.destroy(); });
+  new Chart(document.getElementById('ch-d1b-mm'),{type:'doughnut',
+    data:{labels:['MAYOR 200UF','MENOR 200UF'],datasets:[{data:dvMM,backgroundColor:[C.blue,'#ff7043'],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw} ops (${(ctx.raw/(dtMM||1)*100).toFixed(1)}%)`}}},animation:{duration:300},responsive:true,maintainAspectRatio:false}});
+  document.getElementById('d1b-mm-leg').innerHTML = [['MAYOR 200UF',mayor1b.length],[' MENOR 200UF',menor1b.length]].map(([l,v],i)=>`
+    <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,'#ff7043'][i]};width:8px;height:8px"></div>
+    <div><div style="font-size:9px">${l}</div><span style="font-size:10px;font-weight:600">${v}</span>
+    <span style="font-size:9px;color:#888"> ${dtMM?(v/dtMM*100).toFixed(1):0}%</span></div></div>`).join('');
+
+  // 2. Plazo promedio por institución
+  const plazos = ['AUTOFIN','UNIDAD'].map(k => finOt[k] ? Math.round(finOt[k].plazo_sum/finOt[k].ops)||0 : 0);
+  const plazoTot = totOps ? Math.round(det.reduce((a,r)=>a+r.plazo,0)/totOps) : 0;
+  document.getElementById('d1b-plazo-pct').textContent = plazoTot+'m';
+  ['ch-d1b-plazo'].forEach(id => { const c=Chart.getChart(document.getElementById(id)); if(c) c.destroy(); });
+  new Chart(document.getElementById('ch-d1b-plazo'),{type:'doughnut',
+    data:{labels:['AUTOFIN','UNIDAD'],datasets:[{data:plazos,backgroundColor:[C.blue,'#ff7043'],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw}m`}}},animation:{duration:300},responsive:true,maintainAspectRatio:false}});
+  document.getElementById('d1b-plazo-leg').innerHTML = ['AUTOFIN','UNIDAD'].map((l,i)=>`
+    <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,'#ff7043'][i]};width:8px;height:8px"></div>
+    <div><div style="font-size:9px">${l}</div><span style="font-size:10px;font-weight:600">${plazos[i]}m</span></div></div>`).join('');
+
+  // 3. Monto promedio por institución
+  const montos = ['AUTOFIN','UNIDAD'].map(k => finOt[k] && finOt[k].ops ? finOt[k].fin/finOt[k].ops : 0);
+  const montoTotProm = totOps ? totFin/totOps : 0;
+  document.getElementById('d1b-monto-pct').textContent = fM(montoTotProm);
+  ['ch-d1b-monto'].forEach(id => { const c=Chart.getChart(document.getElementById(id)); if(c) c.destroy(); });
+  new Chart(document.getElementById('ch-d1b-monto'),{type:'doughnut',
+    data:{labels:['AUTOFIN','UNIDAD'],datasets:[{data:montos,backgroundColor:[C.blue,'#ff7043'],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fM(ctx.raw)}`}}},animation:{duration:300},responsive:true,maintainAspectRatio:false}});
+  document.getElementById('d1b-monto-leg').innerHTML = ['AUTOFIN','UNIDAD'].map((l,i)=>`
+    <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,'#ff7043'][i]};width:8px;height:8px"></div>
+    <div><div style="font-size:9px">${l}</div><span style="font-size:10px;font-weight:600">${fM(montos[i])}</span></div></div>`).join('');
+
+  // 4. Ingreso AFA por institución
+  const afas = ['AUTOFIN','UNIDAD'].map(k => finOt[k]?.rentab_afa||0);
+  const afaTot = afas.reduce((a,b)=>a+b,0);
+  document.getElementById('d1b-afa-pct').textContent = afaTot?(afas[0]/afaTot*100).toFixed(1)+'%':'—';
+  ['ch-d1b-afa'].forEach(id => { const c=Chart.getChart(document.getElementById(id)); if(c) c.destroy(); });
+  new Chart(document.getElementById('ch-d1b-afa'),{type:'doughnut',
+    data:{labels:['AUTOFIN','UNIDAD'],datasets:[{data:afas,backgroundColor:[C.blue,'#ff7043'],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${fM(ctx.raw)} (${(ctx.raw/(afaTot||1)*100).toFixed(1)}%)`}}},animation:{duration:300},responsive:true,maintainAspectRatio:false}});
+  document.getElementById('d1b-afa-leg').innerHTML = ['AUTOFIN','UNIDAD'].map((l,i)=>`
+    <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,'#ff7043'][i]};width:8px;height:8px"></div>
+    <div><div style="font-size:9px">${l}</div><span style="font-size:10px;font-weight:600">${fM(afas[i])}</span>
+    <span style="font-size:9px;color:#888"> ${afaTot?(afas[i]/afaTot*100).toFixed(1):0}%</span></div></div>`).join('');
 
   // Mes anterior otorgados
   const jDet = D.jan.detalle_v2||[];
@@ -1405,7 +1529,7 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
   };
 
   function destroyCharts() {
-    ['ch-donut','ch-evol','ch-donut1b','ch-evol1b','ch-donut2','ch-donut3','ch-mm','ch-com','ch-qmes','ch-t1','ch-t2','ch-t3','ch-t4'].forEach(id => {
+    ['ch-donut','ch-evol','ch-donut1b','ch-donut1b-ops','ch-evol1b','ch-d1b-mm','ch-d1b-plazo','ch-d1b-monto','ch-d1b-afa','ch-donut2','ch-donut3','ch-mm','ch-com','ch-qmes','ch-t1','ch-t2','ch-t3','ch-t4'].forEach(id => {
       const el = document.getElementById(id);
       if (el) { const ex = Chart.getChart(el); if (ex) ex.destroy(); }
     });
