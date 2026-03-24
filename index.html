@@ -223,17 +223,16 @@ function checkLogin() {
 
   // Login exitoso
   const primerIngreso = user.estado === 'NUNCA INGRESADO';
-  user.estado = 'ACTIVO';
-  user.ultimoIngreso = new Date().toISOString();
+  if (!primerIngreso) {
+    user.ultimoIngreso = new Date().toISOString();
+    user.estado = 'ACTIVO';
+  }
   saveUsuarios(usuarios);
-
   sesionActual = { nombre: user.nombre, usuario: user.usuario, perfil: user.perfil };
   sessionStorage.setItem('af_sesion', JSON.stringify(sesionActual));
-
   document.getElementById('login-screen').style.display = 'none';
-
-  // Mostrar nombre en topbar
   actualizarTopbarUsuario();
+  if (primerIngreso) setTimeout(() => mostrarModalCambioClave(), 400);
 }
 
 function actualizarTopbarUsuario() {
@@ -255,8 +254,10 @@ function cerrarSesion() {
 }
 
 // Ejecutar al cargar
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
   actualizarTopbarUsuario();
+  // Pre-cargar usuarios en localStorage si no existen
+  getUsuarios();
 });
 </script>
 
@@ -789,7 +790,14 @@ function showV(id, el) {
   if(id==='v4') { buildV4(); window._v4=true; }
   if(id==='v5'&&!window._v5) { buildV5(); window._v5=true; }
   if(id==='v7') { const sd7=document.getElementById('sel-desde'); if(!sd7?.value) window.aplicarFiltro(); buildV7(); window._v7=true; }
-  if(id==='vadmin') { buildVAdmin(); }
+  if(id==='vadmin') {
+    // Verificar que solo admin puede acceder
+    if (!sesionActual || sesionActual.perfil !== 'ADMINISTRADOR') {
+      alert('Acceso denegado.');
+      return;
+    }
+    buildVAdmin();
+  }
   if(id==='v6') {
     const sd = document.getElementById('sel-desde');
     if (!sd?.value) window.aplicarFiltro();
@@ -2534,6 +2542,7 @@ function buildV7() {
       <div style="display:flex;gap:8px">
         <input id="admin-search" placeholder="🔍 Buscar..." onkeyup="filtrarUsuariosAdmin()"
           style="padding:4px 10px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:12px;width:180px"/>
+        <button onclick="nuevoUsuario()" style="background:#43a047;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer">➕ Nuevo Usuario</button>
         <button onclick="exportarUsuarios()" style="background:#1565C0;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer">📥 Exportar</button>
       </div>
     </div>
@@ -2545,7 +2554,7 @@ function buildV7() {
   <!-- Modal editar usuario -->
   <div id="modal-usuario" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;z-index:9999;align-items:center;justify-content:center">
     <div style="background:#1a2a4a;border-radius:12px;padding:32px;width:420px;box-shadow:0 20px 60px #00000060">
-      <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:20px">✏️ Editar Usuario</div>
+      <div id="modal-titulo" style="font-size:16px;font-weight:700;color:#fff;margin-bottom:20px">✏️ Editar Usuario</div>
       <input type="hidden" id="edit-idx"/>
       <div style="margin-bottom:12px">
         <div style="font-size:11px;color:#7bafd4;margin-bottom:4px">Nombre</div>
@@ -2556,8 +2565,11 @@ function buildV7() {
         <input id="edit-usuario" style="width:100%;padding:10px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;box-sizing:border-box"/>
       </div>
       <div style="margin-bottom:12px">
-        <div style="font-size:11px;color:#7bafd4;margin-bottom:4px">Nueva Contraseña (dejar vacío para no cambiar)</div>
-        <input id="edit-clave" type="password" placeholder="Nueva clave..." style="width:100%;padding:10px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;box-sizing:border-box"/>
+        <div style="font-size:11px;color:#7bafd4;margin-bottom:4px;display:flex;justify-content:space-between">
+          <span id="lbl-clave">Contraseña</span>
+        </div>
+        <input id="edit-clave" type="text" placeholder="Contraseña..."
+          style="width:100%;padding:10px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;font-family:monospace;box-sizing:border-box"/>
       </div>
       <div style="margin-bottom:12px">
         <div style="font-size:11px;color:#7bafd4;margin-bottom:4px">Perfil</div>
@@ -2583,103 +2595,118 @@ function buildV7() {
   </div>
 </div>
 <script>
-
 // ======== ADMIN DE USUARIOS ========
 function buildVAdmin() {
-  renderTablaAdmin();
+  // Pequeño delay para asegurar que la vista está visible
+  setTimeout(function() { renderTablaAdmin(); }, 50);
 }
 
 function estadoBadge(estado) {
-  const colores = {
+  const C = {
     'ACTIVO':          {bg:'#e8f5e9',txt:'#2e7d32'},
     'BLOQUEADO':       {bg:'#ffebee',txt:'#c62828'},
     'SUSPENDIDO':      {bg:'#fff3e0',txt:'#e65100'},
     'NUNCA INGRESADO': {bg:'#e3f2fd',txt:'#1565c0'},
   };
-  const c = colores[estado] || {bg:'#f5f5f5',txt:'#666'};
-  return `<span style="background:${c.bg};color:${c.txt};padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">${estado}</span>`;
+  const c = C[estado] || {bg:'#f5f5f5',txt:'#666'};
+  return '<span style="background:'+c.bg+';color:'+c.txt+';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">'+estado+'</span>';
 }
 
-function renderTablaAdmin(filtro='') {
+function renderTablaAdmin(filtro) {
+  filtro = filtro || '';
   const usuarios = getUsuarios();
   const q = filtro.toLowerCase();
-  const filt = q ? usuarios.filter(u =>
-    u.nombre.toLowerCase().includes(q) ||
-    u.usuario.toLowerCase().includes(q) ||
-    u.perfil.toLowerCase().includes(q) ||
-    u.estado.toLowerCase().includes(q)
-  ) : usuarios;
+  const filt = q ? usuarios.filter(function(u) {
+    return u.nombre.toLowerCase().includes(q) || u.usuario.toLowerCase().includes(q) ||
+           u.perfil.toLowerCase().includes(q)  || u.estado.toLowerCase().includes(q);
+  }) : usuarios;
 
-  const thead = `<thead><tr style="background:#1a3a6a;color:#fff;font-size:11px">
-    <th style="padding:8px;text-align:left">Nombre</th>
-    <th style="padding:8px;text-align:left">Usuario</th>
-    <th style="padding:8px;text-align:center">Perfil</th>
-    <th style="padding:8px;text-align:center">Estado</th>
-    <th style="padding:8px;text-align:center">Último Ingreso</th>
-    <th style="padding:8px;text-align:center">Acciones</th>
-  </tr></thead>`;
+  var thead = '<thead><tr style="background:#1a3a6a;color:#fff;font-size:11px">' +
+    '<th style="padding:8px;text-align:left">Nombre</th>' +
+    '<th style="padding:8px;text-align:left">Usuario</th>' +
+    '<th style="padding:8px;text-align:center">Perfil</th>' +
+    '<th style="padding:8px;text-align:center">Estado</th>' +
+    '<th style="padding:8px;text-align:center">Contraseña</th>' +
+    '<th style="padding:8px;text-align:center">Último Ingreso</th>' +
+    '<th style="padding:8px;text-align:center">Acciones</th>' +
+    '</tr></thead>';
 
-  const tbody = filt.map((u, i) => {
-    const idx = usuarios.indexOf(u);
-    const ult = u.ultimoIngreso ? new Date(u.ultimoIngreso).toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
-    return `<tr style="border-bottom:1px solid #f0f2f5;${u.estado==='BLOQUEADO'?'opacity:0.6':''}">
-      <td style="padding:7px 8px;font-weight:600">${u.nombre}</td>
-      <td style="padding:7px 8px;color:#555;font-size:11px">${u.usuario}</td>
-      <td style="padding:7px 8px;text-align:center">
-        <span style="background:${u.perfil==='ADMINISTRADOR'?'#1a3a6a':'#e3f2fd'};color:${u.perfil==='ADMINISTRADOR'?'#fff':'#1565c0'};padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">${u.perfil}</span>
-      </td>
-      <td style="padding:7px 8px;text-align:center">${estadoBadge(u.estado)}</td>
-      <td style="padding:7px 8px;text-align:center;font-size:11px;color:#888">${ult}</td>
-      <td style="padding:7px 8px;text-align:center">
-        <button onclick="editarUsuario(${idx})" style="background:#1565C0;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;margin-right:4px">✏️ Editar</button>
-        <button onclick="resetClave(${idx})" style="background:#fb8c00;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer">🔑 Reset</button>
-      </td>
-    </tr>`;
+  var tbody = filt.map(function(u) {
+    var idx = usuarios.indexOf(u);
+    var ult = u.ultimoIngreso
+      ? new Date(u.ultimoIngreso).toLocaleString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
+      : '—';
+    var perfBg = u.perfil === 'ADMINISTRADOR' ? '#1a3a6a' : '#e3f2fd';
+    var perfC  = u.perfil === 'ADMINISTRADOR' ? '#fff' : '#1565c0';
+    return '<tr style="border-bottom:1px solid #f0f2f5">' +
+      '<td style="padding:7px 8px;font-weight:600">' + u.nombre + '</td>' +
+      '<td style="padding:7px 8px;color:#555;font-size:11px">' + u.usuario + '</td>' +
+      '<td style="padding:7px 8px;text-align:center"><span style="background:' + perfBg + ';color:' + perfC + ';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">' + u.perfil + '</span></td>' +
+      '<td style="padding:7px 8px;text-align:center">' + estadoBadge(u.estado) + '</td>' +
+      '<td style="padding:7px 8px;text-align:center;font-family:monospace;font-size:12px;color:#4fc3f7;letter-spacing:1px">' + u.clave + '</td>' +
+      '<td style="padding:7px 8px;text-align:center;font-size:11px;color:#888">' + ult + '</td>' +
+      '<td style="padding:7px 8px;text-align:center;white-space:nowrap">' +
+        '<button onclick="editarUsuario(' + idx + ')" style="background:#1565C0;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;margin-right:3px">✏️ Editar</button>' +
+        '<button onclick="resetClave(' + idx + ')" style="background:#fb8c00;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;margin-right:3px">🔑 Reset</button>' +
+        '<button onclick="eliminarUsuario(' + idx + ')" style="background:#e53935;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer">🗑</button>' +
+      '</td></tr>';
   }).join('');
 
-  // Stats
-  const totales = {activo:0,bloqueado:0,suspendido:0,nunca:0};
-  usuarios.forEach(u => {
-    if (u.estado==='ACTIVO') totales.activo++;
-    else if (u.estado==='BLOQUEADO') totales.bloqueado++;
-    else if (u.estado==='SUSPENDIDO') totales.suspendido++;
-    else if (u.estado==='NUNCA INGRESADO') totales.nunca++;
+  var tots = {activo:0, bloqueado:0, suspendido:0, nunca:0};
+  usuarios.forEach(function(u) {
+    if (u.estado==='ACTIVO') tots.activo++;
+    else if (u.estado==='BLOQUEADO') tots.bloqueado++;
+    else if (u.estado==='SUSPENDIDO') tots.suspendido++;
+    else tots.nunca++;
   });
 
-  const statsHtml = `<div style="display:flex;gap:10px;padding:10px 0;font-size:11px">
-    <span style="color:#43a047">✅ ${totales.activo} activos</span>
-    <span style="color:#1565c0">🆕 ${totales.nunca} nunca ingresados</span>
-    <span style="color:#e53935">🔒 ${totales.bloqueado} bloqueados</span>
-    <span style="color:#fb8c00">⏸ ${totales.suspendido} suspendidos</span>
-    <span style="color:#888;margin-left:auto">Total: ${usuarios.length} usuarios</span>
-  </div>`;
-
-  const tbl = document.getElementById('t-admin-users');
+  var tbl = document.getElementById('t-admin-users');
   if (tbl) tbl.innerHTML = thead + '<tbody>' + tbody + '</tbody>';
 
-  // Insertar stats antes de la tabla
-  let statsEl = document.getElementById('admin-stats');
-  if (!statsEl) {
-    statsEl = document.createElement('div');
-    statsEl.id = 'admin-stats';
-    tbl.parentElement.insertBefore(statsEl, tbl);
+  // Insertar stats en el contenedor padre del div overflow
+  var el = document.getElementById('admin-stats');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'admin-stats';
+    // Insertar antes del div overflow-x:auto (padre de la tabla)
+    var overflowDiv = tbl.parentElement;
+    overflowDiv.parentElement.insertBefore(el, overflowDiv);
   }
-  statsEl.innerHTML = statsHtml;
+  el.innerHTML = '<div style="display:flex;gap:12px;padding:8px 4px;font-size:11px">' +
+    '<span style="color:#43a047">✅ ' + tots.activo + ' activos</span>' +
+    '<span style="color:#1565c0">🆕 ' + tots.nunca + ' nunca ingresados</span>' +
+    '<span style="color:#e53935">🔒 ' + tots.bloqueado + ' bloqueados</span>' +
+    '<span style="color:#fb8c00">⏸ ' + tots.suspendido + ' suspendidos</span>' +
+    '<span style="color:#888;margin-left:auto">Total: ' + usuarios.length + '</span></div>';
 }
 
 function filtrarUsuariosAdmin() {
-  const q = document.getElementById('admin-search')?.value || '';
-  renderTablaAdmin(q);
+  renderTablaAdmin(document.getElementById('admin-search') ? document.getElementById('admin-search').value : '');
+}
+
+function nuevoUsuario() {
+  document.getElementById('modal-titulo').textContent = '➕ Nuevo Usuario';
+  document.getElementById('edit-idx').value = '-1';
+  document.getElementById('edit-nombre').value = '';
+  document.getElementById('edit-usuario').value = '';
+  document.getElementById('edit-clave').value = 'AF2026';
+  document.getElementById('edit-perfil').value = 'USUARIO';
+  document.getElementById('edit-estado').value = 'NUNCA INGRESADO';
+  document.getElementById('lbl-clave').textContent = 'Contraseña inicial';
+  document.getElementById('modal-usuario').style.display = 'flex';
+  setTimeout(function() { document.getElementById('edit-nombre').focus(); }, 100);
 }
 
 function editarUsuario(idx) {
-  const u = getUsuarios()[idx];
+  var u = getUsuarios()[idx];
+  document.getElementById('modal-titulo').textContent = '✏️ Editar Usuario';
   document.getElementById('edit-idx').value = idx;
   document.getElementById('edit-nombre').value = u.nombre;
   document.getElementById('edit-usuario').value = u.usuario;
-  document.getElementById('edit-clave').value = '';
+  document.getElementById('edit-clave').value = u.clave;
   document.getElementById('edit-perfil').value = u.perfil;
   document.getElementById('edit-estado').value = u.estado;
+  document.getElementById('lbl-clave').textContent = 'Contraseña vigente';
   document.getElementById('modal-usuario').style.display = 'flex';
 }
 
@@ -2688,42 +2715,109 @@ function cerrarModal() {
 }
 
 function guardarUsuario() {
-  const idx   = parseInt(document.getElementById('edit-idx').value);
-  const usuarios = getUsuarios();
-  const u = usuarios[idx];
-  u.nombre  = document.getElementById('edit-nombre').value.trim();
-  u.usuario = document.getElementById('edit-usuario').value.trim();
-  u.perfil  = document.getElementById('edit-perfil').value;
-  u.estado  = document.getElementById('edit-estado').value;
-  const newClave = document.getElementById('edit-clave').value;
-  if (newClave) u.clave = newClave;
+  var idx     = parseInt(document.getElementById('edit-idx').value);
+  var nombre  = document.getElementById('edit-nombre').value.trim();
+  var usuario = document.getElementById('edit-usuario').value.trim().toLowerCase();
+  var clave   = document.getElementById('edit-clave').value.trim();
+  var perfil  = document.getElementById('edit-perfil').value;
+  var estado  = document.getElementById('edit-estado').value;
+
+  if (!nombre || !usuario || !clave) { alert('Completa todos los campos.'); return; }
+
+  var usuarios = getUsuarios();
+  if (idx === -1) {
+    if (usuarios.find(function(u) { return u.usuario.toLowerCase() === usuario; })) {
+      alert('Ya existe un usuario con ese email.'); return;
+    }
+    usuarios.push({ nombre: nombre, usuario: usuario, clave: clave, perfil: perfil, estado: estado, ultimoIngreso: null });
+    alert('✅ Usuario "' + nombre + '" creado. Clave inicial: ' + clave);
+  } else {
+    usuarios[idx].nombre  = nombre;
+    usuarios[idx].usuario = usuario;
+    usuarios[idx].clave   = clave;
+    usuarios[idx].perfil  = perfil;
+    usuarios[idx].estado  = estado;
+    alert('✅ Usuario "' + nombre + '" actualizado.');
+  }
   saveUsuarios(usuarios);
   cerrarModal();
   renderTablaAdmin();
-  alert(`✅ Usuario "${u.nombre}" actualizado correctamente.`);
 }
 
 function resetClave(idx) {
-  if (!confirm('¿Resetear la clave a AF2026?')) return;
-  const usuarios = getUsuarios();
+  if (!confirm('¿Resetear clave a AF2026?')) return;
+  var usuarios = getUsuarios();
   usuarios[idx].clave = 'AF2026';
-  usuarios[idx].estado = 'ACTIVO';
+  usuarios[idx].estado = 'NUNCA INGRESADO';
+  usuarios[idx].ultimoIngreso = null;
   saveUsuarios(usuarios);
   renderTablaAdmin();
-  alert(`✅ Clave reseteada a "AF2026" para ${usuarios[idx].nombre}`);
+  alert('✅ Clave reseteada para ' + usuarios[idx].nombre + '. Deberá cambiarla al ingresar.');
+}
+
+function eliminarUsuario(idx) {
+  var usuarios = getUsuarios();
+  var u = usuarios[idx];
+  if (u.perfil === 'ADMINISTRADOR' && usuarios.filter(function(x) { return x.perfil === 'ADMINISTRADOR'; }).length === 1) {
+    alert('No puedes eliminar el único administrador.'); return;
+  }
+  if (!confirm('¿Eliminar a "' + u.nombre + '"? No se puede deshacer.')) return;
+  usuarios.splice(idx, 1);
+  saveUsuarios(usuarios);
+  renderTablaAdmin();
 }
 
 function exportarUsuarios() {
-  const usuarios = getUsuarios();
-  const csv = 'Nombre,Usuario,Perfil,Estado,Ultimo Ingreso\n' +
-    usuarios.map(u => `"${u.nombre}","${u.usuario}","${u.perfil}","${u.estado}","${u.ultimoIngreso||''}"`).join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  var u = getUsuarios();
+  var csv = 'Nombre,Usuario,Perfil,Estado,Ultimo Ingreso\n' +
+    u.map(function(x) { return '"'+x.nombre+'","'+x.usuario+'","'+x.perfil+'","'+x.estado+'","'+(x.ultimoIngreso||'')+'"'; }).join('\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
   a.download = 'usuarios_autofacil.csv';
   a.click();
 }
 
+function mostrarModalCambioClave() {
+  document.getElementById('modal-cambio-clave').style.display = 'flex';
+  setTimeout(function() { document.getElementById('nueva-clave1').focus(); }, 100);
+}
+
+function guardarNuevaClave() {
+  var c1 = document.getElementById('nueva-clave1').value;
+  var c2 = document.getElementById('nueva-clave2').value;
+  var errEl = document.getElementById('cambio-error');
+  if (c1.length < 6) { errEl.textContent = 'Mínimo 6 caracteres.'; errEl.style.display = 'block'; return; }
+  if (c1 !== c2) { errEl.textContent = 'Las contraseñas no coinciden.'; errEl.style.display = 'block'; return; }
+  var usuarios = getUsuarios();
+  var i = usuarios.findIndex(function(u) { return u.usuario === sesionActual.usuario; });
+  if (i >= 0) {
+    usuarios[i].clave = c1;
+    usuarios[i].estado = 'ACTIVO';
+    usuarios[i].ultimoIngreso = new Date().toISOString();
+    saveUsuarios(usuarios);
+  }
+  document.getElementById('modal-cambio-clave').style.display = 'none';
+  alert('✅ ¡Contraseña establecida correctamente!');
+}
 </script>
+
+  <!-- Modal cambio de clave primer ingreso -->
+  <div id="modal-cambio-clave" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#00000099;z-index:99999;align-items:center;justify-content:center">
+    <div style="background:#1a2a4a;border-radius:12px;padding:36px;width:400px;box-shadow:0 20px 60px #00000060;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🔐</div>
+      <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:8px">Bienvenido/a</div>
+      <div style="font-size:13px;color:#7bafd4;margin-bottom:24px">Es tu primer ingreso. Por favor crea una contraseña personal.</div>
+      <div id="cambio-error" style="background:#ef444420;color:#ef4444;border-radius:6px;padding:8px;font-size:12px;margin-bottom:12px;display:none"></div>
+      <input id="nueva-clave1" type="password" placeholder="Nueva contraseña (mín. 6 caracteres)"
+        style="width:100%;padding:12px;border-radius:8px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:10px"
+        onkeydown="if(event.key==='Enter') document.getElementById('nueva-clave2').focus()"/>
+      <input id="nueva-clave2" type="password" placeholder="Repite la contraseña"
+        style="width:100%;padding:12px;border-radius:8px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;box-sizing:border-box;margin-bottom:16px"
+        onkeydown="if(event.key==='Enter') guardarNuevaClave()"/>
+      <button onclick="guardarNuevaClave()" style="width:100%;padding:12px;background:#2196F3;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">
+        Establecer Contraseña
+      </button>
+    </div>
+  </div>
 </body>
 </html>
