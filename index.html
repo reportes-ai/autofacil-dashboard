@@ -117,16 +117,18 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
 </head>
 <body>
 <div id="login-screen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:#0d1627;z-index:99999;display:flex;align-items:center;justify-content:center">
-  <div style="background:#1a2a4a;border-radius:16px;padding:48px 40px;width:360px;box-shadow:0 20px 60px #00000060;text-align:center">
+  <div style="background:#1a2a4a;border-radius:16px;padding:48px 40px;width:380px;box-shadow:0 20px 60px #00000060;text-align:center">
     <div style="font-family:'Roboto',sans-serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:4px">
       Auto<span style="color:#2196F3">Fácil</span>
     </div>
-    <div style="color:#7bafd4;font-size:13px;margin-bottom:32px">Dashboard Créditos</div>
-    <div id="login-error" style="background:#ef444420;color:#ef4444;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:16px;display:none">
-      Clave incorrecta. Intenta nuevamente.
-    </div>
-    <input id="login-pass" type="password" placeholder="Ingresa la clave de acceso"
-      style="width:100%;padding:12px 16px;border-radius:8px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:14px;font-family:'Roboto',sans-serif;box-sizing:border-box;outline:none;margin-bottom:16px"
+    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos</div>
+    <div id="login-error" style="background:#ef444420;color:#ef4444;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:16px;display:none"></div>
+    <input id="login-user" type="email" placeholder="Usuario (correo)" autocomplete="username"
+      style="width:100%;padding:12px 16px;border-radius:8px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;font-family:'Roboto',sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px"
+      onkeydown="if(event.key==='Enter') document.getElementById('login-pass').focus()"
+    />
+    <input id="login-pass" type="password" placeholder="Contraseña" autocomplete="current-password"
+      style="width:100%;padding:12px 16px;border-radius:8px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;font-family:'Roboto',sans-serif;box-sizing:border-box;outline:none;margin-bottom:16px"
       onkeydown="if(event.key==='Enter') checkLogin()"
     />
     <button onclick="checkLogin()"
@@ -139,33 +141,130 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
 </div>
 
 <script>
-// Clave de acceso — cambia este valor cuando quieras
-const ACCESS_KEY = 'autofacil2026';
+// ============================================================
+// SISTEMA DE USUARIOS — Base de datos en localStorage
+// ============================================================
 
-// Verificar si ya está autenticado en esta sesión
-if (sessionStorage.getItem('af_auth') === '1') {
+// Usuarios iniciales (solo se cargan si no existe la BD)
+const USUARIOS_INICIALES = [
+  {nombre:"Ademir Norambuena",  usuario:"ademir.norambuena@autofacilchile.cl",  clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
+  {nombre:"Bernardo Ponce",     usuario:"bernardo.ponce@autofacilchile.cl",     clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
+  {nombre:"Bryan Saavedra",     usuario:"bryan.saavedra@autofacilchile.cl",     clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
+  {nombre:"Constanza Piedrahita",usuario:"constanza.piedrahita@autofacilchile.cl",clave:"AF2026",perfil:"USUARIO",        estado:"ACTIVO"},
+  {nombre:"Cristina Peña",      usuario:"cristina.pena@autofacilchile.cl",      clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
+  {nombre:"Dagoberto Irribarra",usuario:"dagoberto.irribarra@autofacilchile.cl",clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
+  {nombre:"Eduardo Abad",       usuario:"eduardo.abad@autofacilchile.cl",       clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
+  {nombre:"Fabiola Torres",     usuario:"fabiola.torres@autofacilchile.cl",     clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
+  {nombre:"Jorge Vargas",       usuario:"jorge.vargas@autofacilchile.cl",       clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
+  {nombre:"Juan Manuel Bustamante",usuario:"juan.bustamante@autofacilchile.cl", clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
+  {nombre:"Karina Díaz",        usuario:"karina.diaz@autofacilchile.cl",        clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
+  {nombre:"Katherine Trillo",   usuario:"katherine.trillo@autofacilchile.cl",   clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
+  {nombre:"Leonardo Sevilla",   usuario:"leonardo.sevilla@autofacilchile.cl",   clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
+  {nombre:"Noelia González",    usuario:"noelia.gonzalez@autofacilchile.cl",    clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
+  {nombre:"Patricio Escobar",   usuario:"patricio.escobar@autofacilchile.cl",   clave:"Admin2026!",perfil:"ADMINISTRADOR",estado:"ACTIVO"},
+];
+
+function getUsuarios() {
+  const bd = localStorage.getItem('af_usuarios');
+  if (!bd) {
+    localStorage.setItem('af_usuarios', JSON.stringify(USUARIOS_INICIALES));
+    return USUARIOS_INICIALES;
+  }
+  return JSON.parse(bd);
+}
+
+function saveUsuarios(usu) {
+  localStorage.setItem('af_usuarios', JSON.stringify(usu));
+}
+
+// Sesión actual
+let sesionActual = null;
+const sesionStr = sessionStorage.getItem('af_sesion');
+if (sesionStr) {
+  sesionActual = JSON.parse(sesionStr);
   document.getElementById('login-screen').style.display = 'none';
 }
 
 function checkLogin() {
-  const input = document.getElementById('login-pass').value;
-  if (input === ACCESS_KEY) {
-    sessionStorage.setItem('af_auth', '1');
-    document.getElementById('login-screen').style.display = 'none';
-  } else {
-    const err = document.getElementById('login-error');
-    err.style.display = 'block';
-    document.getElementById('login-pass').value = '';
-    document.getElementById('login-pass').focus();
-    setTimeout(() => err.style.display = 'none', 3000);
+  const uInput = document.getElementById('login-user').value.trim().toLowerCase();
+  const pInput = document.getElementById('login-pass').value;
+  const errEl  = document.getElementById('login-error');
+
+  if (!uInput || !pInput) {
+    errEl.textContent = 'Ingresa usuario y contraseña.';
+    errEl.style.display = 'block';
+    return;
   }
+
+  const usuarios = getUsuarios();
+  const user = usuarios.find(u => u.usuario.toLowerCase() === uInput);
+
+  if (!user) {
+    errEl.textContent = 'Usuario no encontrado.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (user.estado === 'BLOQUEADO') {
+    errEl.textContent = 'Usuario bloqueado. Contacta al administrador.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (user.estado === 'SUSPENDIDO') {
+    errEl.textContent = 'Usuario suspendido. Contacta al administrador.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (user.clave !== pInput) {
+    errEl.textContent = 'Contraseña incorrecta.';
+    errEl.style.display = 'block';
+    setTimeout(() => errEl.style.display = 'none', 3000);
+    return;
+  }
+
+  // Login exitoso
+  const primerIngreso = user.estado === 'NUNCA INGRESADO';
+  user.estado = 'ACTIVO';
+  user.ultimoIngreso = new Date().toISOString();
+  saveUsuarios(usuarios);
+
+  sesionActual = { nombre: user.nombre, usuario: user.usuario, perfil: user.perfil };
+  sessionStorage.setItem('af_sesion', JSON.stringify(sesionActual));
+
+  document.getElementById('login-screen').style.display = 'none';
+
+  // Mostrar nombre en topbar
+  actualizarTopbarUsuario();
 }
+
+function actualizarTopbarUsuario() {
+  if (!sesionActual) return;
+  const el = document.getElementById('topbar-usuario');
+  if (el) {
+    el.innerHTML = `<span style="font-size:10px;color:#7bafd4">👤 ${sesionActual.nombre}</span>
+      <button onclick="cerrarSesion()" style="background:#1a3a6a;border:1px solid #2a4070;color:#aac4e8;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;margin-left:6px">Salir</button>`;
+  }
+  // Mostrar tab admin solo si es ADMINISTRADOR
+  const tabAdmin = document.getElementById('tab-admin');
+  if (tabAdmin) tabAdmin.style.display = sesionActual.perfil === 'ADMINISTRADOR' ? 'flex' : 'none';
+}
+
+function cerrarSesion() {
+  sessionStorage.removeItem('af_sesion');
+  sesionActual = null;
+  location.reload();
+}
+
+// Ejecutar al cargar
+document.addEventListener('DOMContentLoaded', () => {
+  actualizarTopbarUsuario();
+});
 </script>
 
 
 <div class="topbar">
   <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:10px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard</span></div>
   <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:16px"></div>
+  <div id="topbar-usuario" style="display:flex;align-items:center;gap:6px;margin-left:auto"></div>
   
 <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:6px 14px;border-radius:6px;border:1px solid #2a4070">
   <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
@@ -185,6 +284,7 @@ function checkLogin() {
     <div class="tab" onclick="showV('v5',this)">👤 Ejecutivos</div>
     <div class="tab" onclick="showV('v7',this)">🔻 Funnel</div>
     <div class="tab" onclick="showV('v6',this)">💳 Saldo Precio</div>
+    <div class="tab" id="tab-admin" onclick="showV('vadmin',this)" style="display:none;border-left:1px solid #2a4070;margin-left:8px">⚙️ Admin</div>
   </div>
 </div>
 
@@ -689,6 +789,7 @@ function showV(id, el) {
   if(id==='v4') { buildV4(); window._v4=true; }
   if(id==='v5'&&!window._v5) { buildV5(); window._v5=true; }
   if(id==='v7') { const sd7=document.getElementById('sel-desde'); if(!sd7?.value) window.aplicarFiltro(); buildV7(); window._v7=true; }
+  if(id==='vadmin') { buildVAdmin(); }
   if(id==='v6') {
     const sd = document.getElementById('sel-desde');
     if (!sd?.value) window.aplicarFiltro();
@@ -2414,6 +2515,213 @@ function buildV7() {
       }
     }
   });
+}
+
+</script>
+
+<!-- VISTA ADMIN: GESTIÓN DE USUARIOS -->
+<div id="vadmin" class="view">
+  <div class="dash-header">
+    <div class="dash-title">⚙️ Administración de Usuarios</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="logo-block"><div class="logo-text">Auto<span>Fácil</span></div><div class="logo-sub">Crédito Automotriz</div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:10px">
+    <div class="card-head" style="display:flex;align-items:center;justify-content:space-between">
+      <span>Usuarios del Sistema</span>
+      <div style="display:flex;gap:8px">
+        <input id="admin-search" placeholder="🔍 Buscar..." onkeyup="filtrarUsuariosAdmin()"
+          style="padding:4px 10px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:12px;width:180px"/>
+        <button onclick="exportarUsuarios()" style="background:#1565C0;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer">📥 Exportar</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table id="t-admin-users" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+    </div>
+  </div>
+
+  <!-- Modal editar usuario -->
+  <div id="modal-usuario" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;z-index:9999;align-items:center;justify-content:center">
+    <div style="background:#1a2a4a;border-radius:12px;padding:32px;width:420px;box-shadow:0 20px 60px #00000060">
+      <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:20px">✏️ Editar Usuario</div>
+      <input type="hidden" id="edit-idx"/>
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;color:#7bafd4;margin-bottom:4px">Nombre</div>
+        <input id="edit-nombre" style="width:100%;padding:10px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;box-sizing:border-box"/>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;color:#7bafd4;margin-bottom:4px">Usuario (email)</div>
+        <input id="edit-usuario" style="width:100%;padding:10px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;box-sizing:border-box"/>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;color:#7bafd4;margin-bottom:4px">Nueva Contraseña (dejar vacío para no cambiar)</div>
+        <input id="edit-clave" type="password" placeholder="Nueva clave..." style="width:100%;padding:10px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;box-sizing:border-box"/>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;color:#7bafd4;margin-bottom:4px">Perfil</div>
+        <select id="edit-perfil" style="width:100%;padding:10px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px">
+          <option value="USUARIO">USUARIO</option>
+          <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+        </select>
+      </div>
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;color:#7bafd4;margin-bottom:4px">Estado</div>
+        <select id="edit-estado" style="width:100%;padding:10px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px">
+          <option value="ACTIVO">ACTIVO</option>
+          <option value="BLOQUEADO">BLOQUEADO</option>
+          <option value="SUSPENDIDO">SUSPENDIDO</option>
+          <option value="NUNCA INGRESADO">NUNCA INGRESADO</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="guardarUsuario()" style="flex:1;padding:10px;background:#2196F3;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Guardar</button>
+        <button onclick="cerrarModal()" style="flex:1;padding:10px;background:#2a4070;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer">Cancelar</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+
+// ======== ADMIN DE USUARIOS ========
+function buildVAdmin() {
+  renderTablaAdmin();
+}
+
+function estadoBadge(estado) {
+  const colores = {
+    'ACTIVO':          {bg:'#e8f5e9',txt:'#2e7d32'},
+    'BLOQUEADO':       {bg:'#ffebee',txt:'#c62828'},
+    'SUSPENDIDO':      {bg:'#fff3e0',txt:'#e65100'},
+    'NUNCA INGRESADO': {bg:'#e3f2fd',txt:'#1565c0'},
+  };
+  const c = colores[estado] || {bg:'#f5f5f5',txt:'#666'};
+  return `<span style="background:${c.bg};color:${c.txt};padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">${estado}</span>`;
+}
+
+function renderTablaAdmin(filtro='') {
+  const usuarios = getUsuarios();
+  const q = filtro.toLowerCase();
+  const filt = q ? usuarios.filter(u =>
+    u.nombre.toLowerCase().includes(q) ||
+    u.usuario.toLowerCase().includes(q) ||
+    u.perfil.toLowerCase().includes(q) ||
+    u.estado.toLowerCase().includes(q)
+  ) : usuarios;
+
+  const thead = `<thead><tr style="background:#1a3a6a;color:#fff;font-size:11px">
+    <th style="padding:8px;text-align:left">Nombre</th>
+    <th style="padding:8px;text-align:left">Usuario</th>
+    <th style="padding:8px;text-align:center">Perfil</th>
+    <th style="padding:8px;text-align:center">Estado</th>
+    <th style="padding:8px;text-align:center">Último Ingreso</th>
+    <th style="padding:8px;text-align:center">Acciones</th>
+  </tr></thead>`;
+
+  const tbody = filt.map((u, i) => {
+    const idx = usuarios.indexOf(u);
+    const ult = u.ultimoIngreso ? new Date(u.ultimoIngreso).toLocaleDateString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+    return `<tr style="border-bottom:1px solid #f0f2f5;${u.estado==='BLOQUEADO'?'opacity:0.6':''}">
+      <td style="padding:7px 8px;font-weight:600">${u.nombre}</td>
+      <td style="padding:7px 8px;color:#555;font-size:11px">${u.usuario}</td>
+      <td style="padding:7px 8px;text-align:center">
+        <span style="background:${u.perfil==='ADMINISTRADOR'?'#1a3a6a':'#e3f2fd'};color:${u.perfil==='ADMINISTRADOR'?'#fff':'#1565c0'};padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">${u.perfil}</span>
+      </td>
+      <td style="padding:7px 8px;text-align:center">${estadoBadge(u.estado)}</td>
+      <td style="padding:7px 8px;text-align:center;font-size:11px;color:#888">${ult}</td>
+      <td style="padding:7px 8px;text-align:center">
+        <button onclick="editarUsuario(${idx})" style="background:#1565C0;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;margin-right:4px">✏️ Editar</button>
+        <button onclick="resetClave(${idx})" style="background:#fb8c00;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer">🔑 Reset</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Stats
+  const totales = {activo:0,bloqueado:0,suspendido:0,nunca:0};
+  usuarios.forEach(u => {
+    if (u.estado==='ACTIVO') totales.activo++;
+    else if (u.estado==='BLOQUEADO') totales.bloqueado++;
+    else if (u.estado==='SUSPENDIDO') totales.suspendido++;
+    else if (u.estado==='NUNCA INGRESADO') totales.nunca++;
+  });
+
+  const statsHtml = `<div style="display:flex;gap:10px;padding:10px 0;font-size:11px">
+    <span style="color:#43a047">✅ ${totales.activo} activos</span>
+    <span style="color:#1565c0">🆕 ${totales.nunca} nunca ingresados</span>
+    <span style="color:#e53935">🔒 ${totales.bloqueado} bloqueados</span>
+    <span style="color:#fb8c00">⏸ ${totales.suspendido} suspendidos</span>
+    <span style="color:#888;margin-left:auto">Total: ${usuarios.length} usuarios</span>
+  </div>`;
+
+  const tbl = document.getElementById('t-admin-users');
+  if (tbl) tbl.innerHTML = thead + '<tbody>' + tbody + '</tbody>';
+
+  // Insertar stats antes de la tabla
+  let statsEl = document.getElementById('admin-stats');
+  if (!statsEl) {
+    statsEl = document.createElement('div');
+    statsEl.id = 'admin-stats';
+    tbl.parentElement.insertBefore(statsEl, tbl);
+  }
+  statsEl.innerHTML = statsHtml;
+}
+
+function filtrarUsuariosAdmin() {
+  const q = document.getElementById('admin-search')?.value || '';
+  renderTablaAdmin(q);
+}
+
+function editarUsuario(idx) {
+  const u = getUsuarios()[idx];
+  document.getElementById('edit-idx').value = idx;
+  document.getElementById('edit-nombre').value = u.nombre;
+  document.getElementById('edit-usuario').value = u.usuario;
+  document.getElementById('edit-clave').value = '';
+  document.getElementById('edit-perfil').value = u.perfil;
+  document.getElementById('edit-estado').value = u.estado;
+  document.getElementById('modal-usuario').style.display = 'flex';
+}
+
+function cerrarModal() {
+  document.getElementById('modal-usuario').style.display = 'none';
+}
+
+function guardarUsuario() {
+  const idx   = parseInt(document.getElementById('edit-idx').value);
+  const usuarios = getUsuarios();
+  const u = usuarios[idx];
+  u.nombre  = document.getElementById('edit-nombre').value.trim();
+  u.usuario = document.getElementById('edit-usuario').value.trim();
+  u.perfil  = document.getElementById('edit-perfil').value;
+  u.estado  = document.getElementById('edit-estado').value;
+  const newClave = document.getElementById('edit-clave').value;
+  if (newClave) u.clave = newClave;
+  saveUsuarios(usuarios);
+  cerrarModal();
+  renderTablaAdmin();
+  alert(`✅ Usuario "${u.nombre}" actualizado correctamente.`);
+}
+
+function resetClave(idx) {
+  if (!confirm('¿Resetear la clave a AF2026?')) return;
+  const usuarios = getUsuarios();
+  usuarios[idx].clave = 'AF2026';
+  usuarios[idx].estado = 'ACTIVO';
+  saveUsuarios(usuarios);
+  renderTablaAdmin();
+  alert(`✅ Clave reseteada a "AF2026" para ${usuarios[idx].nombre}`);
+}
+
+function exportarUsuarios() {
+  const usuarios = getUsuarios();
+  const csv = 'Nombre,Usuario,Perfil,Estado,Ultimo Ingreso\n' +
+    usuarios.map(u => `"${u.nombre}","${u.usuario}","${u.perfil}","${u.estado}","${u.ultimoIngreso||''}"`).join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'usuarios_autofacil.csv';
+  a.click();
 }
 
 </script>
