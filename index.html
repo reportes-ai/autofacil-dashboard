@@ -840,10 +840,7 @@ function buildV1() {
 
   document.getElementById('kpi1').innerHTML = `
     <div class="kpi-box"><div class="kpi-label">Total a Financiar</div><div class="kpi-val big">${fM(totSaldo)}</div></div>
-    <div class="kpi-box"><div class="kpi-label">Operaciones Aprobadas</div><div class="kpi-val big">${totOps}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Com. Dealer</div><div class="kpi-val big">${fM(totCD)}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Ingreso AutoFácil</div><div class="kpi-val big">${fM(totAFA)}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Com. Seguros</div><div class="kpi-val big">${fM(totSeg)}</div></div>`;
+    <div class="kpi-box"><div class="kpi-label">Operaciones Aprobadas</div><div class="kpi-val big">${totOps}</div></div>`;
 
   // Prom plazo y % financiado badges
   const af = f.financieras.AUTOFIN||{};
