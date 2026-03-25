@@ -321,8 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div style="display:flex;flex-direction:column;gap:10px">
       <div class="card">
         <div class="card-head">Instituciones
-          <span id="pct-prom1" style="background:#1565C0;padding:3px 10px;border-radius:3px;font-size:11px"></span>
-          <span id="pct-prom2" style="background:#4CAF50;padding:3px 10px;border-radius:3px;font-size:11px;margin-left:4px"></span>
+  
         </div>
         <div class="card-body" style="padding:0">
           <div class="scroll-t" style="max-height:160px">
@@ -405,13 +404,13 @@ document.addEventListener('DOMContentLoaded', function() {
   <!-- Fila 2: Concesionarios + Ejecutivos + Estado Comercial / Motivo -->
   <div class="g3parts">
     <div class="card">
-      <div class="card-head">Concesionarios</div>
+      <div class="card-head">Concesionarios — Aprobadas</div>
       <div class="scroll-t">
         <table class="tbl" id="t-ccs"></table>
       </div>
     </div>
     <div class="card">
-      <div class="card-head">Ejecutivos</div>
+      <div class="card-head">Ejecutivos — Aprobadas</div>
       <div class="scroll-t">
         <table class="tbl" id="t-ej"></table>
       </div>
@@ -841,16 +840,14 @@ function buildV1() {
 
   document.getElementById('kpi1').innerHTML = `
     <div class="kpi-box"><div class="kpi-label">Total a Financiar</div><div class="kpi-val big">${fM(totSaldo)}</div></div>
-    <div class="kpi-box"><div class="kpi-label">Operaciones Otorgadas</div><div class="kpi-val big">${totOps}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Operaciones Aprobadas</div><div class="kpi-val big">${totOps}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Com. Dealer</div><div class="kpi-val big">${fM(totCD)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Ingreso AutoFácil</div><div class="kpi-val big">${fM(totAFA)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Com. Seguros</div><div class="kpi-val big">${fM(totSeg)}</div></div>`;
 
   // Prom plazo y % financiado badges
   const af = f.financieras.AUTOFIN||{};
-  const totFin = (af.prom_fin||0) + (f.financieras.UNIDAD?.prom_fin||0);
-  const pctFin = totSaldo ? (totFin/totSaldo*100).toFixed(1) : 0;
-  document.getElementById('pct-prom1').textContent = pctFin+'%';
+
 
   // Tabla instituciones
   const rows = ['AUTOFIN','UNIDAD'].map(k => {
@@ -869,7 +866,7 @@ function buildV1() {
   }).join('');
   const totU = f.financieras.UNIDAD||{ops:0,saldo:0,com_dealer:0,rentab_afa:0,com_seguros:0,prom_fin:0};
   document.getElementById('t-fin').innerHTML = `
-    <thead><tr><th>Institución</th><th>Record</th><th>Total a Financiar</th><th>Prom. Fin</th><th>Saldo Precio</th><th>Com Dealer</th><th>Ing AutoFácil</th><th>Com. Seguros</th></tr></thead>
+    <thead><tr><th>Institución</th><th>Ops Aprobadas</th><th>Total a Financiar</th><th>Prom. Fin</th><th>Saldo Precio</th><th>Com Dealer</th><th>Ing AutoFácil</th><th>Com. Seguros</th></tr></thead>
     <tbody>${rows}</tbody>
     <tfoot><tr><td>Total</td><td>${totOps}</td><td>${fM(totSaldo)}</td><td>${fM(totSaldo/totOps)}</td><td>${fM(totSaldo)}</td><td>${fM(totCD)}</td><td>${fM(totAFA)}</td><td>${fM(totSeg)}</td></tr></tfoot>`;
 
@@ -1012,17 +1009,28 @@ function buildV1() {
     <tbody>${ejRows}</tbody>
     <tfoot><tr><td>Total</td><td>${totEJ.ops}</td><td>${fM(totEJ.saldo)}</td><td>—</td><td>${fM(totEJ.saldo)}</td><td>${fM(totEJ.cd)}</td><td>—</td></tr></tfoot>`;
 
-  // Estado comercial
-  const estOrd = ['OTORGADO','APROBADO','ANULADO','RECHAZADO','PENDIENTE'];
-  const estRows = estOrd.filter(k=>f.estados[k]).map(k=>{
-    const v=f.estados[k];
-    return `<tr><td>${k}</td><td>${v.ops}</td><td>${v.pct}%</td><td>${fM(v.saldo)}</td></tr>`;
+  // Estado comercial — OTORGADO se suma a APROBADO (ambos son aprobados)
+  const estadosAgrup = {};
+  Object.entries(f.estados||{}).forEach(([k,v]) => {
+    // OTORGADO y APROBADO se agrupan como "APROBADO" / EN SEGUIMIENTO
+    const label = (k==='OTORGADO'||k==='APROBADO'||k==='SOLICITUD EN EVALUACION'||k==='CURSADO') ? 'APROBADO' :
+                  k==='RECHAZADO' ? 'RECHAZADO' :
+                  k==='ANULADO'   ? 'ANULADO'   : k;
+    if (!estadosAgrup[label]) estadosAgrup[label] = {ops:0,saldo:0};
+    estadosAgrup[label].ops   += v.ops;
+    estadosAgrup[label].saldo += v.saldo;
+  });
+  const totEst = Object.values(estadosAgrup).reduce((a,v)=>({ops:a.ops+v.ops,saldo:a.saldo+v.saldo}),{ops:0,saldo:0});
+  const estOrdAgrup = ['APROBADO','RECHAZADO','ANULADO','PENDIENTE'];
+  const estRows = estOrdAgrup.filter(k=>estadosAgrup[k]).map(k=>{
+    const v=estadosAgrup[k];
+    const pct = totEst.ops ? (v.ops/totEst.ops*100).toFixed(1) : 0;
+    return '<tr><td>'+k+'</td><td>'+v.ops+'</td><td>'+pct+'%</td><td>'+fM(v.saldo)+'</td></tr>';
   }).join('');
-  const totEst = Object.values(f.estados).reduce((a,v)=>({ops:a.ops+v.ops,saldo:a.saldo+v.saldo}),{ops:0,saldo:0});
-  document.getElementById('t-estado').innerHTML = `
-    <thead><tr><th>Estado Comercial</th><th>N° op</th><th>%</th><th>Total Fin.</th></tr></thead>
-    <tbody>${estRows}</tbody>
-    <tfoot><tr><td>Total</td><td>${totEst.ops}</td><td>100%</td><td>${fM(totEst.saldo)}</td></tr></tfoot>`;
+  document.getElementById('t-estado').innerHTML =
+    '<thead><tr><th>Estado Comercial</th><th>N° op</th><th>%</th><th>Total Fin.</th></tr></thead>' +
+    '<tbody>'+estRows+'</tbody>' +
+    '<tfoot><tr><td>Total</td><td>'+totEst.ops+'</td><td>100%</td><td>'+fM(totEst.saldo)+'</td></tr></tfoot>';
 
   // Motivo (usando estados crédito como proxy)
   const motOrd = ['OTORGADO','APROBADO','ANULADO','RECHAZADO'];
@@ -1832,7 +1840,7 @@ function buildV4() {
 
   document.getElementById('kpi4').innerHTML = `
     <div class="kpi-box"><div class="kpi-label">Total a Financiar</div><div class="kpi-val big">${fM(totSaldo)}</div></div>
-    <div class="kpi-box"><div class="kpi-label">Operaciones Otorgadas</div><div class="kpi-val big">${totOps}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Operaciones Aprobadas</div><div class="kpi-val big">${totOps}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Com. Dealer</div><div class="kpi-val big">${fM(totCD)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Ingreso AutoFácil</div><div class="kpi-val big">${fM(totAFA)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Com. Seguros</div><div class="kpi-val big">${fM(totSeg)}</div></div>
