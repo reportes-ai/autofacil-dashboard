@@ -137,6 +137,7 @@ def procesar_excel(contenido: bytes) -> dict:
             "mayor_menor": s(row[97]),
         "estado_sp":   s(row[36]),   # AK = ESTADO SP
         "fecha_ot":    row[17].strftime("%Y-%m-%d") if row[17] and hasattr(row[17],"day") else "",
+        "fecha_estado": row[14].strftime("%Y-%m-%d") if row[14] and hasattr(row[14],"day") else "",
         })
 
     print(f"   ✓ {len(all_data)} registros procesados")
