@@ -301,6 +301,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="tab" onclick="showV('v5',this)">👤 Ejecutivos</div>
     <div class="tab" onclick="showV('v7',this)">🔻 Funnel</div>
     <div class="tab" onclick="showV('v6',this)">💳 Saldo Precio</div>
+    <div class="tab" onclick="showV('v8',this)">📋 Comparativo</div>
     <div class="tab" id="tab-admin" onclick="showV('vadmin',this)" style="display:none;border-left:1px solid #2a4070;margin-left:8px">⚙️ Admin</div>
   </div>
 </div>
@@ -811,6 +812,7 @@ function showV(id, el) {
   if(id==='v4') { buildV4(); window._v4=true; }
   if(id==='v5'&&!window._v5) { buildV5(); window._v5=true; }
   if(id==='v7') { const sd7=document.getElementById('sel-desde'); if(!sd7?.value) window.aplicarFiltro(); buildV7(); window._v7=true; }
+  if(id==='v8') { const sd8=document.getElementById('sel-desde'); if(!sd8?.value) window.aplicarFiltro(); buildV8(); window._v8=true; }
   if(id==='vadmin') {
     // Verificar que solo admin puede acceder
     if (!sesionActual || sesionActual.perfil !== 'ADMINISTRADOR') {
@@ -1877,7 +1879,7 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
 
     // Rebuild vistas activas
     destroyCharts();
-    window._v2 = false; window._v3 = false; window._v4 = false; window._v1b = false; window._v5 = false; window._v6 = false; window._v6_filtro = null; window._v7 = false;
+    window._v2 = false; window._v3 = false; window._v4 = false; window._v1b = false; window._v5 = false; window._v6 = false; window._v6_filtro = null; window._v7 = false; window._v8 = false;
     buildV1();
     if (document.getElementById('v1b').classList.contains('active')) { buildV1b(); window._v1b=true; }
     if (document.getElementById('v2').classList.contains('active')) { buildV2(); window._v2 = true; }
@@ -1885,6 +1887,7 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
     if (document.getElementById('v4').classList.contains('active')) { buildV4(); window._v4 = true; }
     if (document.getElementById('v6') && document.getElementById('v6').classList.contains('active')) { buildV6(); window._v6 = true; }
     if (document.getElementById('v7') && document.getElementById('v7').classList.contains('active')) { buildV7(); window._v7 = true; }
+    if (document.getElementById('v8') && document.getElementById('v8').classList.contains('active')) { buildV8(); window._v8 = true; }
   };
 
   function destroyCharts() {
@@ -2925,5 +2928,239 @@ function guardarNuevaClave() {
       </button>
     </div>
   </div>
+
+<!-- VISTA 8: COMPARATIVO EJECUTIVOS -->
+<div id="v8" class="view">
+  <div class="dash-header">
+    <div class="dash-title">Comparativo Ejecutivos — Mismos Días Cierre</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="period-badge" id="badge-periodo">📅 —</div>
+      <div class="logo-block"><div class="logo-text">Auto<span>Fácil</span></div><div class="logo-sub">Crédito Automotriz</div></div>
+    </div>
+  </div>
+
+  <!-- Filtro ejecutivo -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;background:#1a2a4a;padding:8px 12px;border-radius:8px">
+    <span style="color:#7bafd4;font-size:12px;font-weight:600">EJECUTIVO:</span>
+    <select id="v8-sel-ej" onchange="buildV8()"
+      style="padding:5px 10px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:12px;min-width:220px">
+      <option value="">Todos</option>
+    </select>
+    <span id="v8-info-fecha" style="color:#4fc3f7;font-size:11px;margin-left:8px"></span>
+  </div>
+
+  <!-- Tabla comparativo -->
+  <div class="card">
+    <div style="overflow-x:auto">
+      <table id="t-v8" style="width:100%;border-collapse:collapse;font-size:11px"></table>
+    </div>
+  </div>
+
+  <!-- Leyenda -->
+  <div style="margin-top:8px;font-size:10px;color:#888;padding:0 4px;line-height:1.8">
+    <b>INGRESADAS</b> = Ingresadas + Aprobadas + Otorgadas + Rechazadas &nbsp;|&nbsp;
+    <b>APROBADAS</b> = Aprobadas + Otorgadas &nbsp;|&nbsp;
+    <b>OTORGADAS</b> = Solo Otorgadas
+  </div>
+</div>
+<script>
+
+// ======== VISTA 8: COMPARATIVO EJECUTIVOS ========
+function buildV8() {
+  const desde = document.getElementById('sel-desde')?.value || '';
+  const hasta  = document.getElementById('sel-hasta')?.value  || '';
+
+  // Calcular días faltantes y mes anterior
+  const hoy = new Date();
+  const diaHoy = hoy.getDate();
+  const mesHoy = hoy.getMonth();
+  const anioHoy = hoy.getFullYear();
+  const ultimoDiaMesActual = new Date(anioHoy, mesHoy+1, 0).getDate();
+  const diasFaltantes = ultimoDiaMesActual - diaHoy;
+  const mesAnt = mesHoy === 0 ? 11 : mesHoy-1;
+  const anioAnt = mesHoy === 0 ? anioHoy-1 : anioHoy;
+  const ultimoDiaMesAnt = new Date(anioAnt, mesAnt+1, 0).getDate();
+  const diaCorteAnt = ultimoDiaMesAnt - diasFaltantes;
+  const mesAntKey = anioAnt+'-'+String(mesAnt+1).padStart(2,'0');
+  const mesesN = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const fechaActStr = diaHoy+' '+mesesN[mesHoy]+' '+anioHoy;
+  const fechaAntStr = diaCorteAnt+' '+mesesN[mesAnt]+' '+anioAnt;
+
+  // Info fechas
+  const infoEl = document.getElementById('v8-info-fecha');
+  if (infoEl) infoEl.textContent =
+    'Período actual: al '+fechaActStr+' | Mes anterior: al '+fechaAntStr+' ('+diasFaltantes+' días antes del cierre)';
+
+  // Filtrar datos período actual
+  const rowsAct = window.RAW_DATA.filter(r =>
+    r.mes >= desde && r.mes <= hasta && r.ejecutivo &&
+    (r.institucion === 'AUTOFIN' || r.institucion === 'UNIDAD DE CREDITO')
+  );
+
+  // Filtrar datos mes anterior (con fecha_ot si disponible)
+  const tienenFecha = window.RAW_DATA.some(r => r.mes === mesAntKey && r.fecha_ot && r.fecha_ot.length >= 10);
+  const rowsAnt = window.RAW_DATA.filter(r => {
+    if (r.mes !== mesAntKey) return false;
+    if (r.institucion !== 'AUTOFIN' && r.institucion !== 'UNIDAD DE CREDITO') return false;
+    if (!r.ejecutivo) return false;
+    if (tienenFecha) {
+      if (!r.fecha_ot) return false;
+      return parseInt(r.fecha_ot.split('-')[2]) <= diaCorteAnt;
+    }
+    return true;
+  });
+
+  // Poblar selector de ejecutivos
+  const ejSet = [...new Set(rowsAct.map(r => r.ejecutivo))].sort();
+  const selEj = document.getElementById('v8-sel-ej');
+  const selVal = selEj ? selEj.value : '';
+  if (selEj) {
+    selEj.innerHTML = '<option value="">Todos</option>' +
+      ejSet.map(e => {
+        const n = e.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
+        return '<option value="'+e+'"'+(e===selVal?' selected':'')+'>'+n+'</option>';
+      }).join('');
+  }
+
+  // Filtrar por ejecutivo seleccionado
+  const ejFiltro = selEj ? selEj.value : '';
+  const rAct = ejFiltro ? rowsAct.filter(r=>r.ejecutivo===ejFiltro) : rowsAct;
+  const rAnt = ejFiltro ? rowsAnt.filter(r=>r.ejecutivo===ejFiltro) : rowsAnt;
+
+  // Función para calcular métricas por institución
+  function calcMetricas(rows) {
+    const res = {};
+    rows.forEach(r => {
+      const inst = r.institucion === 'AUTOFIN' ? 'AUTOFIN' : 'UNIDAD';
+      if (!res[inst]) res[inst] = {ing:0,apro:0,ot:0,rec:0,sal_ing:0,sal_apro:0,sal_ot:0,sal_rec:0};
+      const d = res[inst];
+      const est = r.estado_eval || '';
+      d.ing++; d.sal_ing += r.saldo_precio||0;
+      if (!['RECHAZADO','ANULADO'].includes(est)) { d.apro++; d.sal_apro += r.saldo_precio||0; }
+      if (est === 'OTORGADO') { d.ot++; d.sal_ot += r.saldo_precio||0; }
+      if (est === 'RECHAZADO') { d.rec++; d.sal_rec += r.saldo_precio||0; }
+    });
+    return res;
+  }
+
+  // Calcular por ejecutivo
+  const ejsData = {};
+  const allEjs = [...new Set([...rAct.map(r=>r.ejecutivo), ...rAnt.map(r=>r.ejecutivo)])].sort();
+
+  allEjs.forEach(ej => {
+    const rA = rAct.filter(r=>r.ejecutivo===ej);
+    const rB = rAnt.filter(r=>r.ejecutivo===ej);
+    ejsData[ej] = { act: calcMetricas(rA), ant: calcMetricas(rB) };
+  });
+
+  // Render tabla
+  const insts = ['AUTOFIN','UNIDAD'];
+  const mN = (v) => v ? fM(v) : '$0';
+  const diff = (a,b) => {
+    const d = a-b;
+    const color = d > 0 ? '#43a047' : d < 0 ? '#e53935' : '#888';
+    return '<span style="color:'+color+';font-weight:600">'+(d>0?'+':'')+d+'</span>';
+  };
+  const diffM = (a,b) => {
+    const d = a-b;
+    const color = d > 0 ? '#43a047' : d < 0 ? '#e53935' : '#888';
+    return '<span style="color:'+color+';font-weight:600">'+(d>0?'+':'')+fM(d)+'</span>';
+  };
+
+  const thead = `<thead>
+    <tr style="background:#1a3a6a;color:#fff;font-size:10px">
+      <th rowspan="2" style="padding:6px 8px;text-align:left;min-width:180px;border-right:1px solid #2a4070">Ejecutivo</th>
+      <th rowspan="2" style="padding:6px 4px;text-align:center;border-right:1px solid #2a4070">Financiera</th>
+      <th colspan="4" style="padding:6px;text-align:center;background:#1565C0;border-right:1px solid #2a4070">Al ${fechaActStr}</th>
+      <th colspan="4" style="padding:6px;text-align:center;background:#0d47a1;border-right:1px solid #2a4070">Al ${fechaAntStr}${!tienenFecha?' ⚠️':''}</th>
+      <th colspan="4" style="padding:6px;text-align:center;background:#1a3a6a">Diferencia</th>
+    </tr>
+    <tr style="background:#1a3a6a;color:#fff;font-size:10px">
+      <th style="padding:4px 6px;background:#1565C0">Ing.</th>
+      <th style="padding:4px 6px;background:#1565C0">Apro.</th>
+      <th style="padding:4px 6px;background:#1565C0">Ot.</th>
+      <th style="padding:4px 6px;background:#1565C0;border-right:1px solid #2a4070">Rec.</th>
+      <th style="padding:4px 6px;background:#0d47a1">Ing.</th>
+      <th style="padding:4px 6px;background:#0d47a1">Apro.</th>
+      <th style="padding:4px 6px;background:#0d47a1">Ot.</th>
+      <th style="padding:4px 6px;background:#0d47a1;border-right:1px solid #2a4070">Rec.</th>
+      <th style="padding:4px 6px">Ing.</th>
+      <th style="padding:4px 6px">Apro.</th>
+      <th style="padding:4px 6px">Ot.</th>
+      <th style="padding:4px 6px">Rec.</th>
+    </tr>
+  </thead>`;
+
+  let tbody = '';
+  let totAct = {ing:0,apro:0,ot:0,rec:0};
+  let totAnt2 = {ing:0,apro:0,ot:0,rec:0};
+
+  allEjs.forEach((ej, ejIdx) => {
+    const d = ejsData[ej];
+    const nombre = ej.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
+    const bg = ejIdx%2===0 ? '#f8faff' : '#fff';
+
+    // Sumar instituciones para totales del ejecutivo
+    const sumAct = {ing:0,apro:0,ot:0,rec:0};
+    const sumAnt = {ing:0,apro:0,ot:0,rec:0};
+    insts.forEach(inst => {
+      const a = d.act[inst]||{ing:0,apro:0,ot:0,rec:0};
+      const b = d.ant[inst]||{ing:0,apro:0,ot:0,rec:0};
+      sumAct.ing+=a.ing; sumAct.apro+=a.apro; sumAct.ot+=a.ot; sumAct.rec+=a.rec;
+      sumAnt.ing+=b.ing; sumAnt.apro+=b.apro; sumAnt.ot+=b.ot; sumAnt.rec+=b.rec;
+    });
+    totAct.ing+=sumAct.ing; totAct.apro+=sumAct.apro; totAct.ot+=sumAct.ot; totAct.rec+=sumAct.rec;
+    totAnt2.ing+=sumAnt.ing; totAnt2.apro+=sumAnt.apro; totAnt2.ot+=sumAnt.ot; totAnt2.rec+=sumAnt.rec;
+
+    insts.forEach((inst, instIdx) => {
+      const a = d.act[inst]||{ing:0,apro:0,ot:0,rec:0};
+      const b = d.ant[inst]||{ing:0,apro:0,ot:0,rec:0};
+      const instC = inst==='AUTOFIN'?'#1565C0':'#ff7043';
+      tbody += '<tr style="border-bottom:1px solid #f0f2f5;background:'+bg+'">';
+      if (instIdx===0) {
+        tbody += '<td rowspan="'+insts.length+'" style="padding:5px 8px;font-weight:700;font-size:11px;color:#1a3a6a;border-right:1px solid #e0e8f0;vertical-align:middle;max-width:180px;width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+nombre+'">'+nombre+'</td>';
+      }
+      tbody += '<td style="padding:4px 6px;text-align:center;border-right:1px solid #e0e8f0"><span style="background:'+instC+'22;color:'+instC+';padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600">'+inst+'</span></td>';
+      // Actual
+      tbody += '<td style="text-align:center;padding:4px 6px">'+a.ing+'</td>';
+      tbody += '<td style="text-align:center;padding:4px 6px">'+a.apro+'</td>';
+      tbody += '<td style="text-align:center;padding:4px 6px;font-weight:700">'+a.ot+'</td>';
+      tbody += '<td style="text-align:center;padding:4px 6px;border-right:1px solid #e0e8f0">'+a.rec+'</td>';
+      // Anterior
+      tbody += '<td style="text-align:center;padding:4px 6px;color:#555">'+b.ing+'</td>';
+      tbody += '<td style="text-align:center;padding:4px 6px;color:#555">'+b.apro+'</td>';
+      tbody += '<td style="text-align:center;padding:4px 6px;font-weight:700;color:#555">'+b.ot+'</td>';
+      tbody += '<td style="text-align:center;padding:4px 6px;border-right:1px solid #e0e8f0;color:#555">'+b.rec+'</td>';
+      // Diferencia
+      tbody += '<td style="text-align:center;padding:4px 6px">'+diff(a.ing,b.ing)+'</td>';
+      tbody += '<td style="text-align:center;padding:4px 6px">'+diff(a.apro,b.apro)+'</td>';
+      tbody += '<td style="text-align:center;padding:4px 6px">'+diff(a.ot,b.ot)+'</td>';
+      tbody += '<td style="text-align:center;padding:4px 6px">'+diff(a.rec,b.rec)+'</td>';
+      tbody += '</tr>';
+    });
+  });
+
+  // Fila total
+  const tfootRow = '<tfoot><tr style="background:#1a3a6a;color:#fff;font-weight:700;font-size:11px">' +
+    '<td colspan="2" style="padding:6px 8px">TOTAL</td>' +
+    '<td style="text-align:center;padding:5px">'+totAct.ing+'</td>' +
+    '<td style="text-align:center;padding:5px">'+totAct.apro+'</td>' +
+    '<td style="text-align:center;padding:5px">'+totAct.ot+'</td>' +
+    '<td style="text-align:center;padding:5px;border-right:1px solid #2a4070">'+totAct.rec+'</td>' +
+    '<td style="text-align:center;padding:5px">'+totAnt2.ing+'</td>' +
+    '<td style="text-align:center;padding:5px">'+totAnt2.apro+'</td>' +
+    '<td style="text-align:center;padding:5px">'+totAnt2.ot+'</td>' +
+    '<td style="text-align:center;padding:5px;border-right:1px solid #2a4070">'+totAnt2.rec+'</td>' +
+    '<td style="text-align:center;padding:5px">'+diff(totAct.ing,totAnt2.ing)+'</td>' +
+    '<td style="text-align:center;padding:5px">'+diff(totAct.apro,totAnt2.apro)+'</td>' +
+    '<td style="text-align:center;padding:5px">'+diff(totAct.ot,totAnt2.ot)+'</td>' +
+    '<td style="text-align:center;padding:5px">'+diff(totAct.rec,totAnt2.rec)+'</td>' +
+    '</tr></tfoot>';
+
+  const tbl = document.getElementById('t-v8');
+  if (tbl) tbl.innerHTML = thead + '<tbody>'+tbody+'</tbody>' + tfootRow;
+}
+
+</script>
 </body>
 </html>
