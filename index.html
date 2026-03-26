@@ -1572,15 +1572,27 @@ function buildV1b() {
     <tfoot><tr><td>Total</td><td>${totEJ2.ops}</td><td>${fM(totEJ2.fin)}</td><td>${fM(totEJ2.ops?totEJ2.fin/totEJ2.ops:0)}</td><td>${fM(totEJ2.saldo)}</td><td>${fM(totEJ2.cd)}</td><td>${fM(totEJ2.afa)}</td></tr></tfoot>`;
 
   // Estado comercial (solo otorgados y relacionados)
-  const estOrdOt = ['OTORGADO','APROBADO','ANULADO','RECHAZADO','PENDIENTE'];
-  const estRowsOt = estOrdOt.filter(k=>f.estados?.[k]).map(k=>{
-    const v=f.estados[k]; return `<tr><td>${k}</td><td>${v.ops}</td><td>${v.pct}%</td><td>${fM(v.saldo)}</td></tr>`;
-  }).join('');
-  const totEstOt = Object.values(f.estados||{}).reduce((a,v)=>({ops:a.ops+v.ops,saldo:a.saldo+v.saldo}),{ops:0,saldo:0});
-  document.getElementById('t-estado1b').innerHTML = `
-    <thead><tr><th>Estado</th><th>N° op</th><th>%</th><th>Total Fin.</th></tr></thead>
-    <tbody>${estRowsOt}</tbody>
-    <tfoot><tr><td>Total</td><td>${totEstOt.ops}</td><td>100%</td><td>${fM(totEstOt.saldo)}</td></tr></tfoot>`;
+  // Estado Otorgados — misma lógica: INGRESADAS=todos, APROBADAS=aprobado+otorgado
+  const grpEst1b = {INGRESADAS:0,APROBADAS:0,OTORGADAS:0,PENDIENTE:0,RECHAZADAS:0,ANULADAS:0};
+  const salEst1b = {INGRESADAS:0,APROBADAS:0,OTORGADAS:0,PENDIENTE:0,RECHAZADAS:0,ANULADAS:0};
+  Object.entries(f.estados||{}).forEach(([k,v]) => {
+    grpEst1b.INGRESADAS+=v.ops; salEst1b.INGRESADAS+=v.saldo;
+    if (k==='APROBADO'||k==='OTORGADO'||k==='SOLICITUD EN EVALUACION'||k==='CURSADO'){grpEst1b.APROBADAS+=v.ops;salEst1b.APROBADAS+=v.saldo;}
+    if (k==='OTORGADO'){grpEst1b.OTORGADAS+=v.ops;salEst1b.OTORGADAS+=v.saldo;}
+    if (k==='PENDIENTE'){grpEst1b.PENDIENTE+=v.ops;salEst1b.PENDIENTE+=v.saldo;}
+    if (k==='RECHAZADO'){grpEst1b.RECHAZADAS+=v.ops;salEst1b.RECHAZADAS+=v.saldo;}
+    if (k==='ANULADO'){grpEst1b.ANULADAS+=v.ops;salEst1b.ANULADAS+=v.saldo;}
+  });
+  const totIng1b = grpEst1b.INGRESADAS||1;
+  const estRowsOt = ['INGRESADAS','APROBADAS','OTORGADAS','PENDIENTE','RECHAZADAS','ANULADAS']
+    .filter(k=>grpEst1b[k]>0).map(k=>{
+      const pct=(grpEst1b[k]/totIng1b*100).toFixed(1);
+      return '<tr><td>'+k+'</td><td>'+grpEst1b[k]+'</td><td>'+pct+'%</td><td>'+fM(salEst1b[k])+'</td></tr>';
+    }).join('');
+  document.getElementById('t-estado1b').innerHTML =
+    '<thead><tr><th>Estado</th><th>N° op</th><th>%</th><th>Total Fin.</th></tr></thead>' +
+    '<tbody>'+estRowsOt+'</tbody>' +
+    '<tfoot><tr><td>INGRESADAS</td><td>'+grpEst1b.INGRESADAS+'</td><td>100%</td><td>'+fM(salEst1b.INGRESADAS)+'</td></tr></tfoot>';
 
   // Chart evolución otorgados
   const last6 = (window.DASH.tendencia||[]).slice(-6);
