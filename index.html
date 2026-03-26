@@ -1491,16 +1491,23 @@ function buildV1b() {
     ' (al ' + fechaCorteStr + ', ' + diasFaltantes + ' días antes del cierre)';
 
   // Filtrar RAW_DATA del mes anterior hasta el día de corte usando fecha_ot
-  const rawAnt = window.RAW_DATA.filter(r => {
-    if (r.mes !== mesAntKey) return false;
-    if (r.estado_eval !== 'OTORGADO') return false;
-    if (r.institucion !== 'AUTOFIN' && r.institucion !== 'UNIDAD DE CREDITO') return false;
-    // Filtrar por día usando fecha_ot si está disponible
-    if (r.fecha_ot) {
-      const diaOt = parseInt(r.fecha_ot.split('-')[2]);
-      return diaOt <= diaCorteAnt;
-    }
-    return true; // si no hay fecha, incluir
+  const todosAntMes = window.RAW_DATA.filter(r =>
+    r.mes === mesAntKey && r.estado_eval === 'OTORGADO' &&
+    (r.institucion === 'AUTOFIN' || r.institucion === 'UNIDAD DE CREDITO')
+  );
+
+  // Solo mostrar si los datos tienen fecha_ot exacta
+  const tienenFechaOt = todosAntMes.some(r => r.fecha_ot && r.fecha_ot.length >= 10);
+  if (!tienenFechaOt) {
+    const tblAnt = document.getElementById('t-fin1b-ant');
+    if (tblAnt) tblAnt.innerHTML = '<tr><td colspan="8" style="padding:12px;color:#888;text-align:center">Actualiza los datos para ver esta comparación</td></tr>';
+    if (tituloAnt) tituloAnt.textContent = 'Mismos días faltantes — ' + mesesNombres[mesAnt] + ' ' + anioAnt + ' (pendiente actualización)';
+    return;
+  }
+  const rawAnt = todosAntMes.filter(r => {
+    if (!r.fecha_ot) return false;
+    const diaOt = parseInt(r.fecha_ot.split('-')[2]);
+    return diaOt <= diaCorteAnt;
   });
 
   // Agrupar por institución
