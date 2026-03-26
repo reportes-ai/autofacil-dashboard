@@ -124,7 +124,7 @@ def procesar_excel(contenido: bytes) -> dict:
             "financiera":  fin_raw,
             "institucion": institucion,
             "automotora":  s(row[8]),
-            "estado_eval": s(row[13]),
+            "estado_eval": s(row[16]) if s(row[16]) in ["ANULADO","RECHAZADO"] else s(row[13]),
             "estado_credito": s(row[16]),
             "saldo_precio":    n(row[22]),
             "monto_financiado": n(row[38]),
