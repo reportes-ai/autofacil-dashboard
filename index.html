@@ -1682,6 +1682,8 @@ async function cargarDatos() {
         hour: '2-digit', minute: '2-digit', second: '2-digit'
       });
       document.getElementById('ultima-act').textContent = '🔄 ' + fechaSCL;
+      // Guardar fecha del JSON para usarla en el comparativo
+      window._infoFechaJSON = fechaSCL.split(',')[0]; // solo la parte de la fecha
     }
 
     // Inicializar selects con meses reales
@@ -3091,8 +3093,8 @@ function buildV8() {
     <tr style="background:#1a3a6a;color:#fff;font-size:10px">
       <th rowspan="2" style="padding:6px 8px;text-align:left;min-width:180px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-right:1px solid #2a4070">Ejecutivo</th>
       <th rowspan="2" style="padding:6px 4px;text-align:center;border-right:1px solid #2a4070">Financiera</th>
-      <th colspan="5" style="padding:6px;text-align:center;background:#1565C0;border-right:1px solid #2a4070">Al ${fechaActStr}</th>
-      <th colspan="5" style="padding:6px;text-align:center;background:#0d47a1;border-right:1px solid #2a4070">Al Cierre ${mesesN[mesAnt]} ${anioAnt}${!tienenFecha?' ⚠️':''}</th>
+      <th colspan="5" style="padding:6px;text-align:center;background:#1565C0;border-right:1px solid #2a4070">Al ${window._infoFechaJSON||fechaActStr}</th>
+      <th colspan="5" style="padding:6px;text-align:center;background:#0d47a1;border-right:1px solid #2a4070">Al ${fechaAntStr}${!tienenFecha?' ⚠️':''}</th>
       <th colspan="5" style="padding:6px;text-align:center;background:#1a3a6a">Diferencia</th>
     </tr>
     <tr style="background:#1a3a6a;color:#aac4e8;font-size:10px">
