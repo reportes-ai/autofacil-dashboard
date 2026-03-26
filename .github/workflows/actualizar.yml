@@ -2,8 +2,12 @@ name: Actualizar datos dashboard
 
 on:
   schedule:
-    - cron: '0 12 * * 1-5'  # 9am Chile (UTC-3), lunes a viernes
-    - cron: '0 17 * * 1-5'  # 2pm Chile (UTC-3), lunes a viernes
+    - cron: '0 12 * * 1-5'  # 09:00 Chile
+    - cron: '0 14 * * 1-5'  # 11:00 Chile
+    - cron: '0 16 * * 1-5'  # 13:00 Chile
+    - cron: '0 18 * * 1-5'  # 15:00 Chile
+    - cron: '0 20 * * 1-5'  # 17:00 Chile
+    - cron: '0 22 * * 1-5'  # 19:00 Chile
   workflow_dispatch:
 
 jobs:
