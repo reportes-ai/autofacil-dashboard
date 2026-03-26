@@ -2986,31 +2986,42 @@ function buildV8() {
   const fechaActStr = diaHoy+' '+mesesN[mesHoy]+' '+anioHoy;
   const fechaAntStr = diaCorteAnt+' '+mesesN[mesAnt]+' '+anioAnt;
 
-  // Info fechas
   const infoEl = document.getElementById('v8-info-fecha');
   if (infoEl) infoEl.textContent =
     'Período actual: al '+fechaActStr+' | Mes anterior: al '+fechaAntStr+' ('+diasFaltantes+' días antes del cierre)';
 
-  // Filtrar datos período actual
+  // Función para obtener el día de comparación de un registro
+  // OTORGADOS → fecha_ot, resto → fecha_estado
+  function getDia(r) {
+    const est = r.estado_eval || '';
+    const fecha = est === 'OTORGADO' ? r.fecha_ot : r.fecha_estado;
+    if (!fecha || fecha === 'NO APLICA') return null;
+    return parseInt(fecha.split('-')[2]);
+  }
+
+  // Filtrar período actual — todos los registros del período seleccionado con institución
   const rowsAct = window.RAW_DATA.filter(r =>
     r.mes >= desde && r.mes <= hasta && r.ejecutivo &&
     (r.institucion === 'AUTOFIN' || r.institucion === 'UNIDAD DE CREDITO')
   );
 
-  // Filtrar datos mes anterior (con fecha_ot si disponible)
-  const tienenFecha = window.RAW_DATA.some(r => r.mes === mesAntKey && r.fecha_ot && r.fecha_ot.length >= 10);
+  // Filtrar mes anterior — usar fecha_ot para otorgados, fecha_estado para el resto
+  const tienenFecha = window.RAW_DATA.some(r =>
+    r.mes === mesAntKey && (r.fecha_estado || r.fecha_ot) && r.fecha_estado !== 'NO APLICA'
+  );
   const rowsAnt = window.RAW_DATA.filter(r => {
     if (r.mes !== mesAntKey) return false;
     if (r.institucion !== 'AUTOFIN' && r.institucion !== 'UNIDAD DE CREDITO') return false;
     if (!r.ejecutivo) return false;
     if (tienenFecha) {
-      if (!r.fecha_ot) return false;
-      return parseInt(r.fecha_ot.split('-')[2]) <= diaCorteAnt;
+      const dia = getDia(r);
+      if (!dia) return false;
+      return dia <= diaCorteAnt;
     }
     return true;
   });
 
-  // Poblar selector de ejecutivos
+  // Poblar selector ejecutivos
   const ejSet = [...new Set(rowsAct.map(r => r.ejecutivo))].sort();
   const selEj = document.getElementById('v8-sel-ej');
   const selVal = selEj ? selEj.value : '';
@@ -3022,139 +3033,117 @@ function buildV8() {
       }).join('');
   }
 
-  // Filtrar por ejecutivo seleccionado
   const ejFiltro = selEj ? selEj.value : '';
   const rAct = ejFiltro ? rowsAct.filter(r=>r.ejecutivo===ejFiltro) : rowsAct;
   const rAnt = ejFiltro ? rowsAnt.filter(r=>r.ejecutivo===ejFiltro) : rowsAnt;
 
-  // Función para calcular métricas por institución
+  // Calcular métricas por institución
+  // INGRESADAS = todos los estados
+  // APROBADAS = APROBADO + OTORGADO
+  // OTORGADAS = OTORGADO
+  // PENDIENTE = PENDIENTE
+  // RECHAZADAS = RECHAZADO
   function calcMetricas(rows) {
     const res = {};
     rows.forEach(r => {
       const inst = r.institucion === 'AUTOFIN' ? 'AUTOFIN' : 'UNIDAD';
-      if (!res[inst]) res[inst] = {ing:0,apro:0,ot:0,rec:0,sal_ing:0,sal_apro:0,sal_ot:0,sal_rec:0};
+      if (!res[inst]) res[inst] = {ing:0,apro:0,ot:0,pend:0,rec:0};
       const d = res[inst];
       const est = r.estado_eval || '';
-      d.ing++; d.sal_ing += r.saldo_precio||0;
-      if (!['RECHAZADO','ANULADO'].includes(est)) { d.apro++; d.sal_apro += r.saldo_precio||0; }
-      if (est === 'OTORGADO') { d.ot++; d.sal_ot += r.saldo_precio||0; }
-      if (est === 'RECHAZADO') { d.rec++; d.sal_rec += r.saldo_precio||0; }
+      d.ing++;
+      if (est === 'APROBADO' || est === 'OTORGADO') d.apro++;
+      if (est === 'OTORGADO') d.ot++;
+      if (est === 'PENDIENTE' || est === 'SOLICITUD EN EVALUACION') d.pend++;
+      if (est === 'RECHAZADO') d.rec++;
     });
     return res;
   }
 
-  // Calcular por ejecutivo
-  const ejsData = {};
   const allEjs = [...new Set([...rAct.map(r=>r.ejecutivo), ...rAnt.map(r=>r.ejecutivo)])].sort();
-
+  const ejsData = {};
   allEjs.forEach(ej => {
-    const rA = rAct.filter(r=>r.ejecutivo===ej);
-    const rB = rAnt.filter(r=>r.ejecutivo===ej);
-    ejsData[ej] = { act: calcMetricas(rA), ant: calcMetricas(rB) };
+    ejsData[ej] = {
+      act: calcMetricas(rAct.filter(r=>r.ejecutivo===ej)),
+      ant: calcMetricas(rAnt.filter(r=>r.ejecutivo===ej))
+    };
   });
 
-  // Render tabla
   const insts = ['AUTOFIN','UNIDAD'];
-  const mN = (v) => v ? fM(v) : '$0';
   const diff = (a,b) => {
     const d = a-b;
-    const color = d > 0 ? '#43a047' : d < 0 ? '#e53935' : '#888';
-    return '<span style="color:'+color+';font-weight:600">'+(d>0?'+':'')+d+'</span>';
-  };
-  const diffM = (a,b) => {
-    const d = a-b;
-    const color = d > 0 ? '#43a047' : d < 0 ? '#e53935' : '#888';
-    return '<span style="color:'+color+';font-weight:600">'+(d>0?'+':'')+fM(d)+'</span>';
+    const c = d > 0 ? '#43a047' : d < 0 ? '#e53935' : '#888';
+    return '<span style="color:'+c+';font-weight:600">'+(d>0?'+':'')+d+'</span>';
   };
 
   const thead = `<thead>
     <tr style="background:#1a3a6a;color:#fff;font-size:10px">
-      <th rowspan="2" style="padding:6px 8px;text-align:left;min-width:180px;border-right:1px solid #2a4070">Ejecutivo</th>
+      <th rowspan="2" style="padding:6px 8px;text-align:left;min-width:180px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-right:1px solid #2a4070">Ejecutivo</th>
       <th rowspan="2" style="padding:6px 4px;text-align:center;border-right:1px solid #2a4070">Financiera</th>
-      <th colspan="4" style="padding:6px;text-align:center;background:#1565C0;border-right:1px solid #2a4070">Al ${fechaActStr}</th>
-      <th colspan="4" style="padding:6px;text-align:center;background:#0d47a1;border-right:1px solid #2a4070">Al ${fechaAntStr}${!tienenFecha?' ⚠️':''}</th>
-      <th colspan="4" style="padding:6px;text-align:center;background:#1a3a6a">Diferencia</th>
+      <th colspan="5" style="padding:6px;text-align:center;background:#1565C0;border-right:1px solid #2a4070">Al ${fechaActStr}</th>
+      <th colspan="5" style="padding:6px;text-align:center;background:#0d47a1;border-right:1px solid #2a4070">Al Cierre ${mesesN[mesAnt]} ${anioAnt}${!tienenFecha?' ⚠️':''}</th>
+      <th colspan="5" style="padding:6px;text-align:center;background:#1a3a6a">Diferencia</th>
     </tr>
-    <tr style="background:#1a3a6a;color:#fff;font-size:10px">
-      <th style="padding:4px 6px;background:#1565C0">Ing.</th>
-      <th style="padding:4px 6px;background:#1565C0">Apro.</th>
-      <th style="padding:4px 6px;background:#1565C0">Ot.</th>
-      <th style="padding:4px 6px;background:#1565C0;border-right:1px solid #2a4070">Rec.</th>
-      <th style="padding:4px 6px;background:#0d47a1">Ing.</th>
-      <th style="padding:4px 6px;background:#0d47a1">Apro.</th>
-      <th style="padding:4px 6px;background:#0d47a1">Ot.</th>
-      <th style="padding:4px 6px;background:#0d47a1;border-right:1px solid #2a4070">Rec.</th>
-      <th style="padding:4px 6px">Ing.</th>
-      <th style="padding:4px 6px">Apro.</th>
-      <th style="padding:4px 6px">Ot.</th>
-      <th style="padding:4px 6px">Rec.</th>
+    <tr style="background:#1a3a6a;color:#aac4e8;font-size:10px">
+      <th style="padding:4px 5px;background:#1565C0">Ing.</th>
+      <th style="padding:4px 5px;background:#1565C0">Apro.</th>
+      <th style="padding:4px 5px;background:#1565C0">Ot.</th>
+      <th style="padding:4px 5px;background:#1565C0">Pend.</th>
+      <th style="padding:4px 5px;background:#1565C0;border-right:1px solid #2a4070">Rec.</th>
+      <th style="padding:4px 5px;background:#0d47a1">Ing.</th>
+      <th style="padding:4px 5px;background:#0d47a1">Apro.</th>
+      <th style="padding:4px 5px;background:#0d47a1">Ot.</th>
+      <th style="padding:4px 5px;background:#0d47a1">Pend.</th>
+      <th style="padding:4px 5px;background:#0d47a1;border-right:1px solid #2a4070">Rec.</th>
+      <th style="padding:4px 5px">Ing.</th>
+      <th style="padding:4px 5px">Apro.</th>
+      <th style="padding:4px 5px">Ot.</th>
+      <th style="padding:4px 5px">Pend.</th>
+      <th style="padding:4px 5px">Rec.</th>
     </tr>
   </thead>`;
 
   let tbody = '';
-  let totAct = {ing:0,apro:0,ot:0,rec:0};
-  let totAnt2 = {ing:0,apro:0,ot:0,rec:0};
+  let tA = {ing:0,apro:0,ot:0,pend:0,rec:0};
+  let tB = {ing:0,apro:0,ot:0,pend:0,rec:0};
 
   allEjs.forEach((ej, ejIdx) => {
     const d = ejsData[ej];
     const nombre = ej.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
     const bg = ejIdx%2===0 ? '#f8faff' : '#fff';
 
-    // Sumar instituciones para totales del ejecutivo
-    const sumAct = {ing:0,apro:0,ot:0,rec:0};
-    const sumAnt = {ing:0,apro:0,ot:0,rec:0};
-    insts.forEach(inst => {
-      const a = d.act[inst]||{ing:0,apro:0,ot:0,rec:0};
-      const b = d.ant[inst]||{ing:0,apro:0,ot:0,rec:0};
-      sumAct.ing+=a.ing; sumAct.apro+=a.apro; sumAct.ot+=a.ot; sumAct.rec+=a.rec;
-      sumAnt.ing+=b.ing; sumAnt.apro+=b.apro; sumAnt.ot+=b.ot; sumAnt.rec+=b.rec;
-    });
-    totAct.ing+=sumAct.ing; totAct.apro+=sumAct.apro; totAct.ot+=sumAct.ot; totAct.rec+=sumAct.rec;
-    totAnt2.ing+=sumAnt.ing; totAnt2.apro+=sumAnt.apro; totAnt2.ot+=sumAnt.ot; totAnt2.rec+=sumAnt.rec;
-
     insts.forEach((inst, instIdx) => {
-      const a = d.act[inst]||{ing:0,apro:0,ot:0,rec:0};
-      const b = d.ant[inst]||{ing:0,apro:0,ot:0,rec:0};
+      const a = d.act[inst]||{ing:0,apro:0,ot:0,pend:0,rec:0};
+      const b = d.ant[inst]||{ing:0,apro:0,ot:0,pend:0,rec:0};
+      if (instIdx===0) {
+        tA.ing+=a.ing+((d.act['UNIDAD']||{}).ing||0);
+        tA.apro+=a.apro+((d.act['UNIDAD']||{}).apro||0);
+        tA.ot+=a.ot+((d.act['UNIDAD']||{}).ot||0);
+        tA.pend+=a.pend+((d.act['UNIDAD']||{}).pend||0);
+        tA.rec+=a.rec+((d.act['UNIDAD']||{}).rec||0);
+        tB.ing+=b.ing+((d.ant['UNIDAD']||{}).ing||0);
+        tB.apro+=b.apro+((d.ant['UNIDAD']||{}).apro||0);
+        tB.ot+=b.ot+((d.ant['UNIDAD']||{}).ot||0);
+        tB.pend+=b.pend+((d.ant['UNIDAD']||{}).pend||0);
+        tB.rec+=b.rec+((d.ant['UNIDAD']||{}).rec||0);
+      }
       const instC = inst==='AUTOFIN'?'#1565C0':'#ff7043';
       tbody += '<tr style="border-bottom:1px solid #f0f2f5;background:'+bg+'">';
       if (instIdx===0) {
         tbody += '<td rowspan="'+insts.length+'" style="padding:5px 8px;font-weight:700;font-size:11px;color:#1a3a6a;border-right:1px solid #e0e8f0;vertical-align:middle;max-width:180px;width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+nombre+'">'+nombre+'</td>';
       }
       tbody += '<td style="padding:4px 6px;text-align:center;border-right:1px solid #e0e8f0"><span style="background:'+instC+'22;color:'+instC+';padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600">'+inst+'</span></td>';
-      // Actual
-      tbody += '<td style="text-align:center;padding:4px 6px">'+a.ing+'</td>';
-      tbody += '<td style="text-align:center;padding:4px 6px">'+a.apro+'</td>';
-      tbody += '<td style="text-align:center;padding:4px 6px;font-weight:700">'+a.ot+'</td>';
-      tbody += '<td style="text-align:center;padding:4px 6px;border-right:1px solid #e0e8f0">'+a.rec+'</td>';
-      // Anterior
-      tbody += '<td style="text-align:center;padding:4px 6px;color:#555">'+b.ing+'</td>';
-      tbody += '<td style="text-align:center;padding:4px 6px;color:#555">'+b.apro+'</td>';
-      tbody += '<td style="text-align:center;padding:4px 6px;font-weight:700;color:#555">'+b.ot+'</td>';
-      tbody += '<td style="text-align:center;padding:4px 6px;border-right:1px solid #e0e8f0;color:#555">'+b.rec+'</td>';
-      // Diferencia
-      tbody += '<td style="text-align:center;padding:4px 6px">'+diff(a.ing,b.ing)+'</td>';
-      tbody += '<td style="text-align:center;padding:4px 6px">'+diff(a.apro,b.apro)+'</td>';
-      tbody += '<td style="text-align:center;padding:4px 6px">'+diff(a.ot,b.ot)+'</td>';
-      tbody += '<td style="text-align:center;padding:4px 6px">'+diff(a.rec,b.rec)+'</td>';
+      tbody += '<td style="text-align:center;padding:4px 5px">'+a.ing+'</td><td style="text-align:center;padding:4px 5px">'+a.apro+'</td><td style="text-align:center;padding:4px 5px;font-weight:700">'+a.ot+'</td><td style="text-align:center;padding:4px 5px">'+a.pend+'</td><td style="text-align:center;padding:4px 5px;border-right:1px solid #e0e8f0">'+a.rec+'</td>';
+      tbody += '<td style="text-align:center;padding:4px 5px;color:#555">'+b.ing+'</td><td style="text-align:center;padding:4px 5px;color:#555">'+b.apro+'</td><td style="text-align:center;padding:4px 5px;font-weight:700;color:#555">'+b.ot+'</td><td style="text-align:center;padding:4px 5px;color:#555">'+b.pend+'</td><td style="text-align:center;padding:4px 5px;border-right:1px solid #e0e8f0;color:#555">'+b.rec+'</td>';
+      tbody += '<td style="text-align:center;padding:4px 5px">'+diff(a.ing,b.ing)+'</td><td style="text-align:center;padding:4px 5px">'+diff(a.apro,b.apro)+'</td><td style="text-align:center;padding:4px 5px">'+diff(a.ot,b.ot)+'</td><td style="text-align:center;padding:4px 5px">'+diff(a.pend,b.pend)+'</td><td style="text-align:center;padding:4px 5px">'+diff(a.rec,b.rec)+'</td>';
       tbody += '</tr>';
     });
   });
 
-  // Fila total
   const tfootRow = '<tfoot><tr style="background:#1a3a6a;color:#fff;font-weight:700;font-size:11px">' +
     '<td colspan="2" style="padding:6px 8px">TOTAL</td>' +
-    '<td style="text-align:center;padding:5px">'+totAct.ing+'</td>' +
-    '<td style="text-align:center;padding:5px">'+totAct.apro+'</td>' +
-    '<td style="text-align:center;padding:5px">'+totAct.ot+'</td>' +
-    '<td style="text-align:center;padding:5px;border-right:1px solid #2a4070">'+totAct.rec+'</td>' +
-    '<td style="text-align:center;padding:5px">'+totAnt2.ing+'</td>' +
-    '<td style="text-align:center;padding:5px">'+totAnt2.apro+'</td>' +
-    '<td style="text-align:center;padding:5px">'+totAnt2.ot+'</td>' +
-    '<td style="text-align:center;padding:5px;border-right:1px solid #2a4070">'+totAnt2.rec+'</td>' +
-    '<td style="text-align:center;padding:5px">'+diff(totAct.ing,totAnt2.ing)+'</td>' +
-    '<td style="text-align:center;padding:5px">'+diff(totAct.apro,totAnt2.apro)+'</td>' +
-    '<td style="text-align:center;padding:5px">'+diff(totAct.ot,totAnt2.ot)+'</td>' +
-    '<td style="text-align:center;padding:5px">'+diff(totAct.rec,totAnt2.rec)+'</td>' +
+    '<td style="text-align:center;padding:5px">'+tA.ing+'</td><td style="text-align:center;padding:5px">'+tA.apro+'</td><td style="text-align:center;padding:5px">'+tA.ot+'</td><td style="text-align:center;padding:5px">'+tA.pend+'</td><td style="text-align:center;padding:5px;border-right:1px solid #2a4070">'+tA.rec+'</td>' +
+    '<td style="text-align:center;padding:5px">'+tB.ing+'</td><td style="text-align:center;padding:5px">'+tB.apro+'</td><td style="text-align:center;padding:5px">'+tB.ot+'</td><td style="text-align:center;padding:5px">'+tB.pend+'</td><td style="text-align:center;padding:5px;border-right:1px solid #2a4070">'+tB.rec+'</td>' +
+    '<td style="text-align:center;padding:5px">'+diff(tA.ing,tB.ing)+'</td><td style="text-align:center;padding:5px">'+diff(tA.apro,tB.apro)+'</td><td style="text-align:center;padding:5px">'+diff(tA.ot,tB.ot)+'</td><td style="text-align:center;padding:5px">'+diff(tA.pend,tB.pend)+'</td><td style="text-align:center;padding:5px">'+diff(tA.rec,tB.rec)+'</td>' +
     '</tr></tfoot>';
 
   const tbl = document.getElementById('t-v8');
