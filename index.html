@@ -1345,11 +1345,18 @@ function buildV1b() {
 
   document.getElementById('kpi1b').innerHTML = `
     <div class="kpi-box"><div class="kpi-label">Total a Financiar</div><div class="kpi-val big">${fM(totFin)}</div></div>
-    <div class="kpi-box"><div class="kpi-label">Operaciones Otorgadas</div><div class="kpi-val big">${totOps}</div></div>
+    <div class="kpi-box" style="cursor:pointer" onclick="mostrarListaOps()" title="Ver detalle de operaciones">
+      <div class="kpi-label">Operaciones Otorgadas</div>
+      <div class="kpi-val big">${totOps}</div>
+      <div class="kpi-sub" style="color:#4fc3f7;font-size:9px">🔍 ver detalle</div>
+    </div>
     <div class="kpi-box highlight"><div class="kpi-label">Com. Dealer</div><div class="kpi-val big">${fM(totCD)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Ingreso AutoFácil</div><div class="kpi-val big">${fM(totAFA)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Com. Seguros</div><div class="kpi-val big">${fM(totSeg)}</div></div>
     <div class="kpi-box"><div class="kpi-label">Plazo Prom.</div><div class="kpi-val big">${avgPlazo}m</div></div>`;
+
+  // Guardar det para el modal
+  window._detOps = det;
 
   // Tabla instituciones desde detalle_v2
   const finOt = {};
@@ -3164,6 +3171,59 @@ function buildV8() {
   if (tbl) tbl.innerHTML = thead + '<tbody>'+tbody+'</tbody>' + tfootRow;
 }
 
+</script>
+
+<!-- Modal lista OPs otorgadas -->
+<div id="modal-ops" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#00000080;z-index:9999;align-items:flex-start;justify-content:center;padding-top:60px">
+  <div style="background:#1a2a4a;border-radius:12px;padding:24px;width:700px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px #00000060">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700;color:#fff" id="modal-ops-titulo">Operaciones Otorgadas</div>
+      <button onclick="document.getElementById('modal-ops').style.display='none'"
+        style="background:#2a4070;color:#fff;border:none;border-radius:6px;padding:4px 12px;cursor:pointer;font-size:13px">✕ Cerrar</button>
+    </div>
+    <table id="t-modal-ops" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+  </div>
+</div>
+<script>
+
+function mostrarListaOps() {
+  const det = window._detOps || [];
+  const lbl = document.getElementById('periodo-label')?.textContent || '';
+  document.getElementById('modal-ops-titulo').textContent =
+    'Operaciones Otorgadas — ' + lbl + ' (' + det.length + ' ops)';
+
+  const thead = '<thead><tr style="background:#1a3a6a;color:#fff;font-size:11px">' +
+    '<th style="padding:6px 8px;text-align:left">N° OP</th>' +
+    '<th style="padding:6px 8px">Institución</th>' +
+    '<th style="padding:6px 8px">Concesionario</th>' +
+    '<th style="padding:6px 8px">Ejecutivo</th>' +
+    '<th style="padding:6px 8px;text-align:right">Saldo Precio</th>' +
+    '<th style="padding:6px 8px;text-align:center">Estado</th>' +
+    '</tr></thead>';
+
+  const rows = det.map((r,i) => {
+    const ej = (r.ejecutivo||'').split(' ').slice(0,2).map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
+    const ccs = (r.ccs||'').length > 25 ? (r.ccs||'').substring(0,25)+'…' : (r.ccs||'');
+    const bg = i%2===0 ? '#f8faff' : '#fff';
+    const instC = r.financiera==='AUTOFIN' ? '#1565C0' : '#ff7043';
+    return '<tr style="border-bottom:1px solid #f0f2f5;background:'+bg+'">' +
+      '<td style="padding:5px 8px;font-weight:700;color:#1a3a6a">' + r.op + '</td>' +
+      '<td style="padding:5px 8px;text-align:center"><span style="background:'+instC+'22;color:'+instC+';padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600">' + (r.financiera||'—') + '</span></td>' +
+      '<td style="padding:5px 8px;font-size:11px">' + ccs + '</td>' +
+      '<td style="padding:5px 8px;font-size:11px">' + ej + '</td>' +
+      '<td style="padding:5px 8px;text-align:right">' + fN(r.saldo_precio) + '</td>' +
+      '<td style="padding:5px 8px;text-align:center"><span style="background:#e8f5e9;color:#2e7d32;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600">OTORGADO</span></td>' +
+      '</tr>';
+  }).join('');
+
+  const tfoot = '<tfoot><tr style="background:#1a3a6a;color:#fff;font-weight:700">' +
+    '<td colspan="4" style="padding:6px 8px">Total</td>' +
+    '<td style="padding:6px 8px;text-align:right">' + fN(det.reduce((a,r)=>a+r.saldo_precio,0)) + '</td>' +
+    '<td></td></tr></tfoot>';
+
+  document.getElementById('t-modal-ops').innerHTML = thead + '<tbody>' + rows + '</tbody>' + tfoot;
+  document.getElementById('modal-ops').style.display = 'flex';
+}
 </script>
 </body>
 </html>
