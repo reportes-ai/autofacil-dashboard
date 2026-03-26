@@ -235,8 +235,9 @@ function checkLogin() {
 
   // Login exitoso
   const primerIngreso = user.estado === 'NUNCA INGRESADO';
+  // Registrar último ingreso siempre
+  user.ultimoIngreso = new Date().toISOString();
   if (!primerIngreso) {
-    user.ultimoIngreso = new Date().toISOString();
     user.estado = 'ACTIVO';
   }
   saveUsuarios(usuarios);
@@ -244,7 +245,10 @@ function checkLogin() {
   sessionStorage.setItem('af_sesion', JSON.stringify(sesionActual));
   document.getElementById('login-screen').style.display = 'none';
   actualizarTopbarUsuario();
-  if (primerIngreso) setTimeout(() => mostrarModalCambioClave(), 400);
+  // Mostrar modal cambio de clave si es primer ingreso
+  if (primerIngreso) {
+    setTimeout(() => mostrarModalCambioClave(), 400);
+  }
 }
 
 function actualizarTopbarUsuario() {
@@ -451,6 +455,12 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="card-head">Instituciones — Solo Otorgados</div>
         <div class="card-body" style="padding:0">
           <table class="tbl" id="t-fin1b"></table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head" id="titulo-mismos-dias" style="background:#0d47a1">Mismos días faltantes — Mes Anterior</div>
+        <div class="card-body" style="padding:0">
+          <table class="tbl" id="t-fin1b-ant"></table>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
@@ -1453,6 +1463,71 @@ function buildV1b() {
       <tr><td>Ing. AutoFácil</td><td>${fM(jTotAFA)}</td></tr>
       <tr><td>Com. Dealer</td><td>${fM(jTotCD)}</td></tr>
     </tbody>`;
+
+  // ── Tabla "Mismos días faltantes mes anterior" ──
+  // Calcular: hoy → días faltantes hasta fin de mes actual → aplicar al mes anterior
+  const hoy = new Date();
+  const diaHoy = hoy.getDate();
+  const mesHoy = hoy.getMonth(); // 0-based
+  const anioHoy = hoy.getFullYear();
+
+  // Último día del mes actual
+  const ultimoDiaMesActual = new Date(anioHoy, mesHoy + 1, 0).getDate();
+  const diasFaltantes = ultimoDiaMesActual - diaHoy;
+
+  // Mes anterior
+  const mesAnt = mesHoy === 0 ? 11 : mesHoy - 1;
+  const anioAnt = mesHoy === 0 ? anioHoy - 1 : anioHoy;
+  const ultimoDiaMesAnt = new Date(anioAnt, mesAnt + 1, 0).getDate();
+  const diaCorteAnt = ultimoDiaMesAnt - diasFaltantes;
+  const mesAntKey = (anioAnt) + '-' + String(mesAnt + 1).padStart(2,'0');
+
+  // Formatear fecha de corte para el título
+  const mesesNombres = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const fechaCorteStr = diaCorteAnt + ' ' + mesesNombres[mesAnt] + ' ' + anioAnt;
+  const tituloAnt = document.getElementById('titulo-mismos-dias');
+  if (tituloAnt) tituloAnt.textContent =
+    'Mismos días faltantes — ' + mesesNombres[mesAnt] + ' ' + anioAnt +
+    ' (al ' + fechaCorteStr + ', ' + diasFaltantes + ' días antes del cierre)';
+
+  // Filtrar RAW_DATA del mes anterior hasta el día de corte usando fecha_ot
+  const rawAnt = window.RAW_DATA.filter(r => {
+    if (r.mes !== mesAntKey) return false;
+    if (r.estado_eval !== 'OTORGADO') return false;
+    if (r.institucion !== 'AUTOFIN' && r.institucion !== 'UNIDAD DE CREDITO') return false;
+    // Filtrar por día usando fecha_ot si está disponible
+    if (r.fecha_ot) {
+      const diaOt = parseInt(r.fecha_ot.split('-')[2]);
+      return diaOt <= diaCorteAnt;
+    }
+    return true; // si no hay fecha, incluir
+  });
+
+  // Agrupar por institución
+  const finAnt = {};
+  rawAnt.forEach(r => {
+    const k = r.institucion === 'AUTOFIN' ? 'AUTOFIN' : 'UNIDAD';
+    if (!finAnt[k]) finAnt[k] = {ops:0,saldo:0,fin:0,com_dealer:0,afa:0,com_seg:0};
+    finAnt[k].ops++; finAnt[k].saldo += r.saldo_precio;
+    finAnt[k].fin += r.monto_financiado; finAnt[k].com_dealer += r.com_dealer;
+    finAnt[k].afa += r.rentab_afa; finAnt[k].com_seg += r.com_seguros;
+  });
+  const totAnt = {ops:0,saldo:0,fin:0,com_dealer:0,afa:0,com_seg:0};
+  Object.values(finAnt).forEach(v => {
+    totAnt.ops+=v.ops; totAnt.saldo+=v.saldo; totAnt.fin+=v.fin;
+    totAnt.com_dealer+=v.com_dealer; totAnt.afa+=v.afa; totAnt.com_seg+=v.com_seg;
+  });
+
+  const finRowsAnt = ['AUTOFIN','UNIDAD'].map(k => {
+    const v = finAnt[k]; if(!v) return '';
+    return '<tr><td><strong>'+k+'</strong></td><td>'+v.ops+'</td><td>'+fM(v.fin)+'</td><td>'+fM(v.ops?v.fin/v.ops:0)+'</td><td>'+fM(v.saldo)+'</td><td>'+fM(v.com_dealer)+'</td><td>'+fM(v.afa)+'</td><td>'+fM(v.com_seg)+'</td></tr>';
+  }).join('');
+
+  const tblAnt = document.getElementById('t-fin1b-ant');
+  if (tblAnt) tblAnt.innerHTML =
+    '<thead><tr><th>Institución</th><th>Ops</th><th>Total Fin.</th><th>Prom. Fin</th><th>Saldo Precio</th><th>Com Dealer</th><th>Ing AFA</th><th>Com Seguros</th></tr></thead>' +
+    '<tbody>'+finRowsAnt+'</tbody>' +
+    '<tfoot><tr><td>Total</td><td>'+totAnt.ops+'</td><td>'+fM(totAnt.fin)+'</td><td>'+fM(totAnt.ops?totAnt.fin/totAnt.ops:0)+'</td><td>'+fM(totAnt.saldo)+'</td><td>'+fM(totAnt.com_dealer)+'</td><td>'+fM(totAnt.afa)+'</td><td>'+fM(totAnt.com_seg)+'</td></tr></tfoot>';
 
   // Concesionarios otorgados
   const ccsOt = {};
