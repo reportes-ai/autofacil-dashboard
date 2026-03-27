@@ -1567,7 +1567,7 @@ function buildV1b() {
     ejOt[k].ops++; ejOt[k].saldo += r.saldo_precio; ejOt[k].fin += r.total_a_financiar;
     ejOt[k].cd += r.com_dealer; ejOt[k].afa += r.ing_autofacil;
   });
-  const topEj = Object.entries(ejOt).sort((a,b)=>b[1].saldo-a[1].saldo);
+  const topEj = Object.entries(ejOt).sort((a,b)=>b[1].ops-a[1].ops||b[1].saldo-a[1].saldo);
   const ejRows2 = topEj.map(([nombre,v],i)=>`<tr>
     <td><span class="rank">${i+1}.</span>${nombre.length>24?nombre.substring(0,24)+'…':nombre}</td>
     <td>${v.ops}</td><td>${fM(v.fin)}</td><td>${fM(v.ops?v.fin/v.ops:0)}</td>
