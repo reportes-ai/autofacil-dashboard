@@ -1866,7 +1866,7 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
       ot_saldo: otorgados.reduce((a,r)=>a+r.saldo_precio,0),
       financieras: fin,
       ccs: Object.entries(ccs).sort((a,b)=>b[1].saldo-a[1].saldo).map(([nombre,v])=>({nombre,...v})),
-      ejecutivos: Object.entries(ej).sort((a,b)=>b[1].saldo-a[1].saldo).map(([nombre,v])=>({nombre,...v,prom_plazo:v.cnt_plazo?+(v.plazo_sum/v.cnt_plazo).toFixed(1):0})),
+      ejecutivos: Object.entries(ej).sort((a,b)=>b[1].ops-a[1].ops||b[1].saldo-a[1].saldo).map(([nombre,v])=>({nombre,...v,prom_plazo:v.cnt_plazo?+(v.plazo_sum/v.cnt_plazo).toFixed(1):0})),
       estados, motivos, donut, detalle_v2
     };
   }
