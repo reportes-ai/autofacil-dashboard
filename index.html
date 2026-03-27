@@ -1568,11 +1568,13 @@ function buildV1b() {
     ejOt[k].cd += r.com_dealer; ejOt[k].afa += r.ing_autofacil;
   });
   const topEj = Object.entries(ejOt).sort((a,b)=>b[1].ops-a[1].ops||b[1].saldo-a[1].saldo);
-  const ejRows2 = topEj.map(([nombre,v],i)=>`<tr>
+  const ejRows2 = topEj.map(([nombre,v],i)=>{
+    const finStyle = v.fin < 30000000 ? 'color:#e53935;font-weight:700' : '';
+    return `<tr>
     <td><span class="rank">${i+1}.</span>${nombre.length>24?nombre.substring(0,24)+'…':nombre}</td>
-    <td>${v.ops}</td><td>${fM(v.fin)}</td><td>${fM(v.ops?v.fin/v.ops:0)}</td>
+    <td>${v.ops}</td><td style="${finStyle}">${fM(v.fin)}</td><td>${fM(v.ops?v.fin/v.ops:0)}</td>
     <td>${fM(v.saldo)}</td><td>${fM(v.cd)}</td><td>${fM(v.afa)}</td>
-  </tr>`).join('');
+  </tr>`;}).join('');
   const totEJ2 = topEj.reduce((a,[,v])=>({ops:a.ops+v.ops,fin:a.fin+v.fin,saldo:a.saldo+v.saldo,cd:a.cd+v.cd,afa:a.afa+v.afa}),{ops:0,fin:0,saldo:0,cd:0,afa:0});
   document.getElementById('t-ej1b').innerHTML = `
     <thead><tr><th>Ejecutivo</th><th>Q Otorgados</th><th>Total Fin.</th><th>Prom. Fin.</th><th>Saldo Precio</th><th>Com Dealer</th><th>Ing AFA</th></tr></thead>
