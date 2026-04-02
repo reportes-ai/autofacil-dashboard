@@ -1465,31 +1465,40 @@ function buildV1b() {
   const jDet = D.jan.detalle_v2||[];
   const jTotOps = jDet.length, jTotFin = jDet.reduce((a,r)=>a+r.total_a_financiar,0);
   const jTotCD = jDet.reduce((a,r)=>a+r.com_dealer,0), jTotAFA = jDet.reduce((a,r)=>a+r.ing_autofacil,0);
+  const jFinStyle = jTotFin < 30000000 ? 'color:#e53935;font-weight:700' : '';
   document.getElementById('t-jan1b').innerHTML = `
     <thead><tr><th>Métrica</th><th>Valor</th></tr></thead>
     <tbody>
       <tr><td>Operaciones Otorgadas</td><td>${jTotOps}</td></tr>
-      <tr><td>Total Financiado</td><td>${fM(jTotFin)}</td></tr>
+      <tr><td>Total Financiado</td><td style="${jFinStyle}">${fM(jTotFin)}</td></tr>
       <tr><td>Ing. AutoFácil</td><td>${fM(jTotAFA)}</td></tr>
       <tr><td>Com. Dealer</td><td>${fM(jTotCD)}</td></tr>
     </tbody>`;
 
   // ── Tabla "Mismos días faltantes mes anterior" ──
   // Calcular: hoy → días faltantes hasta fin de mes actual → aplicar al mes anterior
+  // Usar el período seleccionado como referencia (no la fecha de hoy)
+  const desde = document.getElementById('sel-desde')?.value || '';
+  const hasta  = document.getElementById('sel-hasta')?.value  || '';
+  // Si el período es un solo mes, usar ese mes como referencia; si es rango, usar el último mes
+  const refMesStr = hasta || desde; // YYYY-MM
+  const refAnio = refMesStr ? parseInt(refMesStr.split('-')[0]) : new Date().getFullYear();
+  const refMes  = refMesStr ? parseInt(refMesStr.split('-')[1]) - 1 : new Date().getMonth(); // 0-based
+
   const hoy = new Date();
   const diaHoy = hoy.getDate();
-  const mesHoy = hoy.getMonth(); // 0-based
-  const anioHoy = hoy.getFullYear();
 
-  // Último día del mes actual
-  const ultimoDiaMesActual = new Date(anioHoy, mesHoy + 1, 0).getDate();
-  const diasFaltantes = ultimoDiaMesActual - diaHoy;
+  // Último día del mes de referencia
+  const ultimoDiaMesActual = new Date(refAnio, refMes + 1, 0).getDate();
+  // Si el mes de referencia es el mes actual, usar días faltantes reales; si es futuro/pasado usar el último día
+  const esElMesActual = (refAnio === hoy.getFullYear() && refMes === hoy.getMonth());
+  const diasFaltantes = esElMesActual ? (ultimoDiaMesActual - diaHoy) : 0;
 
-  // Mes anterior
-  const mesAnt = mesHoy === 0 ? 11 : mesHoy - 1;
-  const anioAnt = mesHoy === 0 ? anioHoy - 1 : anioHoy;
+  // Mes anterior al mes de referencia
+  const mesAnt = refMes === 0 ? 11 : refMes - 1;
+  const anioAnt = refMes === 0 ? refAnio - 1 : refAnio;
   const ultimoDiaMesAnt = new Date(anioAnt, mesAnt + 1, 0).getDate();
-  const diaCorteAnt = ultimoDiaMesAnt - diasFaltantes;
+  const diaCorteAnt = diasFaltantes > 0 ? ultimoDiaMesAnt - diasFaltantes : ultimoDiaMesAnt;
   const mesAntKey = (anioAnt) + '-' + String(mesAnt + 1).padStart(2,'0');
 
   // Formatear fecha de corte para el título
@@ -1754,12 +1763,15 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
 
 // ======== FILTRADO DINÁMICO POR FECHAS ========
 (function() {
-  const meses_labels = {
-    '2025-01':'Ene 2025','2025-02':'Feb 2025','2025-03':'Mar 2025','2025-04':'Abr 2025',
-    '2025-05':'May 2025','2025-06':'Jun 2025','2025-07':'Jul 2025','2025-08':'Ago 2025',
-    '2025-09':'Sep 2025','2025-10':'Oct 2025','2025-11':'Nov 2025','2025-12':'Dic 2025',
-    '2026-01':'Ene 2026','2026-02':'Feb 2026','2026-03':'Mar 2026'
-  };
+  // Generar meses_labels dinámicamente hasta 24 meses desde 2025-01
+  const meses_labels = {};
+  const _mN = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  for (let y = 2025; y <= 2027; y++) {
+    for (let m = 1; m <= 12; m++) {
+      const key = y+'-'+String(m).padStart(2,'0');
+      meses_labels[key] = _mN[m-1]+' '+y;
+    }
+  }
   const meses_orden = Object.keys(meses_labels);
 
   // Poblar selects
