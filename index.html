@@ -200,8 +200,8 @@
   .estado-LO_PENSARA { background: #E0F7FA; color: #00838F; }
   .estado-OTROS { background: var(--gris-claro); color: var(--gris); }
   #inp-buscar-nombre { transition: all 0.2s; }
-  #inp-buscar-nombre::placeholder { color: rgba(255,255,255,0.6); }
-  #inp-buscar-nombre:focus { background: rgba(255,255,255,0.2) !important; border-color: rgba(255,255,255,0.6) !important; }
+  #inp-buscar-nombre::placeholder { color: var(--texto-sec); }
+  #inp-buscar-nombre:focus { border-color: var(--azul) !important; box-shadow: 0 0 0 3px rgba(21, 101, 192, 0.1); }
 </style>
 </head>
 <body>
@@ -292,7 +292,7 @@
     <div class="panel-right">
       <div class="panel-right-header" id="right-header" style="display:none">
         <span class="estado-badge" id="badge-estado"></span>
-        <input type="text" id="inp-buscar-nombre" placeholder="BUSCAR NOMBRE" style="margin-left:auto;padding:7px 12px;border:1.5px solid rgba(255,255,255,0.3);border-radius:var(--radio);font-size:13px;outline:none;background:rgba(255,255,255,0.1);color:#fff;width:200px" oninput="buscarPorNombre(this.value)">
+        <input type="text" id="inp-buscar-nombre" placeholder="BUSCAR NOMBRE" style="margin-left:auto;padding:8px 12px;border:1.5px solid var(--borde);border-radius:var(--radio);font-size:13px;outline:none;background:var(--blanco);color:var(--texto);width:220px" oninput="buscarPorNombre(this.value)">
         <div class="nav-registros">
           <span id="nav-label">Registro: — de —</span>
           <button class="btn-nav" id="btn-prev" onclick="navRegistro(-1)">‹</button>
@@ -505,6 +505,7 @@ let idxActual = 0;
 let busquedaActiva = false;
 let resultadosBusqueda = [];
 let idxBusqueda = 0;
+let badgeBase = ''; // Almacenar el badge sin búsqueda
 
 // ============================================================
 // LOGIN / LOGOUT
@@ -609,14 +610,12 @@ function mostrarFichaBusqueda() {
   if (!busquedaActiva || resultadosBusqueda.length === 0) return;
 
   const credito = resultadosBusqueda[idxBusqueda];
-  const content = document.getElementById('panel-content');
   const btnNG = document.getElementById('btn-nueva-gestion');
 
   btnNG.disabled = false;
 
   const badge = document.getElementById('badge-estado');
-  const baseLabel = badge.textContent;
-  badge.textContent = `${baseLabel} — BÚSQUEDA (${idxBusqueda + 1}/${resultadosBusqueda.length})`;
+  badge.textContent = badgeBase;
 
   document.getElementById('nav-label').textContent = `Búsqueda: ${idxBusqueda + 1} de ${resultadosBusqueda.length}`;
   document.getElementById('btn-prev').disabled = idxBusqueda === 0;
@@ -905,9 +904,9 @@ function renderPanelDerecho() {
 
   header.style.display = 'flex'; btnNG.disabled = false;
   const colLabel = filtroCol==='sinSeg'?'SIN SEGUIMIENTO':filtroCol==='vencido'?'SEG. VENCIDO':filtroCol==='alDia'?'SEG. AL DÍA':'';
-  const badgeLabel = colLabel ? `${filtroEstado} — ${colLabel}` : filtroEstado;
+  badgeBase = colLabel ? `${filtroEstado} — ${colLabel}` : filtroEstado;
   const badge = document.getElementById('badge-estado');
-  badge.textContent = badgeLabel;
+  badge.textContent = badgeBase;
   badge.className = `estado-badge estado-${filtroEstado.replace(/\s/g,'_').replace(/Á/g,'A').replace(/á/g,'a').replace(/É/g,'E').replace(/é/g,'e')}`;
   
   document.getElementById('nav-label').textContent = `Registro: ${idxActual+1} de ${registrosFiltrados.length}`;
