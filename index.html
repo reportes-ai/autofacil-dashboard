@@ -1862,7 +1862,7 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
           return 'AUTOFIN';
         })(),
         saldo_precio: r.saldo_precio, total_a_financiar: r.monto_financiado,
-        plazo: r.plazo, ing_autofacil: r.rentab_afa, pct_a,
+        plazo: r.plazo, tasa_cli: r.tasa_cli||0, ing_autofacil: r.rentab_afa, pct_a,
         com_dealer: r.com_dealer, pct_d, com_par: r.com_parque, pct_p: 0,
         total_com_broke: tcb, pct_t, com_seguros: r.com_seguros,
         ingreso_bruto: ib, pct_b
@@ -3213,6 +3213,9 @@ function mostrarListaOps() {
     '<th style="padding:6px 8px">Concesionario</th>' +
     '<th style="padding:6px 8px">Ejecutivo</th>' +
     '<th style="padding:6px 8px;text-align:right">Saldo Precio</th>' +
+    '<th style="padding:6px 8px;text-align:center">Plazo</th>' +
+    '<th style="padding:6px 8px;text-align:center">Tasa</th>' +
+    '<th style="padding:6px 8px;text-align:right">Com. Dealer</th>' +
     '<th style="padding:6px 8px;text-align:center">Estado</th>' +
     '</tr></thead>';
 
@@ -3227,6 +3230,9 @@ function mostrarListaOps() {
       '<td style="padding:5px 8px;font-size:11px">' + ccs + '</td>' +
       '<td style="padding:5px 8px;font-size:11px">' + ej + '</td>' +
       '<td style="padding:5px 8px;text-align:right">' + fN(r.saldo_precio) + '</td>' +
+      '<td style="padding:5px 8px;text-align:center">' + (r.plazo||'—') + 'm</td>' +
+      '<td style="padding:5px 8px;text-align:center">' + (r.tasa_cli ? r.tasa_cli.toFixed(2)+'%' : '—') + '</td>' +
+      '<td style="padding:5px 8px;text-align:right">' + fN(r.com_dealer) + '</td>' +
       '<td style="padding:5px 8px;text-align:center"><span style="background:#e8f5e9;color:#2e7d32;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600">OTORGADO</span></td>' +
       '</tr>';
   }).join('');
@@ -3234,6 +3240,8 @@ function mostrarListaOps() {
   const tfoot = '<tfoot><tr style="background:#1a3a6a;color:#fff;font-weight:700">' +
     '<td colspan="4" style="padding:6px 8px">Total</td>' +
     '<td style="padding:6px 8px;text-align:right">' + fN(det.reduce((a,r)=>a+r.saldo_precio,0)) + '</td>' +
+    '<td colspan="2"></td>' +
+    '<td style="padding:6px 8px;text-align:right">' + fN(det.reduce((a,r)=>a+r.com_dealer,0)) + '</td>' +
     '<td></td></tr></tfoot>';
 
   document.getElementById('t-modal-ops').innerHTML = thead + '<tbody>' + rows + '</tbody>' + tfoot;
