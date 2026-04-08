@@ -1679,7 +1679,7 @@ async function cargarDatos() {
 
     // Recalcular DASH desde raw para el período por defecto (último mes completo)
     const meses = [...new Set(window.RAW_DATA.map(r=>r.mes))].sort();
-    const ultimoMes = meses[meses.length - 2] || meses[meses.length - 1];
+    const ultimoMes = meses[meses.length - 1];
 
     // Usar datos embebidos como base y actualizar tendencia y ej_perf
     window.DASH_INLINE = window.DASH_INLINE || {};
@@ -1777,16 +1777,7 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
 
   // Poblar selects
   function initSelects() {
-    const ds = document.getElementById('sel-desde');
-    const hs = document.getElementById('sel-hasta');
-    meses_orden.forEach(m => {
-      ds.innerHTML += `<option value="${m}">${meses_labels[m]}</option>`;
-      hs.innerHTML += `<option value="${m}">${meses_labels[m]}</option>`;
-    });
-    // Default: último mes disponible
-    const ultimoMes = meses_orden[meses_orden.length - 1];
-    ds.value = ultimoMes;
-    hs.value = ultimoMes;
+    // Los selects se pueblan en cargarDatos() con los meses reales del JSON
   }
 
   // Calcular resumen de un mes/rango desde RAW_DATA
