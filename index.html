@@ -1232,8 +1232,9 @@ function buildRentabTable() {
     </tr></thead>
     <tbody>${trs}</tbody>
     <tfoot><tr>
-      <td colspan="3">Total</td>
-      <td>${fN(tot.sal)}</td><td>${fN(tot.fin)}</td><td>—</td>
+      <td colspan="4">Total / Prom.</td>
+      <td>${fN(tot.sal)}</td><td>${fN(tot.fin)}</td>
+      <td>${totOpsR ? Math.round(rows.reduce((a,r)=>a+r.plazo,0)/totOpsR) : '—'}m</td>
       <td>${fN(tot.afa)}</td><td><span class="${pClass(parseFloat(tAfaPct))}">${tAfaPct}%</span></td>
       <td>${fN(tot.cd)}</td><td><span class="${pClass(parseFloat(tCdPct))}">${tCdPct}%</span></td>
       <td>${fN(tot.par)}</td><td>0%</td>
