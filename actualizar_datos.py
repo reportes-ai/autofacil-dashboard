@@ -138,6 +138,8 @@ def procesar_excel(contenido: bytes) -> dict:
         "estado_sp":   s(row[36]),   # AK = ESTADO SP
         "fecha_ot":    row[17].strftime("%Y-%m-%d") if row[17] and hasattr(row[17],"day") else "",
         "fecha_estado": row[14].strftime("%Y-%m-%d") if row[14] and hasattr(row[14],"day") else "",
+        "dia_mes":     int(row[10]) if row[10] and str(row[10]).isdigit() else (int(row[10]) if isinstance(row[10], (int,float)) else 0),
+        "dia_semana":  str(row[11]).strip().lower() if row[11] else "",
         })
 
     print(f"   ✓ {len(all_data)} registros procesados")

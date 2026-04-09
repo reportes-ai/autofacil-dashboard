@@ -304,6 +304,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="tab" onclick="showV('v7',this)">🔻 Funnel</div>
     <div class="tab" onclick="showV('v6',this)">💳 Saldo Precio</div>
     <div class="tab" onclick="showV('v8',this)">📋 Comparativo</div>
+    <div class="tab" onclick="showV('vhist',this)">📅 Historia</div>
     <div class="tab" id="tab-admin" onclick="showV('vadmin',this)" style="display:none;border-left:1px solid #2a4070;margin-left:8px">⚙️ Admin</div>
   </div>
 </div>
@@ -815,6 +816,7 @@ function showV(id, el) {
   if(id==='v5'&&!window._v5) { buildV5(); window._v5=true; }
   if(id==='v7') { const sd7=document.getElementById('sel-desde'); if(!sd7?.value) window.aplicarFiltro(); buildV7(); window._v7=true; }
   if(id==='v8') { const sd8=document.getElementById('sel-desde'); if(!sd8?.value) window.aplicarFiltro(); buildV8(); window._v8=true; }
+  if(id==='vhist') { initVHist(); }
   if(id==='vadmin') {
     // Verificar que solo admin puede acceder
     if (!sesionActual || sesionActual.perfil !== 'ADMINISTRADOR') {
@@ -3241,6 +3243,230 @@ function mostrarListaOps() {
   document.getElementById('t-modal-ops').innerHTML = thead + '<tbody>' + rows + '</tbody>' + tfoot;
   document.getElementById('modal-ops').style.display = 'flex';
 }
+</script>
+
+<!-- VISTA HISTORIA: ESTADÍSTICAS POR PERÍODO -->
+<div id="vhist" class="view">
+  <div class="dash-header">
+    <div class="dash-title">📅 Historia — Estadísticas por Período</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="logo-block"><div class="logo-text">Auto<span>Fácil</span></div><div class="logo-sub">Crédito Automotriz</div></div>
+    </div>
+  </div>
+
+  <!-- Filtro de rango -->
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;background:#1a2a4a;padding:10px 14px;border-radius:8px;flex-wrap:wrap">
+    <span style="color:#7bafd4;font-size:12px;font-weight:600">PERÍODO:</span>
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="color:#aac4e8;font-size:11px">Desde</label>
+      <input type="date" id="hist-desde"
+        style="padding:5px 8px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:12px"/>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <label style="color:#aac4e8;font-size:11px">Hasta</label>
+      <input type="date" id="hist-hasta"
+        style="padding:5px 8px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:12px"/>
+    </div>
+    <button onclick="buildVHist()" style="background:#2196F3;color:#fff;border:none;border-radius:6px;padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer">🔍 Aplicar</button>
+    <span id="hist-info" style="color:#4fc3f7;font-size:11px;margin-left:8px"></span>
+  </div>
+
+  <!-- Cuadros de estadísticas -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+
+    <!-- Día de la semana -->
+    <div class="card">
+      <div class="card-head">Créditos por Día de la Semana</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">INGRESADOS</div>
+          <table id="t-hist-semana-ing" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">OTORGADOS</div>
+          <table id="t-hist-semana-ot" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Semana del mes -->
+    <div class="card">
+      <div class="card-head">Créditos por Semana del Mes (1°, 2°, 3°, 4°)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">INGRESADOS</div>
+          <table id="t-hist-sem-ing" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">OTORGADOS</div>
+          <table id="t-hist-sem-ot" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Día del mes -->
+  <div class="card">
+    <div class="card-head">Créditos por Día del Mes (1–31)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:10px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">INGRESADOS</div>
+        <div style="overflow-y:auto;max-height:400px">
+          <table id="t-hist-dia-ing" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">OTORGADOS</div>
+        <div style="overflow-y:auto;max-height:400px">
+          <table id="t-hist-dia-ot" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+
+// ======== VISTA HISTORIA ========
+function initVHist() {
+  // Default: últimos 6 meses completos
+  const hoy = new Date();
+  // Último día del mes pasado
+  const hasta = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+  // Primer día de hace 6 meses
+  const desde = new Date(hasta.getFullYear(), hasta.getMonth() - 5, 1);
+
+  const fmt = d => d.toISOString().split('T')[0];
+  document.getElementById('hist-desde').value = fmt(desde);
+  document.getElementById('hist-hasta').value = fmt(hasta);
+
+  buildVHist();
+}
+
+function buildVHist() {
+  const desdeStr = document.getElementById('hist-desde').value;
+  const hastaStr = document.getElementById('hist-hasta').value;
+  if (!desdeStr || !hastaStr) return;
+
+  const desde = new Date(desdeStr);
+  const hasta = new Date(hastaStr);
+  hasta.setHours(23, 59, 59); // incluir día completo
+
+  // Actualizar info
+  const infoEl = document.getElementById('hist-info');
+  if (infoEl) {
+    const meses = Math.round((hasta - desde) / (1000 * 60 * 60 * 24 * 30));
+    infoEl.textContent = meses + ' meses — ' + window.RAW_DATA.length + ' registros totales en sistema';
+  }
+
+  // Filtrar por rango de fechas usando fecha_estado para no-otorgados y fecha_ot para otorgados
+  const rows = window.RAW_DATA.filter(r => {
+    const fechaStr = r.estado_eval === 'OTORGADO' && r.fecha_ot ? r.fecha_ot : r.fecha_estado;
+    if (!fechaStr || fechaStr === 'NO APLICA') return false;
+    const f = new Date(fechaStr);
+    return f >= desde && f <= hasta;
+  });
+
+  const rowsOt = rows.filter(r => r.estado_eval === 'OTORGADO');
+
+  // Función para calcular semana del mes a partir del dia_mes
+  function semana(dia) {
+    if (!dia || dia <= 0) return null;
+    if (dia <= 7) return '1ª Semana (días 1-7)';
+    if (dia <= 14) return '2ª Semana (días 8-14)';
+    if (dia <= 21) return '3ª Semana (días 15-21)';
+    return '4ª Semana (días 22+)';
+  }
+
+  // Orden días semana
+  const DIAS_ORD = ['lunes','martes','miércoles','miercoles','jueves','viernes','sábado','sabado','domingo'];
+  const DIAS_LABEL = {
+    'lunes': 'Lunes', 'martes': 'Martes', 'miércoles': 'Miércoles',
+    'miercoles': 'Miércoles', 'jueves': 'Jueves', 'viernes': 'Viernes',
+    'sábado': 'Sábado', 'sabado': 'Sábado', 'domingo': 'Domingo'
+  };
+  const SEMS_ORD = ['1ª Semana (días 1-7)','2ª Semana (días 8-14)','3ª Semana (días 15-21)','4ª Semana (días 22+)'];
+
+  function aggBy(arr, keyFn) {
+    const res = {};
+    arr.forEach(r => {
+      const k = keyFn(r);
+      if (!k) return;
+      res[k] = (res[k] || 0) + 1;
+    });
+    return res;
+  }
+
+  function renderTableBar(tblId, data, ordered, labelFn, maxVal) {
+    const tbl = document.getElementById(tblId);
+    if (!tbl) return;
+    const max = maxVal || Math.max(...Object.values(data), 1);
+    const thead = '<thead><tr style="background:#1a3a6a;color:#fff">' +
+      '<th style="padding:5px 8px;text-align:left;font-size:11px">Día</th>' +
+      '<th style="padding:5px 8px;text-align:right;font-size:11px">Ops</th>' +
+      '<th style="padding:5px 8px;text-align:right;font-size:11px">%</th>' +
+      '<th style="padding:5px 8px;min-width:80px;font-size:11px">Barra</th>' +
+      '</tr></thead>';
+    const total = Object.values(data).reduce((a, b) => a + b, 0) || 1;
+    const tbody = ordered
+      .filter(k => data[k] !== undefined)
+      .map((k, i) => {
+        const v = data[k] || 0;
+        const pct = (v / total * 100).toFixed(1);
+        const barW = Math.round(v / max * 80);
+        const bg = i % 2 === 0 ? '#f8faff' : '#fff';
+        return '<tr style="border-bottom:1px solid #f0f2f5;background:' + bg + '">' +
+          '<td style="padding:4px 8px;font-size:11px;font-weight:600;color:#1a3a6a">' + (labelFn ? labelFn(k) : k) + '</td>' +
+          '<td style="padding:4px 8px;text-align:right;font-size:12px;font-weight:700">' + v + '</td>' +
+          '<td style="padding:4px 8px;text-align:right;font-size:11px;color:#666">' + pct + '%</td>' +
+          '<td style="padding:4px 8px"><div style="background:#1565C0;height:10px;border-radius:3px;width:' + barW + 'px"></div></td>' +
+          '</tr>';
+      }).join('');
+    const tfoot = '<tfoot><tr style="background:#1a3a6a;color:#fff;font-weight:700">' +
+      '<td style="padding:5px 8px;font-size:11px">Total</td>' +
+      '<td style="padding:5px 8px;text-align:right;font-size:11px">' + total + '</td>' +
+      '<td colspan="2" style="padding:5px 8px;font-size:11px">100%</td>' +
+      '</tr></tfoot>';
+    tbl.innerHTML = thead + '<tbody>' + tbody + '</tbody>' + tfoot;
+  }
+
+  // ── Por día de la semana ──
+  const diaSemanaNorm = r => {
+    const d = (r.dia_semana || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (d === 'miercoles') return 'miércoles';
+    if (d === 'sabado') return 'sábado';
+    return r.dia_semana ? r.dia_semana.toLowerCase() : null;
+  };
+  const semanaDiasOrd = ['lunes','martes','miércoles','jueves','viernes','sábado','domingo'];
+
+  const aggIngSemana = aggBy(rows, diaSemanaNorm);
+  const aggOtSemana  = aggBy(rowsOt, diaSemanaNorm);
+  const maxSemana = Math.max(...semanaDiasOrd.map(d => Math.max(aggIngSemana[d]||0, aggOtSemana[d]||0)), 1);
+
+  renderTableBar('t-hist-semana-ing', aggIngSemana, semanaDiasOrd,
+    k => DIAS_LABEL[k] || k, maxSemana);
+  renderTableBar('t-hist-semana-ot', aggOtSemana, semanaDiasOrd,
+    k => DIAS_LABEL[k] || k, maxSemana);
+
+  // ── Por semana del mes ──
+  const aggIngSem = aggBy(rows, r => semana(r.dia_mes));
+  const aggOtSem  = aggBy(rowsOt, r => semana(r.dia_mes));
+  const maxSem = Math.max(...SEMS_ORD.map(s => Math.max(aggIngSem[s]||0, aggOtSem[s]||0)), 1);
+
+  renderTableBar('t-hist-sem-ing', aggIngSem, SEMS_ORD, null, maxSem);
+  renderTableBar('t-hist-sem-ot',  aggOtSem,  SEMS_ORD, null, maxSem);
+
+  // ── Por día del mes (1–31) ──
+  const diasMesOrd = Array.from({length: 31}, (_, i) => String(i + 1));
+  const aggIngDia = aggBy(rows, r => r.dia_mes ? String(r.dia_mes) : null);
+  const aggOtDia  = aggBy(rowsOt, r => r.dia_mes ? String(r.dia_mes) : null);
+  const maxDia = Math.max(...diasMesOrd.map(d => Math.max(aggIngDia[d]||0, aggOtDia[d]||0)), 1);
+
+  renderTableBar('t-hist-dia-ing', aggIngDia, diasMesOrd.filter(d => aggIngDia[d]),
+    k => 'Día ' + k, maxDia);
+  renderTableBar('t-hist-dia-ot',  aggOtDia,  diasMesOrd.filter(d => aggOtDia[d]),
+    k => 'Día ' + k, maxDia);
+}
+
 </script>
 </body>
 </html>
