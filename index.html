@@ -1214,6 +1214,7 @@ function buildRentabTable() {
     afa:a.afa+r.ing_autofacil,cd:a.cd+r.com_dealer,par:a.par+r.com_par,
     tcb:a.tcb+r.total_com_broke,seg:a.seg+r.com_seguros,ig:a.ig+r.ingreso_bruto
   }),{sal:0,fin:0,afa:0,cd:0,par:0,tcb:0,seg:0,ig:0});
+  const totOpsR = rows.length;
   const tAfaPct = tot.fin?(tot.afa/tot.fin*100).toFixed(1):0;
   const tCdPct  = tot.fin?(tot.cd/tot.fin*100).toFixed(1):0;
   const tTcbPct = tot.fin?(tot.tcb/tot.fin*100).toFixed(1):0;
