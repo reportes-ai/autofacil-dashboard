@@ -1681,10 +1681,9 @@ async function cargarDatos() {
 
     // Actualizar RAW_DATA global
     window.RAW_DATA = (datos.raw || []).map(function(r) {
-      // Si no tiene dia_mes, derivar de fecha_ot (otorgados) o fecha_estado
+      // Derivar dia_mes y dia_semana desde fecha_estado (FECHA EV, col J) para todos
       if (!r.dia_mes) {
-        const f = (r.estado_eval==='OTORGADO' && r.fecha_ot && r.fecha_ot!=='NO APLICA')
-          ? r.fecha_ot : r.fecha_estado;
+        const f = r.fecha_estado && r.fecha_estado !== 'NO APLICA' ? r.fecha_estado : null;
         if (f && f.length >= 10) {
           r.dia_mes = parseInt(f.split('-')[2]);
           const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
