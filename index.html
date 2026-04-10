@@ -3371,7 +3371,7 @@ function buildVHist() {
 
   // Función para calcular semana del mes a partir del dia_mes
   function semana(dia) {
-    if (!dia || dia <= 0) return null;
+    if (!dia || dia <= 0) return '4ª Semana (días 22+)'; // sin día → asignar a 4ª
     if (dia <= 7) return '1ª Semana (días 1-7)';
     if (dia <= 14) return '2ª Semana (días 8-14)';
     if (dia <= 21) return '3ª Semana (días 15-21)';
@@ -3468,7 +3468,7 @@ function buildVHist() {
     {key:'3ª Semana (días 15-21)', ing: aggIngSem['3ª Semana (días 15-21)']||0, ot: aggOtSem['3ª Semana (días 15-21)']||0},
     {key:'4ª Semana (días 22+)',   ing: aggIngSem['4ª Semana (días 22+)']||0,   ot: aggOtSem['4ª Semana (días 22+)']||0},
   ];
-  function renderSemProm(tblId, items) {
+  function renderSemProm(tblId, items, n) {
     const tbl = document.getElementById(tblId);
     if (!tbl) return;
     const th = '<thead><tr style="background:#1a3a6a;color:#fff;font-size:11px">' +
@@ -3476,20 +3476,24 @@ function buildVHist() {
       '<th style="padding:5px 8px;text-align:center;color:#90caf9">Ingresados</th>' +
       '<th style="padding:5px 8px;text-align:center;color:#a5d6a7">Otorgados</th>' +
       '</tr></thead>';
+    const promIng = items.map(r => r.ing/n);
+    const promOt  = items.map(r => r.ot/n);
+    const maxI = Math.max(...promIng);
+    const maxO = Math.max(...promOt);
     const tb = items.map((r,i) => {
       const bg = i%2===0?'#f8faff':'#fff';
-      const bold = r.ing === Math.max(...items.map(x=>x.ing)) ? ';color:#1565C0' : '';
-      const boldo = r.ot === Math.max(...items.map(x=>x.ot)) ? ';color:#43a047' : '';
+      const boldI = promIng[i]===maxI ? ';color:#1565C0' : '';
+      const boldO = promOt[i]===maxO  ? ';color:#43a047' : '';
       return '<tr style="border-bottom:1px solid #f0f2f5;background:'+bg+'">' +
         '<td style="padding:4px 8px;font-size:11px;font-weight:600;color:#1a3a6a">'+r.key+'</td>' +
-        '<td style="padding:4px 8px;text-align:center;font-size:12px;font-weight:700'+bold+'">'+r.ing+'</td>' +
-        '<td style="padding:4px 8px;text-align:center;font-size:12px;font-weight:700'+boldo+'">'+r.ot+'</td>' +
+        '<td style="padding:4px 8px;text-align:center;font-size:12px;font-weight:700'+boldI+'">'+(r.ing/n).toFixed(1)+'</td>' +
+        '<td style="padding:4px 8px;text-align:center;font-size:12px;font-weight:700'+boldO+'">'+(r.ot/n).toFixed(1)+'</td>' +
         '</tr>';
     }).join('');
     tbl.innerHTML = th + '<tbody>' + tb + '</tbody>';
   }
-  renderSemProm('t-hist-sem-prom-izq', semResumen.slice(0,2));
-  renderSemProm('t-hist-sem-prom-der', semResumen.slice(2,4));
+  renderSemProm('t-hist-sem-prom-izq', semResumen.slice(0,2), nMesesSemana);
+  renderSemProm('t-hist-sem-prom-der', semResumen.slice(2,4), nMesesSemana);
 
   // ── Por día del mes (1–31) ──
   const diasMesOrd = Array.from({length: 31}, (_, i) => String(i + 1));
