@@ -3306,7 +3306,7 @@ function mostrarListaOps() {
   <!-- Día del mes -->
   <div class="card">
     <div class="card-head">Créditos por Día del Mes (1–31)</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;padding:10px">
       <div>
         <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">INGRESADOS</div>
         <div style="overflow-y:auto;max-height:400px">
@@ -3317,6 +3317,12 @@ function mostrarListaOps() {
         <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">OTORGADOS</div>
         <div style="overflow-y:auto;max-height:400px">
           <table id="t-hist-dia-ot" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#4fc3f7;margin-bottom:8px;text-align:center">PROMEDIO MENSUAL</div>
+        <div style="overflow-y:auto;max-height:400px">
+          <table id="t-hist-dia-prom" style="width:100%;border-collapse:collapse;font-size:12px"></table>
         </div>
       </div>
     </div>
@@ -3392,7 +3398,36 @@ function buildVHist() {
     return res;
   }
 
-  function renderTableBar(tblId, data, ordered, labelFn, maxVal) {
+  function renderTableProm(tblId, dataIng, dataOt, ordered, labelFn, nMeses) {
+  const tbl = document.getElementById(tblId);
+  if (!tbl) return;
+  const n = nMeses || 1;
+  const thead = '<thead><tr style="background:#0d47a1;color:#fff;position:sticky;top:0;z-index:1">' +
+    '<th style="padding:5px 8px;text-align:left;font-size:11px">Período</th>' +
+    '<th style="padding:5px 8px;text-align:center;font-size:11px">Ing. Prom.</th>' +
+    '<th style="padding:5px 8px;text-align:center;font-size:11px">Ot. Prom.</th>' +
+    '</tr></thead>';
+  const tbody = ordered.map((k, i) => {
+    const ing = (dataIng[k] || 0);
+    const ot  = (dataOt[k]  || 0);
+    const bg = i%2===0?'#f0f5ff':'#fff';
+    return '<tr style="border-bottom:1px solid #e8edf5;background:'+bg+'">' +
+      '<td style="padding:4px 8px;font-size:11px;font-weight:600;color:#1a3a6a">'+(labelFn?labelFn(k):k)+'</td>' +
+      '<td style="padding:4px 8px;text-align:center;font-size:12px;font-weight:700;color:#1565C0">'+(ing/n).toFixed(1)+'</td>' +
+      '<td style="padding:4px 8px;text-align:center;font-size:12px;font-weight:700;color:#43a047">'+(ot/n).toFixed(1)+'</td>' +
+      '</tr>';
+  }).join('');
+  const totIng = ordered.reduce((a,k)=>a+(dataIng[k]||0),0);
+  const totOt  = ordered.reduce((a,k)=>a+(dataOt[k]||0),0);
+  const tfoot = '<tfoot><tr style="background:#1a3a6a;color:#fff;font-weight:700;font-size:11px">' +
+    '<td style="padding:5px 8px">Total Prom.</td>' +
+    '<td style="padding:5px 8px;text-align:center;color:#90caf9">'+(totIng/n).toFixed(1)+'</td>' +
+    '<td style="padding:5px 8px;text-align:center;color:#a5d6a7">'+(totOt/n).toFixed(1)+'</td>' +
+    '</tr></tfoot>';
+  tbl.innerHTML = thead+'<tbody>'+tbody+'</tbody>'+tfoot;
+}
+
+function renderTableBar(tblId, data, ordered, labelFn, maxVal) {
     const tbl = document.getElementById(tblId);
     if (!tbl) return;
     const max = maxVal || Math.max(...Object.values(data), 1);
@@ -3448,6 +3483,11 @@ function buildVHist() {
   renderTableBar('t-hist-semana-ot', aggOtSemana, semanaDiasOrd,
     k => DIAS_LABEL[k] || k, maxSemana);
 
+  // Promedio mensual día de semana
+  const nMesesSemana = [...new Set(rows.map(r=>r.mes))].length || 1;
+  renderTableProm('t-hist-semana-prom', aggIngSemana, aggOtSemana, semanaDiasOrd,
+    k => DIAS_LABEL[k]||k, nMesesSemana);
+
   // ── Por semana del mes ──
   const aggIngSem = aggBy(rows, r => semana(r.dia_mes));
   const aggOtSem  = aggBy(rowsOt, r => semana(r.dia_mes));
@@ -3455,6 +3495,10 @@ function buildVHist() {
 
   renderTableBar('t-hist-sem-ing', aggIngSem, SEMS_ORD, null, maxSem);
   renderTableBar('t-hist-sem-ot',  aggOtSem,  SEMS_ORD, null, maxSem);
+
+  // Promedio mensual semana del mes
+  renderTableProm('t-hist-sem-prom', aggIngSem, aggOtSem, SEMS_ORD.filter(s=>aggIngSem[s]||aggOtSem[s]),
+    null, nMesesSemana);
 
   // ── Por día del mes (1–31) ──
   const diasMesOrd = Array.from({length: 31}, (_, i) => String(i + 1));
@@ -3466,6 +3510,10 @@ function buildVHist() {
     k => 'Día ' + k, maxDia);
   renderTableBar('t-hist-dia-ot',  aggOtDia,  diasMesOrd.filter(d => aggOtDia[d]),
     k => 'Día ' + k, maxDia);
+
+  // Promedio mensual día del mes
+  renderTableProm('t-hist-dia-prom', aggIngDia, aggOtDia, diasMesOrd.filter(d=>aggIngDia[d]||aggOtDia[d]),
+    k => 'Día '+k, nMesesSemana);
 }
 
 </script>
