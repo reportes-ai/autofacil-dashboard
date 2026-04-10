@@ -3396,7 +3396,7 @@ function buildVHist() {
     const tbl = document.getElementById(tblId);
     if (!tbl) return;
     const max = maxVal || Math.max(...Object.values(data), 1);
-    const thead = '<thead><tr style="background:#1a3a6a;color:#fff">' +
+    const thead = '<thead><tr style="background:#1a3a6a;color:#fff;position:sticky;top:0;z-index:1">' +
       '<th style="padding:5px 8px;text-align:left;font-size:11px">Día</th>' +
       '<th style="padding:5px 8px;text-align:right;font-size:11px">Ops</th>' +
       '<th style="padding:5px 8px;text-align:right;font-size:11px">%</th>' +
