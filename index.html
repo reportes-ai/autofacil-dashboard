@@ -1679,7 +1679,19 @@ async function cargarDatos() {
     (datos.raw||[]).forEach(r => { opMap[r.op] = r; });
 
     // Actualizar RAW_DATA global
-    window.RAW_DATA = datos.raw || [];
+    window.RAW_DATA = (datos.raw || []).map(function(r) {
+      // Si no tiene dia_mes, derivar de fecha_ot (otorgados) o fecha_estado
+      if (!r.dia_mes) {
+        const f = (r.estado_eval==='OTORGADO' && r.fecha_ot && r.fecha_ot!=='NO APLICA')
+          ? r.fecha_ot : r.fecha_estado;
+        if (f && f.length >= 10) {
+          r.dia_mes = parseInt(f.split('-')[2]);
+          const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+          r.dia_semana = dias[new Date(f).getDay()];
+        }
+      }
+      return r;
+    });
 
     // Recalcular DASH desde raw para el período por defecto (último mes completo)
     const meses = [...new Set(window.RAW_DATA.map(r=>r.mes))].sort();
@@ -3371,10 +3383,11 @@ function buildVHist() {
 
   // Función para calcular semana del mes a partir del dia_mes
   function semana(dia) {
-    if (!dia || dia <= 0) return '4ª Semana (días 22+)'; // sin día → asignar a 4ª
-    if (dia <= 7) return '1ª Semana (días 1-7)';
-    if (dia <= 14) return '2ª Semana (días 8-14)';
-    if (dia <= 21) return '3ª Semana (días 15-21)';
+    const d = parseInt(dia);
+    if (!d || isNaN(d) || d <= 0) return '4ª Semana (días 22+)';
+    if (d <= 7)  return '1ª Semana (días 1-7)';
+    if (d <= 14) return '2ª Semana (días 8-14)';
+    if (d <= 21) return '3ª Semana (días 15-21)';
     return '4ª Semana (días 22+)';
   }
 
