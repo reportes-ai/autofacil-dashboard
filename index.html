@@ -3259,13 +3259,11 @@ function mostrarListaOps() {
     <span style="color:#7bafd4;font-size:12px;font-weight:600">PERÍODO:</span>
     <div style="display:flex;align-items:center;gap:8px">
       <label style="color:#aac4e8;font-size:11px">Desde</label>
-      <input type="date" id="hist-desde"
-        style="padding:5px 8px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:12px"/>
+      <select id="hist-desde" style="padding:5px 8px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:12px;min-width:110px"></select>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <label style="color:#aac4e8;font-size:11px">Hasta</label>
-      <input type="date" id="hist-hasta"
-        style="padding:5px 8px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:12px"/>
+      <select id="hist-hasta" style="padding:5px 8px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:12px;min-width:110px"></select>
     </div>
     <button onclick="buildVHist()" style="background:#2196F3;color:#fff;border:none;border-radius:6px;padding:6px 16px;font-size:12px;font-weight:600;cursor:pointer">🔍 Aplicar</button>
     <span id="hist-info" style="color:#4fc3f7;font-size:11px;margin-left:8px"></span>
@@ -3328,16 +3326,27 @@ function mostrarListaOps() {
 
 // ======== VISTA HISTORIA ========
 function initVHist() {
-  // Default: últimos 6 meses completos
-  const hoy = new Date();
-  // Último día del mes pasado
-  const hasta = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
-  // Primer día de hace 6 meses
-  const desde = new Date(hasta.getFullYear(), hasta.getMonth() - 5, 1);
+  const mesesDisp = [...new Set(window.RAW_DATA.map(r=>r.mes))].sort();
+  const mN = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const fmtM = k => { const [y,m]=k.split('-'); return mN[parseInt(m)-1]+' '+y; };
 
-  const fmt = d => d.toISOString().split('T')[0];
-  document.getElementById('hist-desde').value = fmt(desde);
-  document.getElementById('hist-hasta').value = fmt(hasta);
+  ['hist-desde','hist-hasta'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    sel.innerHTML = mesesDisp.map(m=>'<option value="'+m+'">'+fmtM(m)+'</option>').join('');
+  });
+
+  // Default: 6 meses hasta el mes anterior
+  const hoy = new Date();
+  const hastaKey = new Date(hoy.getFullYear(), hoy.getMonth()-1, 1);
+  const hastaStr = hastaKey.getFullYear()+'-'+String(hastaKey.getMonth()+1).padStart(2,'0');
+  const desdeKey = new Date(hastaKey.getFullYear(), hastaKey.getMonth()-5, 1);
+  const desdeStr = desdeKey.getFullYear()+'-'+String(desdeKey.getMonth()+1).padStart(2,'0');
+
+  const sd = document.getElementById('hist-desde');
+  const sh = document.getElementById('hist-hasta');
+  if (sd) sd.value = mesesDisp.includes(desdeStr) ? desdeStr : mesesDisp[Math.max(0,mesesDisp.length-6)];
+  if (sh) sh.value = mesesDisp.includes(hastaStr) ? hastaStr : mesesDisp[mesesDisp.length-1];
 
   buildVHist();
 }
@@ -3347,24 +3356,11 @@ function buildVHist() {
   const hastaStr = document.getElementById('hist-hasta').value;
   if (!desdeStr || !hastaStr) return;
 
-  const desde = new Date(desdeStr);
-  const hasta = new Date(hastaStr);
-  hasta.setHours(23, 59, 59); // incluir día completo
-
-  // Actualizar info
+  // Filtrar por campo 'mes' (YYYY-MM) — siempre disponible
+  const rows = window.RAW_DATA.filter(r => r.mes >= desdeStr && r.mes <= hastaStr);
+  const nMeses = [...new Set(rows.map(r=>r.mes))].length;
   const infoEl = document.getElementById('hist-info');
-  if (infoEl) {
-    const meses = Math.round((hasta - desde) / (1000 * 60 * 60 * 24 * 30));
-    infoEl.textContent = meses + ' meses — ' + window.RAW_DATA.length + ' registros totales en sistema';
-  }
-
-  // Filtrar por rango de fechas usando fecha_estado para no-otorgados y fecha_ot para otorgados
-  const rows = window.RAW_DATA.filter(r => {
-    const fechaStr = r.estado_eval === 'OTORGADO' && r.fecha_ot ? r.fecha_ot : r.fecha_estado;
-    if (!fechaStr || fechaStr === 'NO APLICA') return false;
-    const f = new Date(fechaStr);
-    return f >= desde && f <= hasta;
-  });
+  if (infoEl) infoEl.textContent = nMeses + ' meses — ' + rows.length + ' registros en el período';
 
   const rowsOt = rows.filter(r => r.estado_eval === 'OTORGADO');
 
