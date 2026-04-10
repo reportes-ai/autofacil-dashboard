@@ -3290,29 +3290,42 @@ function mostrarListaOps() {
     <!-- Semana del mes -->
     <div class="card">
       <div class="card-head">Créditos por Semana del Mes (1ª, 2ª, 3ª, 4ª)</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;padding:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px">
         <div>
-          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">1ª Semana (1-7)</div>
-          <table id="t-hist-s1" style="width:100%;border-collapse:collapse;font-size:11px"></table>
+          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">INGRESADOS</div>
+          <table id="t-hist-sem-ing" style="width:100%;border-collapse:collapse;font-size:12px"></table>
         </div>
         <div>
-          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">2ª Semana (8-14)</div>
-          <table id="t-hist-s2" style="width:100%;border-collapse:collapse;font-size:11px"></table>
+          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">OTORGADOS</div>
+          <table id="t-hist-sem-ot" style="width:100%;border-collapse:collapse;font-size:12px"></table>
         </div>
-        <div>
-          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">3ª Semana (15-21)</div>
-          <table id="t-hist-s3" style="width:100%;border-collapse:collapse;font-size:11px"></table>
-        </div>
-        <div>
-          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">4ª Semana (22+)</div>
-          <table id="t-hist-s4" style="width:100%;border-collapse:collapse;font-size:11px"></table>
-        </div>
-        <div style="grid-column:1/-1;margin-top:6px">
+        <div style="grid-column:1/-1;margin-top:8px">
           <div style="font-size:11px;font-weight:700;color:#4fc3f7;margin-bottom:6px">PROMEDIO MENSUAL</div>
           <table id="t-hist-sem-prom" style="width:100%;border-collapse:collapse;font-size:12px"></table>
         </div>
-        <table id="t-hist-sem-ing" style="display:none"></table>
-        <table id="t-hist-sem-ot" style="display:none"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Semana del mes — detalle por día de semana dentro de cada semana -->
+  <div class="card" style="margin-top:14px">
+    <div class="card-head">Créditos por Semana del Mes — Detalle por Día</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;padding:10px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">1ª Semana (días 1-7)</div>
+        <table id="t-hist-s1" style="width:100%;border-collapse:collapse;font-size:11px"></table>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">2ª Semana (días 8-14)</div>
+        <table id="t-hist-s2" style="width:100%;border-collapse:collapse;font-size:11px"></table>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">3ª Semana (días 15-21)</div>
+        <table id="t-hist-s3" style="width:100%;border-collapse:collapse;font-size:11px"></table>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">4ª Semana (días 22+)</div>
+        <table id="t-hist-s4" style="width:100%;border-collapse:collapse;font-size:11px"></table>
       </div>
     </div>
   </div>
