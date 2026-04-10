@@ -3448,6 +3448,8 @@ function buildVHist() {
     tbl.innerHTML = thead + '<tbody>' + tbody + '</tbody>' + tfoot;
   }
 
+  const nMesesSemana = nMeses;
+
   // ── Por día de la semana ──
   const diaSemanaNorm = r => {
     const d = (r.dia_semana || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
