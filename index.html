@@ -3289,7 +3289,7 @@ function mostrarListaOps() {
 
     <!-- Semana del mes -->
     <div class="card">
-      <div class="card-head">Créditos por Semana del Mes (1ª, 2ª, 3ª, 4ª)</div>
+      <div class="card-head">Créditos por Semana del Mes (1°, 2°, 3°, 4°)</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px">
         <div>
           <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">INGRESADOS</div>
@@ -3299,33 +3299,11 @@ function mostrarListaOps() {
           <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">OTORGADOS</div>
           <table id="t-hist-sem-ot" style="width:100%;border-collapse:collapse;font-size:12px"></table>
         </div>
-        <div style="grid-column:1/-1;margin-top:8px">
-          <div style="font-size:11px;font-weight:700;color:#4fc3f7;margin-bottom:6px">PROMEDIO MENSUAL</div>
-          <table id="t-hist-sem-prom" style="width:100%;border-collapse:collapse;font-size:12px"></table>
-        </div>
       </div>
-    </div>
-  </div>
-
-  <!-- Semana del mes — detalle por día de semana dentro de cada semana -->
-  <div class="card" style="margin-top:14px">
-    <div class="card-head">Créditos por Semana del Mes — Detalle por Día</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;padding:10px">
-      <div>
-        <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">1ª Semana (días 1-7)</div>
-        <table id="t-hist-s1" style="width:100%;border-collapse:collapse;font-size:11px"></table>
-      </div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">2ª Semana (días 8-14)</div>
-        <table id="t-hist-s2" style="width:100%;border-collapse:collapse;font-size:11px"></table>
-      </div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">3ª Semana (días 15-21)</div>
-        <table id="t-hist-s3" style="width:100%;border-collapse:collapse;font-size:11px"></table>
-      </div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">4ª Semana (días 22+)</div>
-        <table id="t-hist-s4" style="width:100%;border-collapse:collapse;font-size:11px"></table>
+      <!-- Cuadro promedio por semana debajo -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 10px 10px 10px">
+        <table id="t-hist-sem-prom-izq" style="width:100%;border-collapse:collapse;font-size:11px"></table>
+        <table id="t-hist-sem-prom-der" style="width:100%;border-collapse:collapse;font-size:11px"></table>
       </div>
     </div>
   </div>
@@ -3333,7 +3311,7 @@ function mostrarListaOps() {
   <!-- Día del mes -->
   <div class="card">
     <div class="card-head">Créditos por Día del Mes (1–31)</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;padding:10px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:10px">
       <div>
         <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">INGRESADOS</div>
         <div style="overflow-y:auto;max-height:400px">
@@ -3344,12 +3322,6 @@ function mostrarListaOps() {
         <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">OTORGADOS</div>
         <div style="overflow-y:auto;max-height:400px">
           <table id="t-hist-dia-ot" style="width:100%;border-collapse:collapse;font-size:12px"></table>
-        </div>
-      </div>
-      <div>
-        <div style="font-size:11px;font-weight:700;color:#4fc3f7;margin-bottom:8px;text-align:center">PROMEDIO MENSUAL</div>
-        <div style="overflow-y:auto;max-height:400px">
-          <table id="t-hist-dia-prom" style="width:100%;border-collapse:collapse;font-size:12px"></table>
         </div>
       </div>
     </div>
@@ -3425,36 +3397,7 @@ function buildVHist() {
     return res;
   }
 
-  function renderTableProm(tblId, dataIng, dataOt, ordered, labelFn, nMeses) {
-  const tbl = document.getElementById(tblId);
-  if (!tbl) return;
-  const n = nMeses || 1;
-  const thead = '<thead><tr style="background:#0d47a1;color:#fff;position:sticky;top:0;z-index:1">' +
-    '<th style="padding:5px 8px;text-align:left;font-size:11px">Período</th>' +
-    '<th style="padding:5px 8px;text-align:center;font-size:11px">Ing. Prom.</th>' +
-    '<th style="padding:5px 8px;text-align:center;font-size:11px">Ot. Prom.</th>' +
-    '</tr></thead>';
-  const tbody = ordered.map((k, i) => {
-    const ing = (dataIng[k] || 0);
-    const ot  = (dataOt[k]  || 0);
-    const bg = i%2===0?'#f0f5ff':'#fff';
-    return '<tr style="border-bottom:1px solid #e8edf5;background:'+bg+'">' +
-      '<td style="padding:4px 8px;font-size:11px;font-weight:600;color:#1a3a6a">'+(labelFn?labelFn(k):k)+'</td>' +
-      '<td style="padding:4px 8px;text-align:center;font-size:12px;font-weight:700;color:#1565C0">'+(ing/n).toFixed(1)+'</td>' +
-      '<td style="padding:4px 8px;text-align:center;font-size:12px;font-weight:700;color:#43a047">'+(ot/n).toFixed(1)+'</td>' +
-      '</tr>';
-  }).join('');
-  const totIng = ordered.reduce((a,k)=>a+(dataIng[k]||0),0);
-  const totOt  = ordered.reduce((a,k)=>a+(dataOt[k]||0),0);
-  const tfoot = '<tfoot><tr style="background:#1a3a6a;color:#fff;font-weight:700;font-size:11px">' +
-    '<td style="padding:5px 8px">Total Prom.</td>' +
-    '<td style="padding:5px 8px;text-align:center;color:#90caf9">'+(totIng/n).toFixed(1)+'</td>' +
-    '<td style="padding:5px 8px;text-align:center;color:#a5d6a7">'+(totOt/n).toFixed(1)+'</td>' +
-    '</tr></tfoot>';
-  tbl.innerHTML = thead+'<tbody>'+tbody+'</tbody>'+tfoot;
-}
-
-function renderTableBar(tblId, data, ordered, labelFn, maxVal) {
+  function renderTableBar(tblId, data, ordered, labelFn, maxVal) {
     const tbl = document.getElementById(tblId);
     if (!tbl) return;
     const max = maxVal || Math.max(...Object.values(data), 1);
@@ -3510,11 +3453,6 @@ function renderTableBar(tblId, data, ordered, labelFn, maxVal) {
   renderTableBar('t-hist-semana-ot', aggOtSemana, semanaDiasOrd,
     k => DIAS_LABEL[k] || k, maxSemana);
 
-  // Promedio mensual día de semana
-  const nMesesSemana = [...new Set(rows.map(r=>r.mes))].length || 1;
-  renderTableProm('t-hist-semana-prom', aggIngSemana, aggOtSemana, semanaDiasOrd,
-    k => DIAS_LABEL[k]||k, nMesesSemana);
-
   // ── Por semana del mes ──
   const aggIngSem = aggBy(rows, r => semana(r.dia_mes));
   const aggOtSem  = aggBy(rowsOt, r => semana(r.dia_mes));
@@ -3523,54 +3461,35 @@ function renderTableBar(tblId, data, ordered, labelFn, maxVal) {
   renderTableBar('t-hist-sem-ing', aggIngSem, SEMS_ORD, null, maxSem);
   renderTableBar('t-hist-sem-ot',  aggOtSem,  SEMS_ORD, null, maxSem);
 
-  // 4 tablas individuales por semana
-  const semDefs = [
-    {id:'t-hist-s1', key:'1ª (1-7)'},
-    {id:'t-hist-s2', key:'2ª (8-14)'},
-    {id:'t-hist-s3', key:'3ª (15-21)'},
-    {id:'t-hist-s4', key:'4ª (22+)'}
+  // Cuadro resumen: 4 semanas en 2 tablas lado a lado (1ª+2ª izq, 3ª+4ª der)
+  const semResumen = [
+    {key:'1ª Semana (días 1-7)',   ing: aggIngSem['1ª Semana (días 1-7)']||0,   ot: aggOtSem['1ª Semana (días 1-7)']||0},
+    {key:'2ª Semana (días 8-14)',  ing: aggIngSem['2ª Semana (días 8-14)']||0,  ot: aggOtSem['2ª Semana (días 8-14)']||0},
+    {key:'3ª Semana (días 15-21)', ing: aggIngSem['3ª Semana (días 15-21)']||0, ot: aggOtSem['3ª Semana (días 15-21)']||0},
+    {key:'4ª Semana (días 22+)',   ing: aggIngSem['4ª Semana (días 22+)']||0,   ot: aggOtSem['4ª Semana (días 22+)']||0},
   ];
-  const diasSem = {
-    '1ª (1-7)':  [1,2,3,4,5,6,7],
-    '2ª (8-14)': [8,9,10,11,12,13,14],
-    '3ª (15-21)':[15,16,17,18,19,20,21],
-    '4ª (22+)':  [22,23,24,25,26,27,28,29,30,31]
-  };
-  semDefs.forEach(sd => {
-    const tbl = document.getElementById(sd.id);
+  function renderSemProm(tblId, items) {
+    const tbl = document.getElementById(tblId);
     if (!tbl) return;
-    const dias = diasSem[sd.key];
-    // Agrupar por día de semana dentro de esta semana
-    const rowsSem = rows.filter(r => dias.includes(r.dia_mes));
-    const rowsOtSem = rowsOt.filter(r => dias.includes(r.dia_mes));
-    const aggS = aggBy(rowsSem, normDia);
-    const aggSOt = aggBy(rowsOtSem, normDia);
-    const thead = '<thead><tr style="background:#1a3a6a;color:#fff;font-size:10px;position:sticky;top:0">' +
-      '<th style="padding:4px 6px">Día</th>' +
-      '<th style="padding:4px 6px;text-align:center;color:#90caf9">Ing.</th>' +
-      '<th style="padding:4px 6px;text-align:center;color:#a5d6a7">Ot.</th>' +
+    const th = '<thead><tr style="background:#1a3a6a;color:#fff;font-size:11px">' +
+      '<th style="padding:5px 8px;text-align:left">Semana</th>' +
+      '<th style="padding:5px 8px;text-align:center;color:#90caf9">Ingresados</th>' +
+      '<th style="padding:5px 8px;text-align:center;color:#a5d6a7">Otorgados</th>' +
       '</tr></thead>';
-    const tbody = semanaDiasOrd.filter(d=>aggS[d]||aggSOt[d]).map((d,i)=>{
+    const tb = items.map((r,i) => {
       const bg = i%2===0?'#f8faff':'#fff';
+      const bold = r.ing === Math.max(...items.map(x=>x.ing)) ? ';color:#1565C0' : '';
+      const boldo = r.ot === Math.max(...items.map(x=>x.ot)) ? ';color:#43a047' : '';
       return '<tr style="border-bottom:1px solid #f0f2f5;background:'+bg+'">' +
-        '<td style="padding:3px 6px;font-size:11px;font-weight:600;color:#1a3a6a">'+(DIAS_LABEL[d]||d)+'</td>' +
-        '<td style="padding:3px 6px;text-align:center;font-size:11px;font-weight:700;color:#1565C0">'+(aggS[d]||0)+'</td>' +
-        '<td style="padding:3px 6px;text-align:center;font-size:11px;font-weight:700;color:#43a047">'+(aggSOt[d]||0)+'</td>' +
+        '<td style="padding:4px 8px;font-size:11px;font-weight:600;color:#1a3a6a">'+r.key+'</td>' +
+        '<td style="padding:4px 8px;text-align:center;font-size:12px;font-weight:700'+bold+'">'+r.ing+'</td>' +
+        '<td style="padding:4px 8px;text-align:center;font-size:12px;font-weight:700'+boldo+'">'+r.ot+'</td>' +
         '</tr>';
     }).join('');
-    const totI = semanaDiasOrd.reduce((a,d)=>a+(aggS[d]||0),0);
-    const totO = semanaDiasOrd.reduce((a,d)=>a+(aggSOt[d]||0),0);
-    const tfoot = '<tfoot><tr style="background:#1a3a6a;color:#fff;font-size:11px;font-weight:700">' +
-      '<td style="padding:4px 6px">Total</td>' +
-      '<td style="padding:4px 6px;text-align:center;color:#90caf9">'+totI+'</td>' +
-      '<td style="padding:4px 6px;text-align:center;color:#a5d6a7">'+totO+'</td>' +
-      '</tr></tfoot>';
-    tbl.innerHTML = thead+'<tbody>'+tbody+'</tbody>'+tfoot;
-  });
-
-  // Promedio mensual semana del mes
-  renderTableProm('t-hist-sem-prom', aggIngSem, aggOtSem, SEMS_ORD.filter(s=>aggIngSem[s]||aggOtSem[s]),
-    null, nMesesSemana);
+    tbl.innerHTML = th + '<tbody>' + tb + '</tbody>';
+  }
+  renderSemProm('t-hist-sem-prom-izq', semResumen.slice(0,2));
+  renderSemProm('t-hist-sem-prom-der', semResumen.slice(2,4));
 
   // ── Por día del mes (1–31) ──
   const diasMesOrd = Array.from({length: 31}, (_, i) => String(i + 1));
@@ -3582,10 +3501,6 @@ function renderTableBar(tblId, data, ordered, labelFn, maxVal) {
     k => 'Día ' + k, maxDia);
   renderTableBar('t-hist-dia-ot',  aggOtDia,  diasMesOrd.filter(d => aggOtDia[d]),
     k => 'Día ' + k, maxDia);
-
-  // Promedio mensual día del mes
-  renderTableProm('t-hist-dia-prom', aggIngDia, aggOtDia, diasMesOrd.filter(d=>aggIngDia[d]||aggOtDia[d]),
-    k => 'Día '+k, nMesesSemana);
 }
 
 </script>
