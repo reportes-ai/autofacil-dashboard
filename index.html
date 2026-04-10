@@ -3404,7 +3404,7 @@ function buildVHist() {
       '<th style="padding:5px 8px;text-align:left;font-size:11px">Día</th>' +
       '<th style="padding:5px 8px;text-align:right;font-size:11px">Ops</th>' +
       '<th style="padding:5px 8px;text-align:right;font-size:11px">%</th>' +
-      '<th style="padding:5px 8px;min-width:80px;font-size:11px">Barra</th>' +
+      '<th style="padding:5px 8px;min-width:110px;font-size:11px">Barra</th>' +
       '</tr></thead>';
     const total = Object.values(data).reduce((a, b) => a + b, 0) || 1;
     const tbody = ordered
@@ -3412,13 +3412,18 @@ function buildVHist() {
       .map((k, i) => {
         const v = data[k] || 0;
         const pct = (v / total * 100).toFixed(1);
-        const barW = Math.round(v / max * 80);
+        const barW = Math.round(parseFloat(pct) * 0.8); // proporcional al % real
         const bg = i % 2 === 0 ? '#f8faff' : '#fff';
+        const isMax = v === max;
         return '<tr style="border-bottom:1px solid #f0f2f5;background:' + bg + '">' +
           '<td style="padding:4px 8px;font-size:11px;font-weight:600;color:#1a3a6a">' + (labelFn ? labelFn(k) : k) + '</td>' +
-          '<td style="padding:4px 8px;text-align:right;font-size:12px;font-weight:700">' + v + '</td>' +
+          '<td style="padding:4px 8px;text-align:right;font-size:12px;font-weight:700' + (isMax ? ';color:#1565C0' : '') + '">' + v + '</td>' +
           '<td style="padding:4px 8px;text-align:right;font-size:11px;color:#666">' + pct + '%</td>' +
-          '<td style="padding:4px 8px"><div style="background:#1565C0;height:10px;border-radius:3px;width:' + barW + 'px"></div></td>' +
+          '<td style="padding:4px 8px">' +
+            '<div style="width:100px;background:#e8edf5;border-radius:3px;height:10px">' +
+              '<div style="background:#1565C0;height:10px;border-radius:3px;width:' + barW + 'px"></div>' +
+            '</div>' +
+          '</td>' +
           '</tr>';
       }).join('');
     const tfoot = '<tfoot><tr style="background:#1a3a6a;color:#fff;font-weight:700">' +
