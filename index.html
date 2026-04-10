@@ -3289,16 +3289,30 @@ function mostrarListaOps() {
 
     <!-- Semana del mes -->
     <div class="card">
-      <div class="card-head">Créditos por Semana del Mes (1°, 2°, 3°, 4°)</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px">
+      <div class="card-head">Créditos por Semana del Mes (1ª, 2ª, 3ª, 4ª)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;padding:10px">
         <div>
-          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">INGRESADOS</div>
-          <table id="t-hist-sem-ing" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">1ª Semana (1-7)</div>
+          <table id="t-hist-s1" style="width:100%;border-collapse:collapse;font-size:11px"></table>
         </div>
         <div>
-          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px;text-align:center">OTORGADOS</div>
-          <table id="t-hist-sem-ot" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">2ª Semana (8-14)</div>
+          <table id="t-hist-s2" style="width:100%;border-collapse:collapse;font-size:11px"></table>
         </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">3ª Semana (15-21)</div>
+          <table id="t-hist-s3" style="width:100%;border-collapse:collapse;font-size:11px"></table>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:6px;text-align:center">4ª Semana (22+)</div>
+          <table id="t-hist-s4" style="width:100%;border-collapse:collapse;font-size:11px"></table>
+        </div>
+        <div style="grid-column:1/-1;margin-top:6px">
+          <div style="font-size:11px;font-weight:700;color:#4fc3f7;margin-bottom:6px">PROMEDIO MENSUAL</div>
+          <table id="t-hist-sem-prom" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+        </div>
+        <table id="t-hist-sem-ing" style="display:none"></table>
+        <table id="t-hist-sem-ot" style="display:none"></table>
       </div>
     </div>
   </div>
@@ -3495,6 +3509,51 @@ function renderTableBar(tblId, data, ordered, labelFn, maxVal) {
 
   renderTableBar('t-hist-sem-ing', aggIngSem, SEMS_ORD, null, maxSem);
   renderTableBar('t-hist-sem-ot',  aggOtSem,  SEMS_ORD, null, maxSem);
+
+  // 4 tablas individuales por semana
+  const semDefs = [
+    {id:'t-hist-s1', key:'1ª (1-7)'},
+    {id:'t-hist-s2', key:'2ª (8-14)'},
+    {id:'t-hist-s3', key:'3ª (15-21)'},
+    {id:'t-hist-s4', key:'4ª (22+)'}
+  ];
+  const diasSem = {
+    '1ª (1-7)':  [1,2,3,4,5,6,7],
+    '2ª (8-14)': [8,9,10,11,12,13,14],
+    '3ª (15-21)':[15,16,17,18,19,20,21],
+    '4ª (22+)':  [22,23,24,25,26,27,28,29,30,31]
+  };
+  semDefs.forEach(sd => {
+    const tbl = document.getElementById(sd.id);
+    if (!tbl) return;
+    const dias = diasSem[sd.key];
+    // Agrupar por día de semana dentro de esta semana
+    const rowsSem = rows.filter(r => dias.includes(r.dia_mes));
+    const rowsOtSem = rowsOt.filter(r => dias.includes(r.dia_mes));
+    const aggS = aggBy(rowsSem, normDia);
+    const aggSOt = aggBy(rowsOtSem, normDia);
+    const thead = '<thead><tr style="background:#1a3a6a;color:#fff;font-size:10px;position:sticky;top:0">' +
+      '<th style="padding:4px 6px">Día</th>' +
+      '<th style="padding:4px 6px;text-align:center;color:#90caf9">Ing.</th>' +
+      '<th style="padding:4px 6px;text-align:center;color:#a5d6a7">Ot.</th>' +
+      '</tr></thead>';
+    const tbody = semanaDiasOrd.filter(d=>aggS[d]||aggSOt[d]).map((d,i)=>{
+      const bg = i%2===0?'#f8faff':'#fff';
+      return '<tr style="border-bottom:1px solid #f0f2f5;background:'+bg+'">' +
+        '<td style="padding:3px 6px;font-size:11px;font-weight:600;color:#1a3a6a">'+(DIAS_LABEL[d]||d)+'</td>' +
+        '<td style="padding:3px 6px;text-align:center;font-size:11px;font-weight:700;color:#1565C0">'+(aggS[d]||0)+'</td>' +
+        '<td style="padding:3px 6px;text-align:center;font-size:11px;font-weight:700;color:#43a047">'+(aggSOt[d]||0)+'</td>' +
+        '</tr>';
+    }).join('');
+    const totI = semanaDiasOrd.reduce((a,d)=>a+(aggS[d]||0),0);
+    const totO = semanaDiasOrd.reduce((a,d)=>a+(aggSOt[d]||0),0);
+    const tfoot = '<tfoot><tr style="background:#1a3a6a;color:#fff;font-size:11px;font-weight:700">' +
+      '<td style="padding:4px 6px">Total</td>' +
+      '<td style="padding:4px 6px;text-align:center;color:#90caf9">'+totI+'</td>' +
+      '<td style="padding:4px 6px;text-align:center;color:#a5d6a7">'+totO+'</td>' +
+      '</tr></tfoot>';
+    tbl.innerHTML = thead+'<tbody>'+tbody+'</tbody>'+tfoot;
+  });
 
   // Promedio mensual semana del mes
   renderTableProm('t-hist-sem-prom', aggIngSem, aggOtSem, SEMS_ORD.filter(s=>aggIngSem[s]||aggOtSem[s]),
