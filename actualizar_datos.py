@@ -23,7 +23,8 @@ import os
 import io
 import sys
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
+import re as _re
 
 # ============================================================
 # CONFIGURACIÓN — edita estos valores o usa variables de entorno
@@ -101,22 +102,16 @@ def procesar_excel(contenido: bytes) -> dict:
         if mes_raw and hasattr(mes_raw, 'year'):
             pass  # datetime OK
         elif mes_raw and isinstance(mes_raw, str):
-            # Puede ser "2025-01-01", "01-2025", "2025-01", etc.
-            import re as _re
             m = _re.search(r'(\d{4})[-/](\d{1,2})', str(mes_raw))
             if m:
-                from datetime import datetime
                 mes_raw = datetime(int(m.group(1)), int(m.group(2)), 1)
             else:
                 m2 = _re.search(r'(\d{1,2})[-/](\d{4})', str(mes_raw))
                 if m2:
-                    from datetime import datetime
                     mes_raw = datetime(int(m2.group(2)), int(m2.group(1)), 1)
                 else:
                     continue
         elif mes_raw and isinstance(mes_raw, (int, float)):
-            # Número serial de Excel
-            from datetime import datetime, timedelta
             mes_raw = datetime(1899, 12, 30) + timedelta(days=int(mes_raw))
         else:
             continue
