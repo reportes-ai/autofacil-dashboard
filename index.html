@@ -1783,7 +1783,7 @@ window.RAW_DATA = [{"op": 77130, "mes": "2025-01", "ejecutivo": "MORENO LIZAMA C
   // Generar meses_labels dinámicamente hasta 24 meses desde 2025-01
   const meses_labels = {};
   const _mN = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  for (let y = 2025; y <= 2027; y++) {
+  for (let y = 2024; y <= 2027; y++) {
     for (let m = 1; m <= 12; m++) {
       const key = y+'-'+String(m).padStart(2,'0');
       meses_labels[key] = _mN[m-1]+' '+y;
@@ -3043,11 +3043,20 @@ function buildV8() {
     return parseInt(fecha.split('-')[2]);
   }
 
-  // Filtrar período actual — todos los registros del período seleccionado con institución
-  const rowsAct = window.RAW_DATA.filter(r =>
-    r.mes >= desde && r.mes <= hasta && r.ejecutivo &&
-    (r.institucion === 'AUTOFIN' || r.institucion === 'UNIDAD DE CREDITO')
-  );
+  // Filtrar período actual — solo el mes actual, con corte al día de hoy
+  const mesActKey = anioHoy+'-'+String(mesHoy+1).padStart(2,'0');
+  const tienenFechaAct = window.RAW_DATA.some(r => r.mes === mesActKey && r.fecha_estado && r.fecha_estado.length >= 10);
+  const rowsAct = window.RAW_DATA.filter(r => {
+    if (r.mes !== mesActKey) return false;
+    if (!r.ejecutivo) return false;
+    if (r.institucion !== 'AUTOFIN' && r.institucion !== 'UNIDAD DE CREDITO') return false;
+    if (tienenFechaAct) {
+      const dia = getDia(r);
+      if (!dia) return false;
+      return dia <= diaHoy;
+    }
+    return true;
+  });
 
   // Filtrar mes anterior — usar fecha_ot para otorgados, fecha_estado para el resto
   const tienenFecha = window.RAW_DATA.some(r =>
@@ -3343,6 +3352,11 @@ function mostrarListaOps() {
 
 // ======== VISTA HISTORIA ========
 function initVHist() {
+  // Si RAW_DATA aún no está cargado, reintentar
+  if (!window.RAW_DATA || window.RAW_DATA.length === 0) {
+    setTimeout(initVHist, 300);
+    return;
+  }
   const mesesDisp = [...new Set(window.RAW_DATA.map(r=>r.mes))].sort();
   const mN = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   const fmtM = k => { const [y,m]=k.split('-'); return mN[parseInt(m)-1]+' '+y; };
@@ -3350,7 +3364,10 @@ function initVHist() {
   ['hist-desde','hist-hasta'].forEach(id => {
     const sel = document.getElementById(id);
     if (!sel) return;
+    // Guardar valor actual antes de repoblar
+    const prev = sel.value;
     sel.innerHTML = mesesDisp.map(m=>'<option value="'+m+'">'+fmtM(m)+'</option>').join('');
+    if (prev && mesesDisp.includes(prev)) sel.value = prev;
   });
 
   // Default: 6 meses hasta el mes anterior
