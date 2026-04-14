@@ -991,13 +991,20 @@ function buildV1() {
   const jaf = j.financieras?.AUTOFIN||{}, jun = j.financieras?.UNIDAD||{};
   const jOt = jaf.ops||0; const jSeg = j.estados?.APROBADO?.ops||0;
   const jSaldoOt = jaf.saldo||0; const jSaldoSeg = 0;
-  document.getElementById('t-jan').innerHTML = `
-    <thead><tr><th>Estado Comercial</th><th>Q</th><th>%</th><th>Total a Financiar</th></tr></thead>
-    <tbody>
-      <tr><td>OTORGADO</td><td>${j.financieras?.AUTOFIN?.ops||0}</td><td>${j.financieras?.AUTOFIN?.ops ? ((j.financieras.AUTOFIN.ops/(j.financieras.AUTOFIN.ops+(j.financieras.UNIDAD?.ops||0)))*100).toFixed(1) : 0}%</td><td>${fM(jaf.saldo)}</td></tr>
-      <tr><td>EN SEGUIMIENTO</td><td>${j.estados?.APROBADO?.ops||0}</td><td>${j.estados?.APROBADO ? ((j.estados.APROBADO.ops/j.total_ops)*100).toFixed(1) : '—'}%</td><td>${fM(j.estados?.APROBADO?.saldo||0)}</td></tr>
-    </tbody>
-    <tfoot><tr><td>Total</td><td>${j.total_ops||0}</td><td>100%</td><td>${fM(j.total_saldo||0)}</td></tr></tfoot>`;
+  // Calcular APROBADOS = APROBADO + OTORGADO + ANULADO + PENDIENTE
+  const jEstados = j.estados || {};
+  const jAprobQ = (jEstados.APROBADO?.ops||0) + (jEstados.OTORGADO?.ops||0) + (jEstados.ANULADO?.ops||0) + (jEstados.PENDIENTE?.ops||0);
+  const jAprobS = (jEstados.APROBADO?.saldo||0) + (jEstados.OTORGADO?.saldo||0) + (jEstados.ANULADO?.saldo||0) + (jEstados.PENDIENTE?.saldo||0);
+  const jRecQ   = jEstados.RECHAZADO?.ops||0;
+  const jRecS   = jEstados.RECHAZADO?.saldo||0;
+  const jTotalQ = j.total_ops||0;
+  document.getElementById('t-jan').innerHTML =
+    '<thead><tr><th>Estado Comercial</th><th>Q</th><th>%</th><th>Total a Financiar</th></tr></thead>' +
+    '<tbody>' +
+    '<tr><td>APROBADOS</td><td>'+jAprobQ+'</td><td>'+(jTotalQ?(jAprobQ/jTotalQ*100).toFixed(1):0)+'%</td><td>'+fM(jAprobS)+'</td></tr>' +
+    '<tr><td>RECHAZADOS</td><td>'+jRecQ+'</td><td>'+(jTotalQ?(jRecQ/jTotalQ*100).toFixed(1):0)+'%</td><td>'+fM(jRecS)+'</td></tr>' +
+    '</tbody>' +
+    '<tfoot><tr><td>Total</td><td>'+jTotalQ+'</td><td>100%</td><td>'+fM(j.total_saldo||0)+'</td></tr></tfoot>';
 
   // Tabla concesionarios
   const ccsRows = f.ccs.map((c,i)=>`<tr>
