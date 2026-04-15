@@ -275,8 +275,16 @@ function cerrarSesion() {
 // Ejecutar al cargar
 document.addEventListener('DOMContentLoaded', function() {
   actualizarTopbarUsuario();
-  // Pre-cargar usuarios en localStorage si no existen
   getUsuarios();
+  // Rellenar credenciales guardadas si "Recordarme" estaba marcado
+  if (localStorage.getItem('af_recordar')) {
+    var su = localStorage.getItem('af_saved_user');
+    var sp = localStorage.getItem('af_saved_pass');
+    if (su) document.getElementById('login-user').value = su;
+    if (sp) document.getElementById('login-pass').value = sp;
+    var chk = document.getElementById('chk-recordar');
+    if (chk) chk.checked = true;
+  }
 });
 </script>
 
