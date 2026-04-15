@@ -248,6 +248,17 @@ function checkLogin() {
     user.estado = 'ACTIVO';
   }
   saveUsuarios(usuarios);
+  // Guardar o limpiar credenciales según checkbox
+  var chkRec = document.getElementById('chk-recordar');
+  if (chkRec && chkRec.checked) {
+    localStorage.setItem('af_recordar', '1');
+    localStorage.setItem('af_saved_user', uInput);
+    localStorage.setItem('af_saved_pass', pInput);
+  } else {
+    localStorage.removeItem('af_recordar');
+    localStorage.removeItem('af_saved_user');
+    localStorage.removeItem('af_saved_pass');
+  }
   sesionActual = { nombre: user.nombre, usuario: user.usuario, perfil: user.perfil };
   sessionStorage.setItem('af_sesion', JSON.stringify(sesionActual));
   document.getElementById('login-screen').style.display = 'none';
