@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260410_193816 -->
+<!-- v20260416_V2.1 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -124,7 +124,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
     <div style="font-family:'Roboto',sans-serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:4px">
       Auto<span style="color:#2196F3">Fácil</span>
     </div>
-    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v2.0</span></div>
+    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v2.1</span></div>
     <div id="login-error" style="background:#ef444420;color:#ef4444;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:16px;display:none"></div>
     <input id="login-user" type="email" placeholder="Usuario (correo)" autocomplete="username"
       style="width:100%;padding:12px 16px;border-radius:8px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;font-family:'Roboto',sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px"
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <div class="topbar">
-  <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:10px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V2.0</span></span></div>
+  <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:10px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V2.1</span></span></div>
   <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:16px"></div>
   <div id="topbar-usuario" style="display:flex;align-items:center;gap:6px;margin-left:auto"></div>
   
@@ -3687,10 +3687,17 @@ function buildVPpto() {
     });
 
     // Totales
-    const totalPpto = PPTO_DATA.reduce((a,d) => a + d[campo==='ops'?'ops':'monto'], 0);
-    const totalReal = Object.values(realesPorMes).reduce((a,v) => a + v[campo==='ops'?'ops':'monto'], 0);
-    const totalCump = totalPpto > 0 ? totalReal / totalPpto : null;
-    const falta = totalPpto - totalReal;
+    // Total anual presupuesto (12 meses)
+    const totalPptoAnio = PPTO_DATA.reduce((a,d) => a + d[campo==='ops'?'ops':'monto'], 0);
+    // Total real solo meses con datos
+    const mesesConDatos = rows_data.filter(d => d.real !== null);
+    const totalRealAcum = mesesConDatos.length > 0 ? mesesConDatos[mesesConDatos.length-1].realAcum : 0;
+    const totalPptoAcum = mesesConDatos.length > 0 ? mesesConDatos[mesesConDatos.length-1].pptoAcum : 0;
+    // Total Mensual = suma real solo meses con datos
+    const totalMensualReal = mesesConDatos.reduce((a,d) => a + d.real, 0);
+    const totalMensualPpto = mesesConDatos.reduce((a,d) => a + d.ppto, 0);
+    const cumpMensualTotal = totalMensualPpto > 0 ? totalMensualReal / totalMensualPpto : null;
+    const cumpAcumTotal    = totalPptoAcum  > 0 ? totalRealAcum  / totalPptoAcum  : null;
 
     // Header con nombres de meses
     let thead = '<thead>';
@@ -3754,31 +3761,39 @@ function buildVPpto() {
 
         // Columna total
         if (isCump) {
-          const pct = si === 0 ? (totalPpto > 0 ? totalReal/totalPpto : null) : (totalPpto > 0 ? totalReal/totalPpto : null);
+          const pct = si === 0 ? cumpMensualTotal : cumpAcumTotal;
           const c = colorCump(pct);
           tbody += `<td style="padding:4px 8px;text-align:center;background:#112060;border-left:2px solid #4fc3f7">`;
           if (pct !== null) tbody += `<span style="background:${c.bg};color:${c.txt};padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">${c.label}</span>`;
           else tbody += '—';
           tbody += `</td>`;
         } else {
-          const isReal = row.key === 'real' || row.key === 'realAcum';
-          const val = isReal ? fmtFn(totalReal) : fmtFn(totalPpto);
-          const color = isReal ? '#fff' : '#90caf9';
+          // Mensual: solo suma hasta meses con datos. Acumulado: último valor acumulado
+          let val, color;
+          if (row.key === 'ppto') {
+            val = fmtFn(totalMensualPpto); color = '#90caf9';
+          } else if (row.key === 'real') {
+            val = fmtFn(totalMensualReal); color = '#fff';
+          } else if (row.key === 'pptoAcum') {
+            val = fmtFn(totalPptoAnio); color = '#90caf9';
+          } else { // realAcum
+            val = fmtFn(totalRealAcum); color = '#fff';
+          }
           tbody += `<td style="padding:4px 8px;text-align:right;background:#112060;border-left:2px solid #4fc3f7;color:${color};font-size:11px;font-weight:700">${val}</td>`;
         }
         tbody += `</tr>`;
       });
     });
 
-    // Fila LOGRADO / FALTA
+    // Fila LOGRADO / FALTA — usa diferencia acumulada por mes
     tbody += `<tr style="background:#0a1a38;border-top:2px solid #4fc3f7">`;
     tbody += `<td style="padding:5px 10px;font-size:11px;font-weight:700;color:#4fc3f7;position:sticky;left:0;background:#0a1a38;z-index:1" colspan="1">LOGRADO / FALTA</td>`;
     meses.forEach((m, mi) => {
       const d = rows_data[mi];
       const isCurrent = m === mesActual;
       const bg = isCurrent ? '#0a2050' : '#0a1a38';
-      if (d.real !== null) {
-        const dif = d.real - d.ppto;
+      if (d.realAcum !== null) {
+        const dif = d.realAcum - d.pptoAcum;
         const c = dif >= 0 ? '#43a047' : '#e53935';
         const lbl = fmtFn(Math.abs(dif));
         tbody += `<td style="padding:5px 6px;text-align:right;background:${bg};border-left:1px solid #0d2140">`;
@@ -3788,8 +3803,8 @@ function buildVPpto() {
         tbody += `<td style="padding:5px 6px;background:${bg};border-left:1px solid #0d2140;color:#444;text-align:center">—</td>`;
       }
     });
-    // Total falta/logrado
-    const difTotal = totalReal - totalPpto;
+    // Total: real acumulado vs presupuesto anual completo
+    const difTotal = totalRealAcum - totalPptoAnio;
     const cDif = difTotal >= 0 ? '#43a047' : '#e53935';
     tbody += `<td style="padding:5px 8px;text-align:right;background:#0a1a38;border-left:2px solid #4fc3f7">`;
     tbody += `<span style="color:${cDif};font-weight:700;font-size:11px">${difTotal>=0?'+':'-'}${fmtFn(Math.abs(difTotal))}</span>`;
@@ -3819,8 +3834,8 @@ function buildVPpto() {
   const pptoAcumMonto  = mesesConReal.reduce((a,d) => a+d.monto, 0);
   const cumpAcumMonto  = pptoAcumMonto > 0 ? totalRealMonto / pptoAcumMonto : 0;
 
-  const faltaOps   = pptoAcumOps   - totalRealOps;
-  const faltaMonto = pptoAcumMonto  - totalRealMonto;
+  const faltaOps   = totalPptoOps   - totalRealOps;
+  const faltaMonto = totalPptoMonto - totalRealMonto;
 
   function kpiBox(label, val, sub, highlight) {
     return `<div class="kpi-box${highlight?' highlight':''}">
