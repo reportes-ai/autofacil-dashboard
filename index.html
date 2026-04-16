@@ -3751,9 +3751,9 @@ function buildVPpto() {
             }
           } else {
             const val = d[row.key];
-            const display = val === null ? (d.esFuturo ? '<span style="color:#444">—</span>' : '<span style="color:#e53935;font-size:10px">Sin datos</span>') : fmtFn(val);
+            const display = val === null ? (d.esFuturo ? '<span style="color:#444">—</span>' : '<span style="color:#e53935;font-size:11px">Sin datos</span>') : fmtFn(val);
             const color = row.key === 'real' || row.key === 'realAcum' ? '#fff' : '#90caf9';
-            tbody += `<td style="padding:4px 6px;text-align:right;background:${bg};border-left:1px solid #0d2140;color:${color};font-size:11px">${display}</td>`;
+            tbody += `<td style="padding:5px 6px;text-align:center;background:${bg};border-left:1px solid #0d2140;color:${color};font-size:13px;font-weight:600">${display}</td>`;
           }
         });
 
@@ -3777,7 +3777,7 @@ function buildVPpto() {
           } else { // realAcum
             val = fmtFn(totalRealAcum); color = '#fff';
           }
-          tbody += `<td style="padding:4px 8px;text-align:right;background:#112060;border-left:2px solid #4fc3f7;color:${color};font-size:11px;font-weight:700">${val}</td>`;
+          tbody += `<td style="padding:5px 8px;text-align:center;background:#112060;border-left:2px solid #4fc3f7;color:${color};font-size:13px;font-weight:700">${val}</td>`;
         }
         tbody += `</tr>`;
       });
@@ -3794,8 +3794,8 @@ function buildVPpto() {
         const dif = d.realAcum - d.pptoAcum;
         const c = dif >= 0 ? '#43a047' : '#e53935';
         const lbl = fmtFn(Math.abs(dif));
-        tbody += `<td style="padding:5px 6px;text-align:right;background:${bg};border-left:1px solid #0d2140">`;
-        tbody += `<span style="color:${c};font-weight:700;font-size:11px">${dif>=0?'+':'-'}${lbl}</span>`;
+        tbody += `<td style="padding:5px 6px;text-align:center;background:${bg};border-left:1px solid #0d2140">`;
+        tbody += `<span style="color:${c};font-weight:700;font-size:13px">${dif>=0?'+':'-'}${lbl}</span>`;
         tbody += `</td>`;
       } else {
         tbody += `<td style="padding:5px 6px;background:${bg};border-left:1px solid #0d2140;color:#444;text-align:center">—</td>`;
@@ -3805,7 +3805,7 @@ function buildVPpto() {
     const difTotal = totalRealAcum - totalPptoAnio;
     const cDif = difTotal >= 0 ? '#43a047' : '#e53935';
     tbody += `<td style="padding:5px 8px;text-align:right;background:#0a1a38;border-left:2px solid #4fc3f7">`;
-    tbody += `<span style="color:${cDif};font-weight:700;font-size:11px">${difTotal>=0?'+':'-'}${fmtFn(Math.abs(difTotal))}</span>`;
+    tbody += `<span style="color:${cDif};font-weight:700;font-size:13px">${difTotal>=0?'+':'-'}${fmtFn(Math.abs(difTotal))}</span>`;
     tbody += `</td></tr>`;
     tbody += '</tbody>';
 
