@@ -3695,7 +3695,7 @@ function buildVPpto() {
     const totalMensualReal = mesesConDatos.reduce((a,d) => a + d.real, 0);
     const totalMensualPpto = mesesConDatos.reduce((a,d) => a + d.ppto, 0);
     const cumpMensualTotal = totalMensualPpto > 0 ? totalMensualReal / totalMensualPpto : null;
-    const cumpAcumTotal    = totalPptoAcum  > 0 ? totalRealAcum  / totalPptoAcum  : null;
+    const cumpAcumTotal    = totalPptoAnio   > 0 ? totalRealAcum    / totalPptoAnio    : null;
 
     // Header con nombres de meses
     let thead = '<thead>';
