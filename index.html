@@ -3591,7 +3591,6 @@ function buildVHist() {
   <div class="card" style="margin-bottom:12px">
     <div class="card-head" style="background:#1a3a6a;display:flex;align-items:center;justify-content:space-between">
       <span>N° Créditos Otorgados — Seguimiento vs Presupuesto</span>
-      <span style="font-size:10px;font-weight:400;color:#aac4e8">Montos en UF</span>
     </div>
     <div style="overflow-x:auto">
       <table id="t-ppto-ops" style="width:100%;border-collapse:collapse;font-size:11px"></table>
@@ -3602,7 +3601,6 @@ function buildVHist() {
   <div class="card" style="margin-bottom:12px">
     <div class="card-head" style="background:#00695c;display:flex;align-items:center;justify-content:space-between">
       <span>Montos Colocados (MM$) — Seguimiento vs Presupuesto</span>
-      <span style="font-size:10px;font-weight:400;color:#b2dfdb">Saldo precio colocado</span>
     </div>
     <div style="overflow-x:auto">
       <table id="t-ppto-montos" style="width:100%;border-collapse:collapse;font-size:11px"></table>
@@ -3652,7 +3650,7 @@ function buildVPpto() {
   window.RAW_DATA.filter(r => r.estado_eval === 'OTORGADO').forEach(r => {
     if (!realesPorMes[r.mes]) realesPorMes[r.mes] = {ops:0, monto:0};
     realesPorMes[r.mes].ops++;
-    realesPorMes[r.mes].monto += (r.saldo_precio || 0) / 1e6; // a MM$
+    realesPorMes[r.mes].monto += (r.monto_financiado || 0) / 1e6; // a MM$
   });
 
   // Función color cumplimiento
