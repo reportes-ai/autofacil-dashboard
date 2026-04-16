@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260416_V2.2 -->
+<!-- v20260416_V2.3 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -12,12 +12,14 @@
 body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#333}
 
 /* ---- NAV ---- */
-.topbar{background:#1a2a4a;padding:0 12px;display:flex;align-items:center;justify-content:space-between;height:48px;flex-wrap:nowrap}
+.topbar{background:#1a2a4a;display:flex;flex-direction:column;flex-wrap:nowrap}
+.topbar-row1{display:flex;align-items:center;gap:10px;padding:0 12px;height:42px;border-bottom:1px solid #2a4070}
+.topbar-row2{display:flex;align-items:center;padding:0 8px;height:36px;background:#0f1e38}
 .brand{color:#fff;font-size:18px;font-weight:700;letter-spacing:-.5px}
 .brand span{color:#4fc3f7}
-.tabs{display:flex;gap:2px}
-.tab{padding:0 18px;height:48px;display:flex;align-items:center;font-size:12px;font-weight:500;color:#aac4e8;cursor:pointer;border-bottom:3px solid transparent;transition:.15s}
-.tab:hover{color:#fff}
+.tabs{display:flex;gap:0px}
+.tab{padding:0 13px;height:36px;display:flex;align-items:center;font-size:11px;font-weight:500;color:#aac4e8;cursor:pointer;border-bottom:2px solid transparent;transition:.15s;white-space:nowrap}
+.tab:hover{color:#fff;background:#ffffff0d}
 .tab.active{color:#fff;border-bottom-color:#4fc3f7}
 
 /* ---- VIEWS ---- */
@@ -124,7 +126,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
     <div style="font-family:'Roboto',sans-serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:4px">
       Auto<span style="color:#2196F3">Fácil</span>
     </div>
-    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v2.2</span></div>
+    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v2.3</span></div>
     <div id="login-error" style="background:#ef444420;color:#ef4444;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:16px;display:none"></div>
     <input id="login-user" type="email" placeholder="Usuario (correo)" autocomplete="username"
       style="width:100%;padding:12px 16px;border-radius:8px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;font-family:'Roboto',sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px"
@@ -305,32 +307,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 <div class="topbar">
-  <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:10px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V2.2</span></span></div>
-  <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:16px"></div>
-  <div id="topbar-usuario" style="display:flex;align-items:center;gap:6px;margin-left:auto"></div>
-  
-<div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:6px 14px;border-radius:6px;border:1px solid #2a4070">
-  <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
-  <select id="sel-desde" onchange="aplicarFiltro()" style="background:#1a2a4a;color:#fff;border:1px solid #2a4070;border-radius:4px;padding:3px 6px;font-size:11px;cursor:pointer">
-  </select>
-  <span style="color:#7bafd4;font-size:11px">→</span>
-  <select id="sel-hasta" onchange="aplicarFiltro()" style="background:#1a2a4a;color:#fff;border:1px solid #2a4070;border-radius:4px;padding:3px 6px;font-size:11px;cursor:pointer">
-  </select>
-  <button onclick="aplicarFiltro()" style="background:#2196F3;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600">Aplicar</button>
-  <span id="periodo-label" style="color:#4fc3f7;font-size:11px;font-weight:600"></span>
-</div>
-  <div class="tabs">
-    <div class="tab active" onclick="showV('v1b',this)">✅ Otorgados</div>
-    <div class="tab" onclick="showV('v1',this)">📊 Aprobados</div>
-    <div class="tab" onclick="showV('v2',this)">💰 Rentabilidades</div>
-    <div class="tab" onclick="showV('v3',this)">📈 Tendencia</div>
-    <div class="tab" onclick="showV('v5',this)">👤 Ejecutivos</div>
-    <div class="tab" onclick="showV('v7',this)">🔻 Funnel</div>
-    <div class="tab" onclick="showV('v6',this)">💳 Saldo Precio</div>
-    <div class="tab" onclick="showV('v8',this)">📋 Comparativo</div>
-    <div class="tab" onclick="showV('vhist',this)">📅 Historia</div>
-    <div class="tab" onclick="showV('vppto',this)">🎯 Presupuesto</div>
-    <div class="tab" id="tab-admin" onclick="showV('vadmin',this)" style="display:none;border-left:1px solid #2a4070;margin-left:8px">⚙️ Admin</div>
+  <div class="topbar-row1">
+    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V2.3</span></span></div>
+    <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:8px"></div>
+    <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:4px 12px;border-radius:6px;border:1px solid #2a4070;margin-left:8px">
+      <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
+      <select id="sel-desde" onchange="aplicarFiltro()" style="background:#1a2a4a;color:#fff;border:1px solid #2a4070;border-radius:4px;padding:3px 6px;font-size:11px;cursor:pointer"></select>
+      <span style="color:#7bafd4;font-size:11px">→</span>
+      <select id="sel-hasta" onchange="aplicarFiltro()" style="background:#1a2a4a;color:#fff;border:1px solid #2a4070;border-radius:4px;padding:3px 6px;font-size:11px;cursor:pointer"></select>
+      <button onclick="aplicarFiltro()" style="background:#2196F3;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-weight:600">Aplicar</button>
+      <span id="periodo-label" style="color:#4fc3f7;font-size:11px;font-weight:600"></span>
+    </div>
+    <div id="topbar-usuario" style="display:flex;align-items:center;gap:6px;margin-left:auto"></div>
+  </div>
+  <div class="topbar-row2">
+    <div class="tabs">
+      <div class="tab active" onclick="showV('v1b',this)">✅ Otorgados</div>
+      <div class="tab" onclick="showV('v1',this)">📊 Aprobados</div>
+      <div class="tab" onclick="showV('v2',this)">💰 Rentabilidades</div>
+      <div class="tab" onclick="showV('v3',this)">📈 Tendencia</div>
+      <div class="tab" onclick="showV('v5',this)">👤 Ejecutivos</div>
+      <div class="tab" onclick="showV('v7',this)">🔻 Funnel</div>
+      <div class="tab" onclick="showV('v6',this)">💳 Saldo Precio</div>
+      <div class="tab" onclick="showV('v8',this)">📋 Comparativo</div>
+      <div class="tab" onclick="showV('vhist',this)">📅 Historia</div>
+      <div class="tab" onclick="showV('vppto',this)">🎯 Presupuesto</div>
+      <div class="tab" id="tab-admin" onclick="showV('vadmin',this)" style="display:none;border-left:1px solid #2a4070;margin-left:8px">⚙️ Admin</div>
+    </div>
   </div>
 </div>
 
