@@ -329,6 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div class="tab" onclick="showV('v6',this)">💳 Saldo Precio</div>
     <div class="tab" onclick="showV('v8',this)">📋 Comparativo</div>
     <div class="tab" onclick="showV('vhist',this)">📅 Historia</div>
+    <div class="tab" onclick="showV('vppto',this)">🎯 Presupuesto</div>
     <div class="tab" id="tab-admin" onclick="showV('vadmin',this)" style="display:none;border-left:1px solid #2a4070;margin-left:8px">⚙️ Admin</div>
   </div>
 </div>
@@ -841,6 +842,7 @@ function showV(id, el) {
   if(id==='v7') { const sd7=document.getElementById('sel-desde'); if(!sd7?.value) window.aplicarFiltro(); buildV7(); window._v7=true; }
   if(id==='v8') { const sd8=document.getElementById('sel-desde'); if(!sd8?.value) window.aplicarFiltro(); buildV8(); window._v8=true; }
   if(id==='vhist') { initVHist(); }
+  if(id==='vppto') { buildVPpto(); }
   if(id==='vadmin') {
     // Verificar que solo admin puede acceder
     if (!sesionActual || sesionActual.perfil !== 'ADMINISTRADOR') {
@@ -3570,5 +3572,279 @@ function buildVHist() {
 }
 
 </script>
+
+<!-- ============================================================ VISTA PRESUPUESTO ============================================================ -->
+<div id="vppto" class="view">
+  <div class="dash-header">
+    <div>
+      <div class="dash-title">🎯 Seguimiento Presupuesto</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="logo-block"><div class="logo-text">Auto<span>Fácil</span></div><div class="logo-sub">Crédito Automotriz</div></div>
+    </div>
+  </div>
+
+  <!-- KPI resumen -->
+  <div id="ppto-kpis" class="kpi-strip" style="margin-bottom:12px"></div>
+
+  <!-- Tabla N° Créditos Otorgados -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-head" style="background:#1a3a6a;display:flex;align-items:center;justify-content:space-between">
+      <span>N° Créditos Otorgados — Seguimiento vs Presupuesto</span>
+      <span style="font-size:10px;font-weight:400;color:#aac4e8">Montos en UF</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table id="t-ppto-ops" style="width:100%;border-collapse:collapse;font-size:11px"></table>
+    </div>
+  </div>
+
+  <!-- Tabla Montos Colocados -->
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-head" style="background:#00695c;display:flex;align-items:center;justify-content:space-between">
+      <span>Montos Colocados (MM$) — Seguimiento vs Presupuesto</span>
+      <span style="font-size:10px;font-weight:400;color:#b2dfdb">Saldo precio colocado</span>
+    </div>
+    <div style="overflow-x:auto">
+      <table id="t-ppto-montos" style="width:100%;border-collapse:collapse;font-size:11px"></table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ======== PRESUPUESTO ========
+
+// Presupuesto hardcoded (desde PRESUPUESTO.xlsx)
+// Fechas Excel: 46023=Ene25, 46054=Feb25, 46082=Mar25, etc.
+const PPTO_DATA = [
+  {mes:"2025-01", ops:91,  monto:618.8},
+  {mes:"2025-02", ops:91,  monto:618.8},
+  {mes:"2025-03", ops:109, monto:741.2},
+  {mes:"2025-04", ops:133, monto:904.4},
+  {mes:"2025-05", ops:161, monto:1094.8},
+  {mes:"2025-06", ops:169, monto:1149.2},
+  {mes:"2025-07", ops:177, monto:1203.6},
+  {mes:"2025-08", ops:181, monto:1230.8},
+  {mes:"2025-09", ops:181, monto:1230.8},
+  {mes:"2025-10", ops:181, monto:1230.8},
+  {mes:"2025-11", ops:181, monto:1230.8},
+  {mes:"2025-12", ops:181, monto:1230.8},
+];
+
+const MES_LABELS_PPTO = {
+  "2025-01":"Ene 25","2025-02":"Feb 25","2025-03":"Mar 25","2025-04":"Abr 25",
+  "2025-05":"May 25","2025-06":"Jun 25","2025-07":"Jul 25","2025-08":"Ago 25",
+  "2025-09":"Sep 25","2025-10":"Oct 25","2025-11":"Nov 25","2025-12":"Dic 25",
+  "2026-01":"Ene 26","2026-02":"Feb 26","2026-03":"Mar 26","2026-04":"Abr 26",
+};
+
+function buildVPpto() {
+  if (!window.RAW_DATA || window.RAW_DATA.length === 0) {
+    setTimeout(buildVPpto, 300); return;
+  }
+
+  const hoy = new Date();
+  const mesActual = hoy.getFullYear() + '-' + String(hoy.getMonth()+1).padStart(2,'0');
+
+  // Calcular reales desde RAW_DATA (solo OTORGADOS)
+  const realesPorMes = {};
+  window.RAW_DATA.filter(r => r.estado_eval === 'OTORGADO').forEach(r => {
+    if (!realesPorMes[r.mes]) realesPorMes[r.mes] = {ops:0, monto:0};
+    realesPorMes[r.mes].ops++;
+    realesPorMes[r.mes].monto += (r.saldo_precio || 0) / 1e6; // a MM$
+  });
+
+  // Función color cumplimiento
+  function colorCump(pct) {
+    if (pct === null) return {bg:'#f0f2f5', txt:'#999', label:'—'};
+    if (pct >= 1.0)   return {bg:'#e8f5e9', txt:'#2e7d32', label: (pct*100).toFixed(1)+'%'};
+    if (pct >= 0.75)  return {bg:'#fff3e0', txt:'#e65100', label: (pct*100).toFixed(1)+'%'};
+    return              {bg:'#ffebee', txt:'#c62828', label: (pct*100).toFixed(1)+'%'};
+  }
+
+  // ── Construir tabla genérica (ops o montos) ──
+  function buildPptoTable(tblId, campo, fmtFn) {
+    const tbl = document.getElementById(tblId);
+    if (!tbl) return;
+
+    // Solo meses con presupuesto
+    const meses = PPTO_DATA.map(d => d.mes);
+
+    // Calcular acumulados
+    let pptoAcum = 0, realAcum = 0;
+    const rows_data = PPTO_DATA.map(d => {
+      const real = realesPorMes[d.mes] ? realesPorMes[d.mes][campo === 'ops' ? 'ops' : 'monto'] : null;
+      const ppto = d[campo === 'ops' ? 'ops' : 'monto'];
+      pptoAcum += ppto;
+      if (real !== null && real !== undefined) realAcum += real;
+      const tieneReal = real !== null && real !== undefined;
+      const cump_mens = tieneReal ? real / ppto : null;
+      const cump_acum = tieneReal ? realAcum / pptoAcum : null;
+      const esMesActual = d.mes === mesActual;
+      const esFuturo = d.mes > mesActual;
+      return { mes: d.mes, ppto, real: tieneReal ? real : null, pptoAcum, realAcum: tieneReal ? realAcum : null, cump_mens, cump_acum, esMesActual, esFuturo };
+    });
+
+    // Totales
+    const totalPpto = PPTO_DATA.reduce((a,d) => a + d[campo==='ops'?'ops':'monto'], 0);
+    const totalReal = Object.values(realesPorMes).reduce((a,v) => a + v[campo==='ops'?'ops':'monto'], 0);
+    const totalCump = totalPpto > 0 ? totalReal / totalPpto : null;
+    const falta = totalPpto - totalReal;
+
+    // Header con nombres de meses
+    let thead = '<thead>';
+    // Fila 1: labels de meses
+    thead += '<tr style="background:#1a3a6a;color:#fff;font-size:10px">';
+    thead += '<th style="padding:5px 10px;text-align:left;min-width:120px;position:sticky;left:0;background:#1a3a6a;z-index:2">Período / Producto</th>';
+    meses.forEach(m => {
+      const isCurrent = m === mesActual;
+      const bg = isCurrent ? '#1565C0' : '#1a3a6a';
+      thead += `<th style="padding:5px 6px;text-align:center;min-width:70px;background:${bg};border-left:1px solid #2a4070">${MES_LABELS_PPTO[m]||m}${isCurrent?' 📍':''}</th>`;
+    });
+    thead += '<th style="padding:5px 8px;text-align:center;min-width:80px;background:#0d47a1;border-left:2px solid #4fc3f7">TOTAL</th>';
+    thead += '</tr></thead>';
+
+    // Filas: Mensual Presupuesto / Real / Cumplimiento y Acumulado idem
+    const sections = [
+      { label: 'MENSUAL', rows: [
+        { lbl: 'Brokerage — Presupuesto', key: 'ppto',     style: 'color:#90caf9;font-style:italic' },
+        { lbl: 'Brokerage — Real',        key: 'real',     style: 'font-weight:700;color:#fff' },
+        { lbl: 'Cumplimiento',            key: 'cump_mens',style: 'font-weight:700' },
+      ]},
+      { label: 'ACUMULADO', rows: [
+        { lbl: 'Brokerage — Presupuesto', key: 'pptoAcum',  style: 'color:#90caf9;font-style:italic' },
+        { lbl: 'Brokerage — Real',        key: 'realAcum',  style: 'font-weight:700;color:#fff' },
+        { lbl: 'Cumplimiento',            key: 'cump_acum', style: 'font-weight:700' },
+      ]},
+    ];
+
+    let tbody = '<tbody>';
+    sections.forEach((sec, si) => {
+      // Separador de sección
+      tbody += `<tr style="background:#0d2140"><td colspan="${meses.length+2}" style="padding:4px 10px;font-size:10px;font-weight:700;color:#4fc3f7;letter-spacing:.5px;position:sticky;left:0">${sec.label}</td></tr>`;
+
+      sec.rows.forEach(row => {
+        const isCump = row.key === 'cump_mens' || row.key === 'cump_acum';
+        tbody += `<tr style="border-bottom:1px solid #0d2140;background:#1a2a4a">`;
+        tbody += `<td style="padding:4px 10px;font-size:11px;${row.style};position:sticky;left:0;background:#1a2a4a;z-index:1;border-right:1px solid #2a4070">${row.lbl}</td>`;
+
+        meses.forEach((m, mi) => {
+          const d = rows_data[mi];
+          const isCurrent = m === mesActual;
+          const bg = isCurrent ? '#0d2d5a' : '#1a2a4a';
+
+          if (isCump) {
+            const pct = d[row.key];
+            if (pct === null) {
+              tbody += `<td style="padding:4px 6px;text-align:center;background:${bg};border-left:1px solid #0d2140;color:#555">—</td>`;
+            } else {
+              const c = colorCump(pct);
+              tbody += `<td style="padding:4px 6px;text-align:center;background:${bg};border-left:1px solid #0d2140">`;
+              tbody += `<span style="background:${c.bg};color:${c.txt};padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">${c.label}</span>`;
+              tbody += `</td>`;
+            }
+          } else {
+            const val = d[row.key];
+            const display = val === null ? (d.esFuturo ? '<span style="color:#444">—</span>' : '<span style="color:#e53935;font-size:10px">Sin datos</span>') : fmtFn(val);
+            const color = row.key === 'real' || row.key === 'realAcum' ? '#fff' : '#90caf9';
+            tbody += `<td style="padding:4px 6px;text-align:right;background:${bg};border-left:1px solid #0d2140;color:${color};font-size:11px">${display}</td>`;
+          }
+        });
+
+        // Columna total
+        if (isCump) {
+          const pct = si === 0 ? (totalPpto > 0 ? totalReal/totalPpto : null) : (totalPpto > 0 ? totalReal/totalPpto : null);
+          const c = colorCump(pct);
+          tbody += `<td style="padding:4px 8px;text-align:center;background:#112060;border-left:2px solid #4fc3f7">`;
+          if (pct !== null) tbody += `<span style="background:${c.bg};color:${c.txt};padding:1px 6px;border-radius:3px;font-size:10px;font-weight:700">${c.label}</span>`;
+          else tbody += '—';
+          tbody += `</td>`;
+        } else {
+          const isReal = row.key === 'real' || row.key === 'realAcum';
+          const val = isReal ? fmtFn(totalReal) : fmtFn(totalPpto);
+          const color = isReal ? '#fff' : '#90caf9';
+          tbody += `<td style="padding:4px 8px;text-align:right;background:#112060;border-left:2px solid #4fc3f7;color:${color};font-size:11px;font-weight:700">${val}</td>`;
+        }
+        tbody += `</tr>`;
+      });
+    });
+
+    // Fila LOGRADO / FALTA
+    tbody += `<tr style="background:#0a1a38;border-top:2px solid #4fc3f7">`;
+    tbody += `<td style="padding:5px 10px;font-size:11px;font-weight:700;color:#4fc3f7;position:sticky;left:0;background:#0a1a38;z-index:1" colspan="1">LOGRADO / FALTA</td>`;
+    meses.forEach((m, mi) => {
+      const d = rows_data[mi];
+      const isCurrent = m === mesActual;
+      const bg = isCurrent ? '#0a2050' : '#0a1a38';
+      if (d.real !== null) {
+        const dif = d.real - d.ppto;
+        const c = dif >= 0 ? '#43a047' : '#e53935';
+        const lbl = fmtFn(Math.abs(dif));
+        tbody += `<td style="padding:5px 6px;text-align:right;background:${bg};border-left:1px solid #0d2140">`;
+        tbody += `<span style="color:${c};font-weight:700;font-size:11px">${dif>=0?'+':'-'}${lbl}</span>`;
+        tbody += `</td>`;
+      } else {
+        tbody += `<td style="padding:5px 6px;background:${bg};border-left:1px solid #0d2140;color:#444;text-align:center">—</td>`;
+      }
+    });
+    // Total falta/logrado
+    const difTotal = totalReal - totalPpto;
+    const cDif = difTotal >= 0 ? '#43a047' : '#e53935';
+    tbody += `<td style="padding:5px 8px;text-align:right;background:#0a1a38;border-left:2px solid #4fc3f7">`;
+    tbody += `<span style="color:${cDif};font-weight:700;font-size:11px">${difTotal>=0?'+':'-'}${fmtFn(Math.abs(difTotal))}</span>`;
+    tbody += `</td></tr>`;
+    tbody += '</tbody>';
+
+    tbl.innerHTML = thead + tbody;
+  }
+
+  // Formatear número entero
+  const fmtOps = v => Math.round(v).toString();
+  // Formatear MM$ con 1 decimal
+  const fmtMM = v => v.toFixed(1);
+
+  buildPptoTable('t-ppto-ops',    'ops',   fmtOps);
+  buildPptoTable('t-ppto-montos', 'monto', fmtMM);
+
+  // ── KPIs ──
+  const mesesConReal = PPTO_DATA.filter(d => realesPorMes[d.mes]);
+  const totalPptoOps = PPTO_DATA.reduce((a,d) => a+d.ops, 0);
+  const totalRealOps = mesesConReal.reduce((a,d) => a+(realesPorMes[d.mes]?.ops||0), 0);
+  const pptoAcumOps  = mesesConReal.reduce((a,d) => a+d.ops, 0);
+  const cumpAcumOps  = pptoAcumOps > 0 ? totalRealOps / pptoAcumOps : 0;
+
+  const totalPptoMonto = PPTO_DATA.reduce((a,d) => a+d.monto, 0);
+  const totalRealMonto = mesesConReal.reduce((a,d) => a+(realesPorMes[d.mes]?.monto||0), 0);
+  const pptoAcumMonto  = mesesConReal.reduce((a,d) => a+d.monto, 0);
+  const cumpAcumMonto  = pptoAcumMonto > 0 ? totalRealMonto / pptoAcumMonto : 0;
+
+  const faltaOps   = pptoAcumOps   - totalRealOps;
+  const faltaMonto = pptoAcumMonto  - totalRealMonto;
+
+  function kpiBox(label, val, sub, highlight) {
+    return `<div class="kpi-box${highlight?' highlight':''}">
+      <div class="kpi-label">${label}</div>
+      <div class="kpi-val big">${val}</div>
+      <div class="kpi-sub">${sub}</div>
+    </div>`;
+  }
+  function pctBadge(pct) {
+    if (pct >= 1.0) return `<span class="pct-ok">${(pct*100).toFixed(1)}%</span>`;
+    if (pct >= 0.75) return `<span class="pct-warn">${(pct*100).toFixed(1)}%</span>`;
+    return `<span class="pct-bad">${(pct*100).toFixed(1)}%</span>`;
+  }
+
+  const kpisEl = document.getElementById('ppto-kpis');
+  if (kpisEl) {
+    kpisEl.innerHTML =
+      kpiBox('Créditos Otorgados', totalRealOps, `Ppto año: ${totalPptoOps}`, true) +
+      kpiBox('Cumplim. Acum. Ops', pctBadge(cumpAcumOps), `Logrado: ${totalRealOps} / Meta acum: ${pptoAcumOps}`, false) +
+      kpiBox('Falta (Ops)', (faltaOps > 0 ? '-' : '+')+Math.abs(Math.round(faltaOps)), faltaOps > 0 ? 'Por lograr en el año' : '¡Meta superada!', false) +
+      kpiBox('Monto Colocado', totalRealMonto.toFixed(1)+' MM$', `Ppto año: ${totalPptoMonto.toFixed(1)} MM$`, true) +
+      kpiBox('Cumplim. Acum. Monto', pctBadge(cumpAcumMonto), `Logrado: ${totalRealMonto.toFixed(1)} / Meta acum: ${pptoAcumMonto.toFixed(1)}`, false) +
+      kpiBox('Falta (Monto)', (faltaMonto > 0 ? '-' : '+')+Math.abs(faltaMonto).toFixed(1)+' MM$', faltaMonto > 0 ? 'Por colocar en el año' : '¡Meta superada!', false);
+  }
+}
+</script>
+
 </body>
 </html>
