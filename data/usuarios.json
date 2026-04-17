@@ -1,0 +1,18 @@
+[
+  {"nombre":"Ademir Norambuena",     "usuario":"ademir.norambuena@autofacilchile.cl",     "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null},
+  {"nombre":"Bernardo Ponce",        "usuario":"bernardo.ponce@autofacilchile.cl",        "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null},
+  {"nombre":"Bryan Saavedra",        "usuario":"bryan.saavedra@autofacilchile.cl",        "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null},
+  {"nombre":"Constanza Piedrahita",  "usuario":"constanza.piedrahita@autofacilchile.cl",  "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null},
+  {"nombre":"Cristina Peña",         "usuario":"cristina.pena@autofacilchile.cl",         "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null},
+  {"nombre":"Dagoberto Irribarra",   "usuario":"dagoberto.irribarra@autofacilchile.cl",   "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null},
+  {"nombre":"Eduardo Abad",          "usuario":"eduardo.abad@autofacilchile.cl",          "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null},
+  {"nombre":"Fabiola Torres",        "usuario":"fabiola.torres@autofacilchile.cl",        "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null},
+  {"nombre":"Jorge Vargas",          "usuario":"jorge.vargas@autofacilchile.cl",          "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null},
+  {"nombre":"Juan Manuel Bustamante","usuario":"juan.bustamante@autofacilchile.cl",       "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null},
+  {"nombre":"Karina Díaz",           "usuario":"karina.diaz@autofacilchile.cl",           "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null},
+  {"nombre":"Katherine Trillo",      "usuario":"katherine.trillo@autofacilchile.cl",      "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null},
+  {"nombre":"Leonardo Sevilla",      "usuario":"leonardo.sevilla@autofacilchile.cl",      "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null},
+  {"nombre":"Noelia González",       "usuario":"noelia.gonzalez@autofacilchile.cl",       "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null},
+  {"nombre":"Patricio Escobar",      "usuario":"patricio.escobar@autofacilchile.cl",      "clave":"Admin2026!", "perfil":"ADMINISTRADOR",  "estado":"ACTIVO",          "ultimoIngreso":null},
+  {"nombre":"Sandra Ayala",          "usuario":"sandra.ayala@autofacilchile.cl",          "clave":"AF2026",     "perfil":"USUARIO",        "estado":"NUNCA INGRESADO", "ultimoIngreso":null}
+]
