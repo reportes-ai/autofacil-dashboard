@@ -39,12 +39,39 @@ function githubRequest(method, path, body = null) {
   });
 }
 
+const USUARIOS_INICIALES = [
+  {nombre:"Ademir Norambuena",     usuario:"ademir.norambuena@autofacilchile.cl",     clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+  {nombre:"Bernardo Ponce",        usuario:"bernardo.ponce@autofacilchile.cl",        clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+  {nombre:"Bryan Saavedra",        usuario:"bryan.saavedra@autofacilchile.cl",        clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+  {nombre:"Constanza Piedrahita",  usuario:"constanza.piedrahita@autofacilchile.cl",  clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+  {nombre:"Cristina Peña",         usuario:"cristina.pena@autofacilchile.cl",         clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+  {nombre:"Dagoberto Irribarra",   usuario:"dagoberto.irribarra@autofacilchile.cl",   clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+  {nombre:"Eduardo Abad",          usuario:"eduardo.abad@autofacilchile.cl",          clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+  {nombre:"Fabiola Torres",        usuario:"fabiola.torres@autofacilchile.cl",        clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+  {nombre:"Jorge Vargas",          usuario:"jorge.vargas@autofacilchile.cl",          clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+  {nombre:"Juan Manuel Bustamante",usuario:"juan.bustamante@autofacilchile.cl",       clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+  {nombre:"Karina Díaz",           usuario:"karina.diaz@autofacilchile.cl",           clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+  {nombre:"Katherine Trillo",      usuario:"katherine.trillo@autofacilchile.cl",      clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+  {nombre:"Leonardo Sevilla",      usuario:"leonardo.sevilla@autofacilchile.cl",      clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+  {nombre:"Noelia González",       usuario:"noelia.gonzalez@autofacilchile.cl",       clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+  {nombre:"Patricio Escobar",      usuario:"patricio.escobar@autofacilchile.cl",      clave:"Admin2026!", perfil:"ADMINISTRADOR", estado:"ACTIVO",          ultimoIngreso:null},
+  {nombre:"Sandra Ayala",          usuario:"sandra.ayala@autofacilchile.cl",          clave:"AF2026",     perfil:"USUARIO",       estado:"NUNCA INGRESADO", ultimoIngreso:null},
+];
+
 async function leerUsuarios() {
   const apiPath = `/repos/${GITHUB_REPO}/contents/${USERS_FILE}`;
   const res = await githubRequest('GET', apiPath);
-  if (res.status === 404) return { usuarios: [], sha: null };
-  const content = Buffer.from(res.body.content, 'base64').toString('utf-8');
-  return { usuarios: JSON.parse(content), sha: res.body.sha };
+  if (res.status === 404 || !res.body.content) {
+    // Archivo no existe aún — inicializar con usuarios por defecto
+    return { usuarios: USUARIOS_INICIALES, sha: null };
+  }
+  try {
+    const content = Buffer.from(res.body.content.replace(/\n/g, ''), 'base64').toString('utf-8');
+    return { usuarios: JSON.parse(content), sha: res.body.sha };
+  } catch(e) {
+    console.error('Error parseando usuarios.json:', e.message);
+    return { usuarios: USUARIOS_INICIALES, sha: null };
+  }
 }
 
 async function guardarUsuarios(usuarios, sha, mensaje = 'usuarios: actualización') {
