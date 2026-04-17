@@ -1,13 +1,15 @@
 const nodemailer = require('nodemailer');
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const GITHUB_REPO  = process.env.GITHUB_REPO;   // usuario/repo
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN;  // para leer repo privado (opcional si es público)
+const DATA_FILE    = 'data/dashboard_data.json';
 
-async function sbGet(table, params = '') {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
-  });
-  if (!res.ok) throw new Error(await res.text());
+async function getData() {
+  const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${DATA_FILE}`;
+  const headers = { 'User-Agent': 'autofacil-informe' };
+  if (GITHUB_TOKEN) headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+  const res = await fetch(url, { headers });
+  if (!res.ok) throw new Error(`Error leyendo JSON: HTTP ${res.status}`);
   return res.json();
 }
 
@@ -24,52 +26,59 @@ async function main() {
   ayer.setDate(ayer.getDate() - 1);
   if (hoy.getDay() === 1) ayer.setDate(ayer.getDate() - 2);
 
-  // Desde el día 1 del mes de ayer
+  // Mes en curso (mismo mes que ayer)
+  const mesActual = `${ayer.getFullYear()}-${String(ayer.getMonth() + 1).padStart(2, '0')}`;
   const primerDiaMes = new Date(ayer.getFullYear(), ayer.getMonth(), 1);
-  const desdeStr = primerDiaMes.toISOString().split('T')[0];
-  const hastaStr = hoy.toISOString().split('T')[0]; // < hoy = hasta ayer inclusive
 
-  console.log(`Período: ${desdeStr} → ${ayer.toISOString().split('T')[0]}`);
+  console.log(`Leyendo dashboard_data.json...`);
+  const data = await getData();
+  const raw = data.raw || [];
 
-  // Todos los créditos del mes (cualquier estado) → determina qué ejecutivos participan
-  const todosIngresados = await sbGet(
-    'creditos',
-    `fecha_otorgamiento=gte.${desdeStr}&fecha_otorgamiento=lt.${hastaStr}&order=ejecutivo.asc&limit=5000`
+  console.log(`Total registros en JSON: ${raw.length}`);
+
+  // Filtrar: otorgados del mes en curso
+  const otorgados = raw.filter(r =>
+    r.mes === mesActual &&
+    (r.estado_eval || '').toUpperCase() === 'OTORGADO'
   );
 
-  // Solo otorgados
-  const otorgados = todosIngresados.filter(c =>
-    (c.estado_eval || '').toUpperCase() === 'OTORGADO'
-  );
+  // Todos los del mes (cualquier estado) → para detectar ejecutivos con ingresos
+  const todosDelMes = raw.filter(r => r.mes === mesActual);
 
-  // Set de todos los ejecutivos con al menos un ingreso en el mes
   const todosEjecutivos = new Set(
-    todosIngresados.map(c => (c.ejecutivo || 'SIN EJECUTIVO').trim())
+    todosDelMes
+      .map(r => (r.ejecutivo || 'SIN EJECUTIVO').trim())
+      .filter(Boolean)
   );
 
   // Agrupar otorgados por ejecutivo → financiera
   const porEjecutivo = {};
-  otorgados.forEach(c => {
-    const ej  = (c.ejecutivo  || 'SIN EJECUTIVO').trim();
-    const fin = (c.financiera || 'SIN FINANCIERA').trim();
+  otorgados.forEach(r => {
+    const ej  = (r.ejecutivo  || 'SIN EJECUTIVO').trim();
+    const fin = (r.financiera || r.institucion || 'SIN FINANCIERA').trim();
     if (!porEjecutivo[ej]) porEjecutivo[ej] = {};
     if (!porEjecutivo[ej][fin]) porEjecutivo[ej][fin] = { ops: 0, monto: 0 };
     porEjecutivo[ej][fin].ops++;
-    porEjecutivo[ej][fin].monto += Number(c.monto_financiado) || 0;
+    porEjecutivo[ej][fin].monto += Number(r.monto_financiado) || 0;
   });
 
-  // Incluir ejecutivos con ingresos pero sin otorgados (mapa vacío)
+  // Incluir ejecutivos con ingresos pero sin otorgados
   todosEjecutivos.forEach(ej => {
     if (!porEjecutivo[ej]) porEjecutivo[ej] = {};
   });
 
   const ejecutivos = Object.keys(porEjecutivo).sort();
 
+  if (todosDelMes.length === 0) {
+    console.log('No hay datos para el mes en curso. No se envía email.');
+    return;
+  }
+
   // Labels de fecha
-  const mesLabel      = ayer.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
-  const ayerLabel     = ayer.toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  const primerLabel   = primerDiaMes.toLocaleDateString('es-CL', { day: 'numeric', month: 'long' });
-  const ayerCorto     = ayer.toLocaleDateString('es-CL', { day: 'numeric', month: 'long' });
+  const ayerLabel   = ayer.toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const primerLabel = primerDiaMes.toLocaleDateString('es-CL', { day: 'numeric', month: 'long' });
+  const ayerCorto   = ayer.toLocaleDateString('es-CL', { day: 'numeric', month: 'long' });
+  const mesLabel    = ayer.toLocaleDateString('es-CL', { month: 'long', year: 'numeric' });
 
   let totalOpsGlobal   = 0;
   let totalMontoGlobal = 0;
@@ -105,12 +114,12 @@ async function main() {
     totalOpsGlobal   += totalOpsEj;
     totalMontoGlobal += totalMontoEj;
 
-    const nombre     = ej.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-    const sinVentas  = totalOpsEj === 0;
-    const colorAcc   = sinVentas ? '#CFD8DC' : '#2196F3';
-    const colorHead  = sinVentas ? '#90A4AE' : '#1565C0';
-    const colorFoot  = sinVentas ? '#F5F5F5' : '#E3F2FD';
-    const colorTxt   = sinVentas ? '#90A4AE' : '#1565C0';
+    const nombre    = ej.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+    const sinVentas = totalOpsEj === 0;
+    const colorAcc  = sinVentas ? '#CFD8DC' : '#2196F3';
+    const colorHead = sinVentas ? '#90A4AE' : '#1565C0';
+    const colorFoot = sinVentas ? '#F5F5F5' : '#E3F2FD';
+    const colorTxt  = sinVentas ? '#90A4AE' : '#1565C0';
 
     bloques += `
       <div style="margin-bottom:24px">
@@ -149,11 +158,6 @@ async function main() {
         </tbody>
       </table>
     </div>`;
-
-  if (todosIngresados.length === 0) {
-    console.log('No hay créditos en el período. No se envía email.');
-    return;
-  }
 
   const html = `
     <div style="font-family:'Segoe UI',Arial,sans-serif;max-width:700px;margin:0 auto;color:#333">
