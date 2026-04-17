@@ -1,0 +1,30 @@
+name: Informe Diario de Ventas
+
+on:
+  schedule:
+    - cron: '0 11 * * 1-5'  # 8:00 AM Chile (UTC-3), lunes a viernes
+  workflow_dispatch:          # permite ejecutar manualmente
+
+jobs:
+  enviar-informe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        run: npm install node-fetch nodemailer
+
+      - name: Informe diario de ventas
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GMAIL_USER: autofacilreportes@gmail.com
+          GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
+          EMAIL_TO: eduardo.abad@autofacilchile.cl,patricio.escobar@autofacilchile.cl
+        run: node .github/workflows/scripts/informe-diario-ventas.js
