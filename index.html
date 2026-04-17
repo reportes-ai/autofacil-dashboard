@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260416_V2.3 -->
+<!-- v20260417_V2.4 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -126,7 +126,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
     <div style="font-family:'Roboto',sans-serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:4px">
       Auto<span style="color:#2196F3">Fácil</span>
     </div>
-    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v2.3</span></div>
+    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v2.4</span></div>
     <div id="login-error" style="background:#ef444420;color:#ef4444;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:16px;display:none"></div>
     <input id="login-user" type="email" placeholder="Usuario (correo)" autocomplete="username"
       style="width:100%;padding:12px 16px;border-radius:8px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;font-family:'Roboto',sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px"
@@ -151,65 +151,38 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
 
 <script>
 // ============================================================
-// SISTEMA DE USUARIOS — Base de datos en localStorage
+// SISTEMA DE USUARIOS — API Vercel + GitHub
 // ============================================================
 
-// Usuarios iniciales (solo se cargan si no existe la BD)
-const USUARIOS_INICIALES = [
-  {nombre:"Ademir Norambuena",  usuario:"ademir.norambuena@autofacilchile.cl",  clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
-  {nombre:"Bernardo Ponce",     usuario:"bernardo.ponce@autofacilchile.cl",     clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
-  {nombre:"Bryan Saavedra",     usuario:"bryan.saavedra@autofacilchile.cl",     clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
-  {nombre:"Constanza Piedrahita",usuario:"constanza.piedrahita@autofacilchile.cl",clave:"AF2026",perfil:"USUARIO",        estado:"ACTIVO"},
-  {nombre:"Cristina Peña",      usuario:"cristina.pena@autofacilchile.cl",      clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
-  {nombre:"Dagoberto Irribarra",usuario:"dagoberto.irribarra@autofacilchile.cl",clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
-  {nombre:"Eduardo Abad",       usuario:"eduardo.abad@autofacilchile.cl",       clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
-  {nombre:"Fabiola Torres",     usuario:"fabiola.torres@autofacilchile.cl",     clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
-  {nombre:"Jorge Vargas",       usuario:"jorge.vargas@autofacilchile.cl",       clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
-  {nombre:"Juan Manuel Bustamante",usuario:"juan.bustamante@autofacilchile.cl", clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
-  {nombre:"Karina Díaz",        usuario:"karina.diaz@autofacilchile.cl",        clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
-  {nombre:"Katherine Trillo",   usuario:"katherine.trillo@autofacilchile.cl",   clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
-  {nombre:"Leonardo Sevilla",   usuario:"leonardo.sevilla@autofacilchile.cl",   clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
-  {nombre:"Noelia González",    usuario:"noelia.gonzalez@autofacilchile.cl",    clave:"AF2026",  perfil:"USUARIO",        estado:"ACTIVO"},
-  {nombre:"Patricio Escobar",   usuario:"patricio.escobar@autofacilchile.cl",   clave:"Admin2026!",perfil:"ADMINISTRADOR",estado:"ACTIVO"},
-];
+const API_USUARIOS = '/api/usuarios';
 
-function getUsuarios() {
-  const bd = localStorage.getItem('af_usuarios');
-  if (!bd) {
-    localStorage.setItem('af_usuarios', JSON.stringify(USUARIOS_INICIALES));
-    return USUARIOS_INICIALES;
-  }
-  var usuarios = JSON.parse(bd);
-  // Asegurar que todos los usuarios tengan campo clave (migración)
-  var updated = false;
-  usuarios.forEach(function(u) {
-    if (!u.clave) {
-      // Buscar clave inicial en USUARIOS_INICIALES
-      var ini = USUARIOS_INICIALES.find(function(x) { return x.usuario === u.usuario; });
-      u.clave = ini ? ini.clave : 'AF2026';
-      updated = true;
-    }
-  });
-  if (updated) localStorage.setItem('af_usuarios', JSON.stringify(usuarios));
-  return usuarios;
-}
-
-function saveUsuarios(usu) {
-  localStorage.setItem('af_usuarios', JSON.stringify(usu));
-}
-
-// Sesión actual
+// Token de sesión en memoria (no persiste entre recargas intencionalmente)
 let sesionActual = null;
+let _sesionToken = null; // email usado como token simple para llamadas admin
+
+// Restaurar sesión desde sessionStorage
 const sesionStr = sessionStorage.getItem('af_sesion');
 if (sesionStr) {
-  sesionActual = JSON.parse(sesionStr);
-  document.getElementById('login-screen').style.display = 'none';
+  try {
+    const parsed = JSON.parse(sesionStr);
+    sesionActual = parsed.sesion;
+    _sesionToken = parsed.token;
+    document.getElementById('login-screen').style.display = 'none';
+  } catch(e) {}
 }
 
-function checkLogin() {
+async function apiUsuarios(body, authToken) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+  const res = await fetch(API_USUARIOS, { method: 'POST', headers, body: JSON.stringify(body) });
+  return res.json();
+}
+
+async function checkLogin() {
   const uInput = document.getElementById('login-user').value.trim().toLowerCase();
   const pInput = document.getElementById('login-pass').value;
   const errEl  = document.getElementById('login-error');
+  const btnEl  = document.querySelector('#login-screen button');
 
   if (!uInput || !pInput) {
     errEl.textContent = 'Ingresa usuario y contraseña.';
@@ -217,57 +190,47 @@ function checkLogin() {
     return;
   }
 
-  const usuarios = getUsuarios();
-  const user = usuarios.find(u => u.usuario.toLowerCase() === uInput);
+  if (btnEl) btnEl.textContent = 'Verificando...';
+  errEl.style.display = 'none';
 
-  if (!user) {
-    errEl.textContent = 'Usuario no encontrado.';
-    errEl.style.display = 'block';
-    return;
-  }
-  if (user.estado === 'BLOQUEADO') {
-    errEl.textContent = 'Usuario bloqueado. Contacta al administrador.';
-    errEl.style.display = 'block';
-    return;
-  }
-  if (user.estado === 'SUSPENDIDO') {
-    errEl.textContent = 'Usuario suspendido. Contacta al administrador.';
-    errEl.style.display = 'block';
-    return;
-  }
-  if (user.clave !== pInput) {
-    errEl.textContent = 'Contraseña incorrecta.';
-    errEl.style.display = 'block';
-    setTimeout(() => errEl.style.display = 'none', 3000);
-    return;
-  }
+  try {
+    const data = await apiUsuarios({ accion: 'login', usuario: uInput, clave: pInput });
 
-  // Login exitoso
-  const primerIngreso = user.estado === 'NUNCA INGRESADO';
-  // Registrar último ingreso siempre
-  user.ultimoIngreso = new Date().toISOString();
-  if (!primerIngreso) {
-    user.estado = 'ACTIVO';
-  }
-  saveUsuarios(usuarios);
-  // Guardar o limpiar credenciales según checkbox
-  var chkRec = document.getElementById('chk-recordar');
-  if (chkRec && chkRec.checked) {
-    localStorage.setItem('af_recordar', '1');
-    localStorage.setItem('af_saved_user', uInput);
-    localStorage.setItem('af_saved_pass', pInput);
-  } else {
-    localStorage.removeItem('af_recordar');
-    localStorage.removeItem('af_saved_user');
-    localStorage.removeItem('af_saved_pass');
-  }
-  sesionActual = { nombre: user.nombre, usuario: user.usuario, perfil: user.perfil };
-  sessionStorage.setItem('af_sesion', JSON.stringify(sesionActual));
-  document.getElementById('login-screen').style.display = 'none';
-  actualizarTopbarUsuario();
-  // Mostrar modal cambio de clave si es primer ingreso
-  if (primerIngreso) {
-    setTimeout(() => mostrarModalCambioClave(), 400);
+    if (!data.ok) {
+      errEl.textContent = data.error || 'Error al iniciar sesión.';
+      errEl.style.display = 'block';
+      if (btnEl) btnEl.textContent = 'Ingresar';
+      return;
+    }
+
+    // Guardar sesión
+    sesionActual = data.sesion;
+    _sesionToken = uInput;
+    sessionStorage.setItem('af_sesion', JSON.stringify({ sesion: data.sesion, token: uInput }));
+
+    // Guardar credenciales si checkbox marcado
+    const chkRec = document.getElementById('chk-recordar');
+    if (chkRec && chkRec.checked) {
+      localStorage.setItem('af_recordar', '1');
+      localStorage.setItem('af_saved_user', uInput);
+      localStorage.setItem('af_saved_pass', pInput);
+    } else {
+      localStorage.removeItem('af_recordar');
+      localStorage.removeItem('af_saved_user');
+      localStorage.removeItem('af_saved_pass');
+    }
+
+    document.getElementById('login-screen').style.display = 'none';
+    actualizarTopbarUsuario();
+
+    if (data.primerIngreso) {
+      setTimeout(() => mostrarModalCambioClave(), 400);
+    }
+
+  } catch(e) {
+    errEl.textContent = 'Error de conexión. Intenta nuevamente.';
+    errEl.style.display = 'block';
+    if (btnEl) btnEl.textContent = 'Ingresar';
   }
 }
 
@@ -278,7 +241,6 @@ function actualizarTopbarUsuario() {
     el.innerHTML = `<span style="font-size:10px;color:#7bafd4">👤 ${sesionActual.nombre}</span>
       <button onclick="cerrarSesion()" style="background:#1a3a6a;border:1px solid #2a4070;color:#aac4e8;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;margin-left:6px">Salir</button>`;
   }
-  // Mostrar tab admin solo si es ADMINISTRADOR
   const tabAdmin = document.getElementById('tab-admin');
   if (tabAdmin) tabAdmin.style.display = sesionActual.perfil === 'ADMINISTRADOR' ? 'flex' : 'none';
 }
@@ -286,14 +248,12 @@ function actualizarTopbarUsuario() {
 function cerrarSesion() {
   sessionStorage.removeItem('af_sesion');
   sesionActual = null;
+  _sesionToken = null;
   location.reload();
 }
 
-// Ejecutar al cargar
 document.addEventListener('DOMContentLoaded', function() {
   actualizarTopbarUsuario();
-  getUsuarios();
-  // Rellenar credenciales guardadas si "Recordarme" estaba marcado
   if (localStorage.getItem('af_recordar')) {
     var su = localStorage.getItem('af_saved_user');
     var sp = localStorage.getItem('af_saved_pass');
@@ -308,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="topbar">
   <div class="topbar-row1">
-    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V2.3</span></span></div>
+    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V2.4</span></span></div>
     <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:8px"></div>
     <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:4px 12px;border-radius:6px;border:1px solid #2a4070;margin-left:8px">
       <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
@@ -2784,9 +2744,8 @@ function buildV7() {
 </div>
 <script>
 // ======== ADMIN DE USUARIOS ========
-function buildVAdmin() {
-  // Pequeño delay para asegurar que la vista está visible
-  setTimeout(function() { renderTablaAdmin(); }, 50);
+async function buildVAdmin() {
+  setTimeout(async function() { await renderTablaAdmin(); }, 50);
 }
 
 function estadoBadge(estado) {
@@ -2800,9 +2759,22 @@ function estadoBadge(estado) {
   return '<span style="background:'+c.bg+';color:'+c.txt+';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">'+estado+'</span>';
 }
 
-function renderTablaAdmin(filtro) {
+// Cache local de usuarios para el admin (se recarga al abrir la vista)
+window._usuariosAdmin = [];
+
+async function renderTablaAdmin(filtro) {
   filtro = filtro || '';
-  const usuarios = getUsuarios();
+  // Cargar desde API si no tenemos datos o es recarga forzada
+  if (window._usuariosAdmin.length === 0) {
+    const tbl = document.getElementById('t-admin-users');
+    if (tbl) tbl.innerHTML = '<tr><td colspan="7" style="padding:20px;text-align:center;color:#7bafd4">Cargando...</td></tr>';
+    try {
+      const data = await apiUsuarios({ accion: 'listar' }, _sesionToken);
+      if (data.ok) window._usuariosAdmin = data.usuarios;
+    } catch(e) { console.error('Error cargando usuarios', e); }
+  }
+
+  const usuarios = window._usuariosAdmin;
   const q = filtro.toLowerCase();
   const filt = q ? usuarios.filter(function(u) {
     return u.nombre.toLowerCase().includes(q) || u.usuario.toLowerCase().includes(q) ||
@@ -2814,13 +2786,12 @@ function renderTablaAdmin(filtro) {
     '<th style="padding:8px;text-align:left">Usuario</th>' +
     '<th style="padding:8px;text-align:center">Perfil</th>' +
     '<th style="padding:8px;text-align:center">Estado</th>' +
-    '<th style="padding:8px;text-align:center">Contraseña</th>' +
     '<th style="padding:8px;text-align:center">Último Ingreso</th>' +
     '<th style="padding:8px;text-align:center">Acciones</th>' +
     '</tr></thead>';
 
   var tbody = filt.map(function(u) {
-    var idx = usuarios.indexOf(u);
+    var uEmail = encodeURIComponent(u.usuario);
     var ult = u.ultimoIngreso
       ? new Date(u.ultimoIngreso).toLocaleString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
       : '—';
@@ -2831,12 +2802,11 @@ function renderTablaAdmin(filtro) {
       '<td style="padding:7px 8px;color:#555;font-size:11px">' + u.usuario + '</td>' +
       '<td style="padding:7px 8px;text-align:center"><span style="background:' + perfBg + ';color:' + perfC + ';padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600">' + u.perfil + '</span></td>' +
       '<td style="padding:7px 8px;text-align:center">' + estadoBadge(u.estado) + '</td>' +
-      '<td style="padding:7px 8px;text-align:center;font-family:monospace;font-size:12px;color:#4fc3f7;letter-spacing:1px">' + u.clave + '</td>' +
       '<td style="padding:7px 8px;text-align:center;font-size:11px;color:#888">' + ult + '</td>' +
       '<td style="padding:7px 8px;text-align:center;white-space:nowrap">' +
-        '<button onclick="editarUsuario(' + idx + ')" style="background:#1565C0;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;margin-right:3px">✏️ Editar</button>' +
-        '<button onclick="resetClave(' + idx + ')" style="background:#fb8c00;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;margin-right:3px">🔑 Reset</button>' +
-        '<button onclick="eliminarUsuario(' + idx + ')" style="background:#e53935;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer">🗑</button>' +
+        '<button onclick="editarUsuario(\'' + u.usuario + '\')" style="background:#1565C0;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;margin-right:3px">✏️ Editar</button>' +
+        '<button onclick="resetClave(\'' + u.usuario + '\')" style="background:#fb8c00;color:#fff;border:none;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;margin-right:3px">🔑 Reset</button>' +
+        '<button onclick="eliminarUsuario(\'' + u.usuario + '\')" style="background:#e53935;color:#fff;border:none;border-radius:4px;padding:3px 8px;font-size:11px;cursor:pointer">🗑</button>' +
       '</td></tr>';
   }).join('');
 
@@ -2851,12 +2821,10 @@ function renderTablaAdmin(filtro) {
   var tbl = document.getElementById('t-admin-users');
   if (tbl) tbl.innerHTML = thead + '<tbody>' + tbody + '</tbody>';
 
-  // Insertar stats en el contenedor padre del div overflow
   var el = document.getElementById('admin-stats');
   if (!el) {
     el = document.createElement('div');
     el.id = 'admin-stats';
-    // Insertar antes del div overflow-x:auto (padre de la tabla)
     var overflowDiv = tbl.parentElement;
     overflowDiv.parentElement.insertBefore(el, overflowDiv);
   }
@@ -2874,7 +2842,7 @@ function filtrarUsuariosAdmin() {
 
 function nuevoUsuario() {
   document.getElementById('modal-titulo').textContent = '➕ Nuevo Usuario';
-  document.getElementById('edit-idx').value = '-1';
+  document.getElementById('edit-idx').value = '';
   document.getElementById('edit-nombre').value = '';
   document.getElementById('edit-usuario').value = '';
   document.getElementById('edit-clave').value = 'AF2026';
@@ -2885,16 +2853,17 @@ function nuevoUsuario() {
   setTimeout(function() { document.getElementById('edit-nombre').focus(); }, 100);
 }
 
-function editarUsuario(idx) {
-  var u = getUsuarios()[idx];
+function editarUsuario(email) {
+  var u = window._usuariosAdmin.find(function(x) { return x.usuario === email; });
+  if (!u) return;
   document.getElementById('modal-titulo').textContent = '✏️ Editar Usuario';
-  document.getElementById('edit-idx').value = idx;
+  document.getElementById('edit-idx').value = u.usuario;
   document.getElementById('edit-nombre').value = u.nombre;
   document.getElementById('edit-usuario').value = u.usuario;
-  document.getElementById('edit-clave').value = u.clave;
+  document.getElementById('edit-clave').value = '';
   document.getElementById('edit-perfil').value = u.perfil;
   document.getElementById('edit-estado').value = u.estado;
-  document.getElementById('lbl-clave').textContent = 'Contraseña vigente';
+  document.getElementById('lbl-clave').textContent = 'Nueva contraseña (dejar vacío para no cambiar)';
   document.getElementById('modal-usuario').style.display = 'flex';
 }
 
@@ -2902,63 +2871,59 @@ function cerrarModal() {
   document.getElementById('modal-usuario').style.display = 'none';
 }
 
-function guardarUsuario() {
-  var idx     = parseInt(document.getElementById('edit-idx').value);
+async function guardarUsuario() {
+  var emailOriginal = document.getElementById('edit-idx').value;
   var nombre  = document.getElementById('edit-nombre').value.trim();
   var usuario = document.getElementById('edit-usuario').value.trim().toLowerCase();
   var clave   = document.getElementById('edit-clave').value.trim();
   var perfil  = document.getElementById('edit-perfil').value;
   var estado  = document.getElementById('edit-estado').value;
 
-  if (!nombre || !usuario || !clave) { alert('Completa todos los campos.'); return; }
+  if (!nombre || !usuario) { alert('Completa nombre y usuario.'); return; }
+  if (!emailOriginal && !clave) { alert('Ingresa una contraseña inicial.'); return; }
 
-  var usuarios = getUsuarios();
-  if (idx === -1) {
-    if (usuarios.find(function(u) { return u.usuario.toLowerCase() === usuario; })) {
-      alert('Ya existe un usuario con ese email.'); return;
-    }
-    usuarios.push({ nombre: nombre, usuario: usuario, clave: clave, perfil: perfil, estado: estado, ultimoIngreso: null });
-    alert('✅ Usuario "' + nombre + '" creado. Clave inicial: ' + clave);
-  } else {
-    usuarios[idx].nombre  = nombre;
-    usuarios[idx].usuario = usuario;
-    usuarios[idx].clave   = clave;
-    usuarios[idx].perfil  = perfil;
-    usuarios[idx].estado  = estado;
-    alert('✅ Usuario "' + nombre + '" actualizado.');
-  }
-  saveUsuarios(usuarios);
-  cerrarModal();
-  renderTablaAdmin();
+  const body = { accion: 'guardar', usuario, nombre, perfil, estado };
+  if (clave) body.clave = clave;
+
+  try {
+    const data = await apiUsuarios(body, _sesionToken);
+    if (!data.ok) { alert('Error: ' + data.error); return; }
+    alert(emailOriginal ? '✅ Usuario actualizado.' : '✅ Usuario "' + nombre + '" creado.');
+    window._usuariosAdmin = []; // forzar recarga
+    cerrarModal();
+    await renderTablaAdmin();
+  } catch(e) { alert('Error de conexión.'); }
 }
 
-function resetClave(idx) {
-  if (!confirm('¿Resetear clave a AF2026?')) return;
-  var usuarios = getUsuarios();
-  usuarios[idx].clave = 'AF2026';
-  usuarios[idx].estado = 'NUNCA INGRESADO';
-  usuarios[idx].ultimoIngreso = null;
-  saveUsuarios(usuarios);
-  renderTablaAdmin();
-  alert('✅ Clave reseteada para ' + usuarios[idx].nombre + '. Deberá cambiarla al ingresar.');
+async function resetClave(email) {
+  if (!confirm('¿Resetear clave a AF2026 para ' + email + '?')) return;
+  try {
+    const data = await apiUsuarios({ accion: 'guardar', usuario: email, clave: 'AF2026', estado: 'NUNCA INGRESADO' }, _sesionToken);
+    if (!data.ok) { alert('Error: ' + data.error); return; }
+    alert('✅ Clave reseteada. El usuario deberá cambiarla al ingresar.');
+    window._usuariosAdmin = [];
+    await renderTablaAdmin();
+  } catch(e) { alert('Error de conexión.'); }
 }
 
-function eliminarUsuario(idx) {
-  var usuarios = getUsuarios();
-  var u = usuarios[idx];
-  if (u.perfil === 'ADMINISTRADOR' && usuarios.filter(function(x) { return x.perfil === 'ADMINISTRADOR'; }).length === 1) {
-    alert('No puedes eliminar el único administrador.'); return;
-  }
-  if (!confirm('¿Eliminar a "' + u.nombre + '"? No se puede deshacer.')) return;
-  usuarios.splice(idx, 1);
-  saveUsuarios(usuarios);
-  renderTablaAdmin();
+async function eliminarUsuario(email) {
+  var u = window._usuariosAdmin.find(function(x) { return x.usuario === email; });
+  if (!confirm('¿Eliminar a "' + (u ? u.nombre : email) + '"? No se puede deshacer.')) return;
+  try {
+    const data = await apiUsuarios({ accion: 'eliminar', usuario: email }, _sesionToken);
+    if (!data.ok) { alert('Error: ' + data.error); return; }
+    window._usuariosAdmin = [];
+    await renderTablaAdmin();
+  } catch(e) { alert('Error de conexión.'); }
 }
 
-function exportarUsuarios() {
-  var u = getUsuarios();
+async function exportarUsuarios() {
+  const data = await apiUsuarios({ accion: 'listar' }, _sesionToken);
+  if (!data.ok) { alert('Error al exportar.'); return; }
   var csv = 'Nombre,Usuario,Perfil,Estado,Ultimo Ingreso\n' +
-    u.map(function(x) { return '"'+x.nombre+'","'+x.usuario+'","'+x.perfil+'","'+x.estado+'","'+(x.ultimoIngreso||'')+'"'; }).join('\n');
+    data.usuarios.map(function(x) {
+      return '"'+x.nombre+'","'+x.usuario+'","'+x.perfil+'","'+x.estado+'","'+(x.ultimoIngreso||'')+'"';
+    }).join('\n');
   var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
   a.download = 'usuarios_autofacil.csv';
@@ -2970,22 +2935,22 @@ function mostrarModalCambioClave() {
   setTimeout(function() { document.getElementById('nueva-clave1').focus(); }, 100);
 }
 
-function guardarNuevaClave() {
+async function guardarNuevaClave() {
   var c1 = document.getElementById('nueva-clave1').value;
   var c2 = document.getElementById('nueva-clave2').value;
   var errEl = document.getElementById('cambio-error');
   if (c1.length < 6) { errEl.textContent = 'Mínimo 6 caracteres.'; errEl.style.display = 'block'; return; }
   if (c1 !== c2) { errEl.textContent = 'Las contraseñas no coinciden.'; errEl.style.display = 'block'; return; }
-  var usuarios = getUsuarios();
-  var i = usuarios.findIndex(function(u) { return u.usuario === sesionActual.usuario; });
-  if (i >= 0) {
-    usuarios[i].clave = c1;
-    usuarios[i].estado = 'ACTIVO';
-    usuarios[i].ultimoIngreso = new Date().toISOString();
-    saveUsuarios(usuarios);
+
+  try {
+    const data = await apiUsuarios({ accion: 'cambiar-clave', usuario: sesionActual.usuario, nueva_clave: c1 });
+    if (!data.ok) { errEl.textContent = data.error || 'Error al cambiar clave.'; errEl.style.display = 'block'; return; }
+    document.getElementById('modal-cambio-clave').style.display = 'none';
+    alert('✅ ¡Contraseña establecida correctamente!');
+  } catch(e) {
+    errEl.textContent = 'Error de conexión.';
+    errEl.style.display = 'block';
   }
-  document.getElementById('modal-cambio-clave').style.display = 'none';
-  alert('✅ ¡Contraseña establecida correctamente!');
 }
 </script>
 
