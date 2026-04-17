@@ -192,7 +192,7 @@ async function main() {
   await transporter.sendMail({
     from: `"AutoFácil Reportes" <${process.env.GMAIL_USER}>`,
     to: process.env.EMAIL_TO,
-    subject: `Informe Diario de Ventas — ${ayerCL} · ${totalOpsGlobal} créditos acumulados`,
+    subject: `💰 Informe Diario de Ventas — ${ayerCL} · ${totalOpsGlobal} créditos acumulados`,
     html,
   });
 
