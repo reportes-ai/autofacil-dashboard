@@ -117,7 +117,7 @@ module.exports = async function handler(req, res) {
 
       const primerIngreso = u.estado === 'NUNCA INGRESADO';
       usuarios[idx].ultimoIngreso = new Date().toISOString();
-      if (!primerIngreso) usuarios[idx].estado = 'ACTIVO';
+      usuarios[idx].estado = 'ACTIVO'; // siempre marcar activo al ingresar
 
       await guardarUsuarios(usuarios, sha, `login: ${usuario}`);
 
