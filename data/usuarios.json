@@ -139,8 +139,8 @@
     "usuario": "sandra.ayala@autofacilchile.cl",
     "clave": "AF2026",
     "perfil": "USUARIO",
-    "estado": "NUNCA INGRESADO",
-    "ultimoIngreso": null,
-    "primerIngreso": true
+    "estado": "ACTIVO",
+    "ultimoIngreso": "2026-04-21T15:19:44.105Z",
+    "primerIngreso": false
   }
 ]
