@@ -62,27 +62,41 @@ async function leerUsuarios() {
   const apiPath = `/repos/${GITHUB_REPO}/contents/${USERS_FILE}`;
   const res = await githubRequest('GET', apiPath);
   if (res.status === 404 || !res.body.content) {
-    // Archivo no existe aún — inicializar con usuarios por defecto
-    return { usuarios: USUARIOS_INICIALES, sha: null };
+    return { usuarios: USUARIOS_INICIALES.map(u => ({...u})), sha: null };
   }
   try {
     const content = Buffer.from(res.body.content.replace(/\n/g, ''), 'base64').toString('utf-8');
-    return { usuarios: JSON.parse(content), sha: res.body.sha };
+    const usuarios = JSON.parse(content);
+    // Migración: asegurar que todos tengan campo primerIngreso
+    usuarios.forEach(u => {
+      if (u.primerIngreso === undefined) {
+        u.primerIngreso = u.estado === 'NUNCA INGRESADO';
+      }
+    });
+    return { usuarios, sha: res.body.sha };
   } catch(e) {
     console.error('Error parseando usuarios.json:', e.message);
-    return { usuarios: USUARIOS_INICIALES, sha: null };
+    return { usuarios: USUARIOS_INICIALES.map(u => ({...u})), sha: null };
   }
 }
 
 async function guardarUsuarios(usuarios, sha, mensaje = 'usuarios: actualización') {
   const apiPath = `/repos/${GITHUB_REPO}/contents/${USERS_FILE}`;
+  // Si no tenemos sha, obtenerlo antes de guardar para evitar conflicto
+  if (!sha) {
+    const check = await githubRequest('GET', apiPath);
+    if (check.body.sha) sha = check.body.sha;
+  }
   const contenidoB64 = Buffer.from(JSON.stringify(usuarios, null, 2)).toString('base64');
-  await githubRequest('PUT', apiPath, {
+  const result = await githubRequest('PUT', apiPath, {
     message: mensaje,
     content: contenidoB64,
     branch: 'main',
     ...(sha ? { sha } : {}),
   });
+  if (result.status !== 200 && result.status !== 201) {
+    throw new Error(`GitHub PUT falló: ${result.status} — ${JSON.stringify(result.body)}`);
+  }
 }
 
 // ── CORS headers ──────────────────────────────────────────────────────────────
@@ -115,9 +129,10 @@ module.exports = async function handler(req, res) {
       if (u.estado === 'SUSPENDIDO')  return res.status(403).json({ ok: false, error: 'Usuario suspendido' });
       if (u.clave !== clave)          return res.status(401).json({ ok: false, error: 'Contraseña incorrecta' });
 
-      const primerIngreso = u.estado === 'NUNCA INGRESADO';
+      const primerIngreso = u.primerIngreso !== false && u.estado === 'NUNCA INGRESADO';
       usuarios[idx].ultimoIngreso = new Date().toISOString();
-      usuarios[idx].estado = 'ACTIVO'; // siempre marcar activo al ingresar
+      usuarios[idx].estado = 'ACTIVO';
+      usuarios[idx].primerIngreso = false; // marcar que ya no es primer ingreso
 
       await guardarUsuarios(usuarios, sha, `login: ${usuario}`);
 
@@ -165,16 +180,16 @@ module.exports = async function handler(req, res) {
 
       const { usuarios, sha } = await leerUsuarios();
       const idx = usuarios.findIndex(u => u.usuario.toLowerCase() === usuario.toLowerCase());
+      const { primerIngreso } = req.body || {};
 
       if (idx === -1) {
-        // Nuevo usuario
-        usuarios.push({ nombre, usuario, clave: clave || 'AF2026', perfil: perfil || 'USUARIO', estado: estado || 'NUNCA INGRESADO', ultimoIngreso: null });
+        usuarios.push({ nombre, usuario, clave: clave || 'AF2026', perfil: perfil || 'USUARIO', estado: estado || 'NUNCA INGRESADO', primerIngreso: true, ultimoIngreso: null });
       } else {
-        // Actualizar
-        if (nombre)  usuarios[idx].nombre  = nombre;
-        if (clave)   usuarios[idx].clave   = clave;
-        if (perfil)  usuarios[idx].perfil  = perfil;
-        if (estado)  usuarios[idx].estado  = estado;
+        if (nombre  !== undefined) usuarios[idx].nombre  = nombre;
+        if (clave   !== undefined && clave)  usuarios[idx].clave   = clave;
+        if (perfil  !== undefined) usuarios[idx].perfil  = perfil;
+        if (estado  !== undefined) usuarios[idx].estado  = estado;
+        if (primerIngreso !== undefined) usuarios[idx].primerIngreso = primerIngreso;
       }
 
       await guardarUsuarios(usuarios, sha, `admin: guardar ${usuario}`);
