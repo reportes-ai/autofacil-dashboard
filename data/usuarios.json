@@ -58,9 +58,9 @@
     "usuario": "eduardo.abad@autofacilchile.cl",
     "clave": "AF2026",
     "perfil": "USUARIO",
-    "estado": "NUNCA INGRESADO",
-    "ultimoIngreso": null,
-    "primerIngreso": true
+    "estado": "ACTIVO",
+    "ultimoIngreso": "2026-04-21T14:59:16.838Z",
+    "primerIngreso": false
   },
   {
     "nombre": "Fabiola Torres",
