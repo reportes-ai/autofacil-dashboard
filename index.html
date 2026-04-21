@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260417_V2.4 -->
+<!-- v20260417_V2.5 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -126,7 +126,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
     <div style="font-family:'Roboto',sans-serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:4px">
       Auto<span style="color:#2196F3">Fácil</span>
     </div>
-    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v2.4</span></div>
+    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v2.5</span></div>
     <div id="login-error" style="background:#ef444420;color:#ef4444;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:16px;display:none"></div>
     <input id="login-user" type="email" placeholder="Usuario (correo)" autocomplete="username"
       style="width:100%;padding:12px 16px;border-radius:8px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;font-family:'Roboto',sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px"
@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="topbar">
   <div class="topbar-row1">
-    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V2.4</span></span></div>
+    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V2.5</span></span></div>
     <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:8px"></div>
     <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:4px 12px;border-radius:6px;border:1px solid #2a4070;margin-left:8px">
       <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
@@ -2898,7 +2898,7 @@ async function guardarUsuario() {
 async function resetClave(email) {
   if (!confirm('¿Resetear clave a AF2026 para ' + email + '?')) return;
   try {
-    const data = await apiUsuarios({ accion: 'guardar', usuario: email, clave: 'AF2026', estado: 'NUNCA INGRESADO' }, _sesionToken);
+    const data = await apiUsuarios({ accion: 'guardar', usuario: email, clave: 'AF2026', estado: 'NUNCA INGRESADO', primerIngreso: true }, _sesionToken);
     if (!data.ok) { alert('Error: ' + data.error); return; }
     alert('✅ Clave reseteada. El usuario deberá cambiarla al ingresar.');
     window._usuariosAdmin = [];
