@@ -112,9 +112,9 @@
     "usuario": "leonardo.sevilla@autofacilchile.cl",
     "clave": "AF2026",
     "perfil": "USUARIO",
-    "estado": "NUNCA INGRESADO",
-    "ultimoIngreso": null,
-    "primerIngreso": true
+    "estado": "ACTIVO",
+    "ultimoIngreso": "2026-04-22T17:01:53.195Z",
+    "primerIngreso": false
   },
   {
     "nombre": "Noelia González",
