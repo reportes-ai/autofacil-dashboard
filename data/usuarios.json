@@ -85,9 +85,9 @@
     "usuario": "juan.bustamante@autofacilchile.cl",
     "clave": "AF2026",
     "perfil": "USUARIO",
-    "estado": "NUNCA INGRESADO",
-    "ultimoIngreso": null,
-    "primerIngreso": true
+    "estado": "ACTIVO",
+    "ultimoIngreso": "2026-04-22T22:04:44.315Z",
+    "primerIngreso": false
   },
   {
     "nombre": "Karina Díaz",
