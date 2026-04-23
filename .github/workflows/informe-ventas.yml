@@ -26,5 +26,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GMAIL_USER: autofacilreportes@gmail.com
           GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
-          EMAIL_TO: grupo.comercial@autofacilchile.cl
+          EMAIL_TO: grupo.comercial@autofacilchile.cl,operaciones@autofacilchile.cl,validacion@autofacilchile.cl
         run: node .github/workflows/scripts/informe-diario-ventas.js
