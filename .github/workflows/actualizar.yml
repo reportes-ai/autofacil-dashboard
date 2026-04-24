@@ -3,7 +3,7 @@ name: Actualizar datos dashboard
 on:
   schedule:
     # Cada 30 minutos de 12:00 a 23:00 UTC (09:00 a 20:00 Chile UTC-3)
-    - cron: '0,30 12-23 * * 1-5'
+    - cron: '0,15 12-23 * * 1-5'
   workflow_dispatch:
 
 jobs:
