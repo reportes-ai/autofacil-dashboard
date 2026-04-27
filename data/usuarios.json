@@ -121,9 +121,9 @@
     "usuario": "noelia.gonzalez@autofacilchile.cl",
     "clave": "AF2026",
     "perfil": "USUARIO",
-    "estado": "NUNCA INGRESADO",
-    "ultimoIngreso": null,
-    "primerIngreso": true
+    "estado": "ACTIVO",
+    "ultimoIngreso": "2026-04-27T21:46:56.716Z",
+    "primerIngreso": false
   },
   {
     "nombre": "Patricio Escobar",
