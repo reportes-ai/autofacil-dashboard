@@ -76,9 +76,9 @@
     "usuario": "jorge.vargas@autofacilchile.cl",
     "clave": "AF2026",
     "perfil": "USUARIO",
-    "estado": "NUNCA INGRESADO",
-    "ultimoIngreso": null,
-    "primerIngreso": true
+    "estado": "ACTIVO",
+    "ultimoIngreso": "2026-04-30T21:21:15.429Z",
+    "primerIngreso": false
   },
   {
     "nombre": "Juan Manuel Bustamante",
