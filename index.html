@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260417_V2.5 -->
+<!-- v20260417_V2.6 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -126,7 +126,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
     <div style="font-family:'Roboto',sans-serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:4px">
       Auto<span style="color:#2196F3">Fácil</span>
     </div>
-    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v2.5</span></div>
+    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v2.6</span></div>
     <div id="login-error" style="background:#ef444420;color:#ef4444;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:16px;display:none"></div>
     <input id="login-user" type="email" placeholder="Usuario (correo)" autocomplete="username"
       style="width:100%;padding:12px 16px;border-radius:8px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;font-family:'Roboto',sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px"
@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="topbar">
   <div class="topbar-row1">
-    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V2.5</span></span></div>
+    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V2.6</span></span></div>
     <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:8px"></div>
     <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:4px 12px;border-radius:6px;border:1px solid #2a4070;margin-left:8px">
       <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
@@ -292,6 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="tab" onclick="showV('v8',this)">📋 Comparativo</div>
       <div class="tab" onclick="showV('vhist',this)">📅 Historia</div>
       <div class="tab" onclick="showV('vppto',this)">🎯 Presupuesto</div>
+      <div class="tab" onclick="showV('vevol',this)">📊 Evolución</div>
       <div class="tab" id="tab-admin" onclick="showV('vadmin',this)" style="display:none;border-left:1px solid #2a4070;margin-left:8px">⚙️ Admin</div>
     </div>
   </div>
@@ -806,6 +807,7 @@ function showV(id, el) {
   if(id==='v8') { const sd8=document.getElementById('sel-desde'); if(!sd8?.value) window.aplicarFiltro(); buildV8(); window._v8=true; }
   if(id==='vhist') { initVHist(); }
   if(id==='vppto') { buildVPpto(); }
+  if(id==='vevol') { buildVEvol(); }
   if(id==='vadmin') {
     // Verificar que solo admin puede acceder
     if (!sesionActual || sesionActual.perfil !== 'ADMINISTRADOR') {
@@ -3826,6 +3828,180 @@ function buildVPpto() {
       kpiBox('Cumplim. Acum. Monto', pctBadge(cumpAcumMonto), `Logrado: ${totalRealMonto.toFixed(1)} / Meta acum: ${pptoAcumMonto.toFixed(1)}`, false) +
       kpiBox('Falta (Monto)', (faltaMonto > 0 ? '-' : '+')+Math.abs(faltaMonto).toFixed(1)+' MM$', faltaMonto > 0 ? 'Por colocar en el año' : '¡Meta superada!', false);
   }
+}
+</script>
+
+<!-- ============================================================ VISTA EVOLUCIÓN ============================================================ -->
+<div id="vevol" class="view">
+  <div class="dash-header">
+    <div><div class="dash-title">📊 Evolución Histórica de Operaciones</div></div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="logo-block"><div class="logo-text">Auto<span>Fácil</span></div><div class="logo-sub">Crédito Automotriz</div></div>
+    </div>
+  </div>
+  <div id="evol-kpis" class="kpi-strip" style="margin-bottom:12px"></div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-head" style="background:#1a3a6a">📋 Operaciones Otorgadas Mensuales — por Institución</div>
+    <div style="overflow-x:auto"><table id="t-evol" style="width:100%;border-collapse:collapse;font-size:12px"></table></div>
+  </div>
+  <div class="card">
+    <div class="card-head" style="background:#1a3a6a">📈 Tendencia Histórica</div>
+    <div style="padding:12px"><canvas id="evol-chart" height="90"></canvas></div>
+  </div>
+</div>
+
+<script>
+// ======== EVOLUCIÓN HISTÓRICA ========
+let evolChart = null;
+
+function buildVEvol() {
+  if (!window.RAW_DATA || window.RAW_DATA.length === 0) { setTimeout(buildVEvol, 300); return; }
+
+  // Agrupar otorgados por mes e institución
+  const mesesSet = new Set();
+  const porMes = {};
+
+  window.RAW_DATA.filter(r => r.estado_eval === 'OTORGADO').forEach(r => {
+    const m = r.mes;
+    const inst = (r.institucion || '').includes('UNIDAD') ? 'UNIDAD' : 'AUTOFIN';
+    if (!porMes[m]) porMes[m] = { AUTOFIN: 0, UNIDAD: 0, monto_AUTOFIN: 0, monto_UNIDAD: 0 };
+    porMes[m][inst]++;
+    porMes[m]['monto_' + inst] += (r.monto_financiado || 0);
+    mesesSet.add(m);
+  });
+
+  const meses = Array.from(mesesSet).sort();
+  const labels = meses.map(m => {
+    const [y, mo] = m.split('-');
+    const mNames = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    return mNames[parseInt(mo)] + ' ' + y.slice(2);
+  });
+
+  // ── Tabla ──
+  const thead = `<thead>
+    <tr style="background:#1a3a6a;color:#fff;font-size:11px">
+      <th style="padding:7px 12px;text-align:left;position:sticky;left:0;background:#1a3a6a;z-index:2;min-width:110px">Mes</th>
+      <th style="padding:7px 10px;text-align:center;border-left:1px solid #2a4070">AUTOFIN Ops</th>
+      <th style="padding:7px 10px;text-align:center;border-left:1px solid #2a4070">UNIDAD Ops</th>
+      <th style="padding:7px 10px;text-align:center;border-left:1px solid #2a4070;background:#0d47a1">TOTAL Ops</th>
+      <th style="padding:7px 10px;text-align:right;border-left:2px solid #4fc3f7">AUTOFIN M$</th>
+      <th style="padding:7px 10px;text-align:right;border-left:1px solid #2a4070">UNIDAD M$</th>
+      <th style="padding:7px 10px;text-align:right;border-left:1px solid #2a4070;background:#0d47a1">TOTAL M$</th>
+    </tr></thead>`;
+
+  let tbody = '<tbody>';
+  let totAF=0, totUN=0, totMAF=0, totMUN=0;
+  meses.forEach((m, i) => {
+    const d = porMes[m] || {AUTOFIN:0,UNIDAD:0,monto_AUTOFIN:0,monto_UNIDAD:0};
+    const total = d.AUTOFIN + d.UNIDAD;
+    const mTotal = d.monto_AUTOFIN + d.monto_UNIDAD;
+    totAF += d.AUTOFIN; totUN += d.UNIDAD; totMAF += d.monto_AUTOFIN; totMUN += d.monto_UNIDAD;
+    const bg = i % 2 === 0 ? '#1a2a4a' : '#162238';
+    const fmtM = v => (v/1e6).toFixed(1);
+    tbody += `<tr style="background:${bg};border-bottom:1px solid #0d2140">
+      <td style="padding:6px 12px;font-weight:600;color:#4fc3f7;position:sticky;left:0;background:${bg};z-index:1">${labels[i]}</td>
+      <td style="padding:6px 10px;text-align:center;color:#90caf9;border-left:1px solid #0d2140;font-size:13px">${d.AUTOFIN}</td>
+      <td style="padding:6px 10px;text-align:center;color:#90caf9;border-left:1px solid #0d2140;font-size:13px">${d.UNIDAD||'—'}</td>
+      <td style="padding:6px 10px;text-align:center;color:#fff;font-weight:700;border-left:1px solid #0d2140;background:#112060;font-size:14px">${total}</td>
+      <td style="padding:6px 10px;text-align:right;color:#80cbc4;border-left:2px solid #4fc3f7;font-size:13px">${fmtM(d.monto_AUTOFIN)}</td>
+      <td style="padding:6px 10px;text-align:right;color:#80cbc4;border-left:1px solid #0d2140;font-size:13px">${d.UNIDAD ? fmtM(d.monto_UNIDAD) : '—'}</td>
+      <td style="padding:6px 10px;text-align:right;color:#fff;font-weight:700;border-left:1px solid #0d2140;background:#112060;font-size:13px">${fmtM(mTotal)}</td>
+    </tr>`;
+  });
+
+  // Fila total
+  const totOps = totAF + totUN;
+  const totM = totMAF + totMUN;
+  const fmtM = v => (v/1e6).toFixed(1);
+  tbody += `<tr style="background:#0a1a38;border-top:2px solid #4fc3f7;font-weight:700">
+    <td style="padding:7px 12px;color:#4fc3f7;position:sticky;left:0;background:#0a1a38;z-index:1">TOTAL</td>
+    <td style="padding:7px 10px;text-align:center;color:#4fc3f7;border-left:1px solid #0d2140;font-size:14px">${totAF}</td>
+    <td style="padding:7px 10px;text-align:center;color:#4fc3f7;border-left:1px solid #0d2140;font-size:14px">${totUN}</td>
+    <td style="padding:7px 10px;text-align:center;color:#fff;border-left:1px solid #0d2140;background:#112060;font-size:15px">${totOps}</td>
+    <td style="padding:7px 10px;text-align:right;color:#4fc3f7;border-left:2px solid #4fc3f7;font-size:13px">${fmtM(totMAF)}</td>
+    <td style="padding:7px 10px;text-align:right;color:#4fc3f7;border-left:1px solid #0d2140;font-size:13px">${fmtM(totMUN)}</td>
+    <td style="padding:7px 10px;text-align:right;color:#fff;border-left:1px solid #0d2140;background:#112060;font-size:14px">${fmtM(totM)}</td>
+  </tr></tbody>`;
+
+  document.getElementById('t-evol').innerHTML = thead + tbody;
+
+  // ── KPIs ──
+  const promOps = Math.round(totOps / meses.length);
+  const maxMes = meses.reduce((a,m) => ((porMes[m]?.AUTOFIN||0)+(porMes[m]?.UNIDAD||0)) > ((porMes[a]?.AUTOFIN||0)+(porMes[a]?.UNIDAD||0)) ? m : a, meses[0]);
+  const maxOps = (porMes[maxMes]?.AUTOFIN||0) + (porMes[maxMes]?.UNIDAD||0);
+  const maxLabel = labels[meses.indexOf(maxMes)];
+  const ultimoMes = meses[meses.length-1];
+  const ultimoOps = (porMes[ultimoMes]?.AUTOFIN||0) + (porMes[ultimoMes]?.UNIDAD||0);
+  const ultimoLabel = labels[labels.length-1];
+
+  document.getElementById('evol-kpis').innerHTML = `
+    <div class="kpi-box highlight"><div class="kpi-label">Total Histórico Ops</div><div class="kpi-val big">${totOps}</div><div class="kpi-sub">${meses.length} meses</div></div>
+    <div class="kpi-box"><div class="kpi-label">Promedio Mensual</div><div class="kpi-val big">${promOps}</div><div class="kpi-sub">ops/mes</div></div>
+    <div class="kpi-box"><div class="kpi-label">Mejor Mes</div><div class="kpi-val big">${maxOps}</div><div class="kpi-sub">${maxLabel}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Monto Total Histórico</div><div class="kpi-val big">${fmtM(totM)} MM$</div><div class="kpi-sub">${meses.length} meses</div></div>
+    <div class="kpi-box"><div class="kpi-label">Último Mes (${ultimoLabel})</div><div class="kpi-val big">${ultimoOps}</div><div class="kpi-sub">ops otorgadas</div></div>
+  `;
+
+  // ── Gráfico ──
+  const totalOpsArr = meses.map(m => (porMes[m]?.AUTOFIN||0) + (porMes[m]?.UNIDAD||0));
+  const totalMontoArr = meses.map(m => ((porMes[m]?.monto_AUTOFIN||0) + (porMes[m]?.monto_UNIDAD||0)) / 1e6);
+
+  if (evolChart) { evolChart.destroy(); evolChart = null; }
+
+  const ctx = document.getElementById('evol-chart').getContext('2d');
+  evolChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Operaciones Otorgadas (Total)',
+          data: totalOpsArr,
+          borderColor: '#90a4ae',
+          backgroundColor: 'rgba(144,164,174,0.1)',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointBackgroundColor: '#90a4ae',
+          tension: 0.3,
+          yAxisID: 'y',
+        },
+        {
+          label: 'Monto Financiado (MM$)',
+          data: totalMontoArr,
+          borderColor: '#4caf50',
+          backgroundColor: 'rgba(76,175,80,0.1)',
+          borderWidth: 2.5,
+          pointRadius: 4,
+          pointBackgroundColor: '#4caf50',
+          tension: 0.3,
+          yAxisID: 'y2',
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#aac4e8', font: { size: 11 } } },
+        tooltip: { backgroundColor: '#1a2a4a', titleColor: '#4fc3f7', bodyColor: '#fff' }
+      },
+      scales: {
+        x: { ticks: { color: '#7bafd4', font: { size: 10 } }, grid: { color: '#1e3050' } },
+        y: {
+          position: 'left',
+          title: { display: true, text: 'Operaciones', color: '#90a4ae' },
+          ticks: { color: '#90a4ae' },
+          grid: { color: '#1e3050' }
+        },
+        y2: {
+          position: 'right',
+          title: { display: true, text: 'Monto MM$', color: '#4caf50' },
+          ticks: { color: '#4caf50', callback: v => v.toFixed(0) + ' MM$' },
+          grid: { drawOnChartArea: false }
+        }
+      }
+    }
+  });
 }
 </script>
 
