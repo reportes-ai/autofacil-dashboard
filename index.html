@@ -1640,6 +1640,8 @@ window.DASH_INLINE = {
 </script>
 <script>// Enriquecer detalle_v2 inicial con campo financiera y ejecutivo desde RAW_DATA
 (function() {
+  // Solo ejecutar si DASH_INLINE tiene datos embebidos (feb/jan)
+  if (!window.DASH_INLINE || !window.DASH_INLINE.feb || !window.DASH_INLINE.jan) return;
   const opMap = {};
   (window.RAW_DATA||[]).forEach(r => { opMap[r.op] = r; });
   // Función para derivar institución desde producto (igual que Python)
