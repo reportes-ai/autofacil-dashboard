@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260417_V2.6 -->
+<!-- v20260504_V2.7 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -126,7 +126,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
     <div style="font-family:'Roboto',sans-serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:4px">
       Auto<span style="color:#2196F3">Fácil</span>
     </div>
-    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v2.6</span></div>
+    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v2.7</span></div>
     <div id="login-error" style="background:#ef444420;color:#ef4444;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:16px;display:none"></div>
     <input id="login-user" type="email" placeholder="Usuario (correo)" autocomplete="username"
       style="width:100%;padding:12px 16px;border-radius:8px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;font-family:'Roboto',sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px"
@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="topbar">
   <div class="topbar-row1">
-    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V2.6</span></span></div>
+    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V2.7</span></span></div>
     <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:8px"></div>
     <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:4px 12px;border-radius:6px;border:1px solid #2a4070;margin-left:8px">
       <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
@@ -2250,6 +2250,11 @@ function buildV5() {
   <div class="dash-header">
     <div class="dash-title">Estado Saldo Precio</div>
     <div style="display:flex;align-items:center;gap:12px">
+      <button onclick="exportarDetalleV6()" id="btn-exportar-v6"
+        style="display:flex;align-items:center;gap:6px;background:#1B5E20;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Roboto',sans-serif;transition:.15s"
+        onmouseover="this.style.background='#2e7d32'" onmouseout="this.style.background='#1B5E20'">
+        📥 Exportar Detalle Excel
+      </button>
       <div class="period-badge" id="badge-periodo">📅 —</div>
       <div class="logo-block"><div class="logo-text">Auto<span>Fácil</span></div><div class="logo-sub">Crédito Automotriz</div></div>
     </div>
@@ -2416,8 +2421,13 @@ function renderTablaV6(ot, colsSP, bysp, totOps, totSaldo) {
         if (col !== sp) return `<td style="background:#fafafa;border-right:1px solid #f0f2f5"></td>`;
         return `<td style="text-align:center;background:${c.bg}55;color:${c.txt};padding:3px 6px;border-right:1px solid #f0f2f5;font-size:10px">${fN(r.saldo_precio)}</td>`;
       }).join('');
-      return `<tr style="border-bottom:1px solid #f5f5f5">
-        <td style="padding:3px 6px 3px 16px;font-size:10px;color:#777;white-space:nowrap">${op} — ${(() => { const n=(r.ejecutivo||"").trim(); return n.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" "); })()}</td>
+      return `<tr style="border-bottom:1px solid #f5f5f5" data-op="${r.op}">
+        <td style="padding:3px 6px 3px 16px;font-size:10px;color:#777;white-space:nowrap">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+            <input type="checkbox" class="chk-sp-op" data-op="${r.op}" style="cursor:pointer;accent-color:#1565C0;width:12px;height:12px"/>
+            ${op} — ${(() => { const n=(r.ejecutivo||"").trim(); return n.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" "); })()}
+          </label>
+        </td>
         ${opCells}
       </tr>`;
     }).join('');
@@ -2439,7 +2449,11 @@ function renderTablaV6(ot, colsSP, bysp, totOps, totSaldo) {
   document.getElementById('t-sp').innerHTML = `
     <thead><tr>
       <th style="background:#1a3a6a;color:#fff;text-align:left;padding:6px 8px;min-width:150px;font-size:11px;position:sticky;left:0;z-index:2">
-        Dealer / N° OP ${filtroActivo ? `<span style="font-size:9px;background:#fff2;padding:1px 6px;border-radius:3px;margin-left:6px">🔍 ${filtroActivo}</span>` : ''}
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500">
+          <input type="checkbox" id="chk-sp-all" onchange="toggleTodosV6(this.checked)"
+            style="cursor:pointer;accent-color:#4fc3f7;width:13px;height:13px"/>
+          Dealer / N° OP ${filtroActivo ? `<span style="font-size:9px;background:#fff2;padding:1px 6px;border-radius:3px;margin-left:6px">🔍 ${filtroActivo}</span>` : ''}
+        </label>
       </th>
       ${thSP}
     </tr></thead>
@@ -2453,9 +2467,69 @@ function renderTablaV6(ot, colsSP, bysp, totOps, totSaldo) {
 
 }
 
-</script>
+// Seleccionar / deseleccionar todos los checkboxes visibles
+function toggleTodosV6(checked) {
+  document.querySelectorAll('.chk-sp-op').forEach(chk => chk.checked = checked);
+}
 
-<!-- VISTA 7: FUNNEL DE CONVERSIÓN -->
+// Exportar operaciones seleccionadas como CSV descargable
+function exportarDetalleV6() {
+  const checks = Array.from(document.querySelectorAll('.chk-sp-op:checked'));
+  const ops = checks.map(c => parseInt(c.dataset.op));
+
+  if (!ops.length) {
+    alert('Selecciona al menos una operación usando los checkboxes.');
+    return;
+  }
+
+  const filas = ops.map(op => window.RAW_DATA.find(r => r.op === op)).filter(Boolean);
+
+  const headers = [
+    'OP','RUT','NOMBRE','EJ.COMERCIAL','PARQUE','AUTOMOTORA',
+    'FINANCIERA','MES','ESTADO CREDITO','FECHA OTORGADO',
+    'ALERTA PAGO SP','FECHA RECEPCION FEI','ALERTA RECEP FEI',
+    'MONTO PAGO COMISION FINAN','RENTABILIDAD AUTOFACIL DIRECTO'
+  ];
+
+  const esc = v => {
+    if (v === null || v === undefined) return '';
+    const s = String(v);
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) return `"${s.replace(/"/g,'""')}"`;
+    return s;
+  };
+
+  const csvRows = [
+    headers.join(','),
+    ...filas.map(r => [
+      esc(r.op),
+      esc(r.rut || ''),
+      esc(r.nombre || ''),
+      esc(r.ejecutivo || ''),
+      esc(r.parque || r.com_parque || ''),
+      esc(r.automotora || ''),
+      esc(r.financiera || r.institucion || ''),
+      esc(r.mes || ''),
+      esc(r.estado_credito || ''),
+      esc(r.fecha_otorgado || ''),
+      esc(r.alerta_pago_sp || ''),
+      esc(r.fecha_recepcion_fei || ''),
+      esc(r.alerta_recep_fei || ''),
+      esc(r.monto_pago_comision_finan !== undefined ? r.monto_pago_comision_finan : (r.com_dealer || '')),
+      esc(r.rentab_afa || '')
+    ].join(','))
+  ];
+
+  const bom = '\uFEFF';
+  const blob = new Blob([bom + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `detalle_sp_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+
 <div id="v7" class="view">
   <div class="dash-header">
     <div class="dash-title">Funnel de Conversión por Ejecutivo</div>
