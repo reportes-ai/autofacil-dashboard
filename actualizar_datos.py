@@ -118,9 +118,13 @@ def procesar_excel(contenido: bytes) -> dict:
 
         def n(v):
             if v is None: return 0.0
-            if isinstance(v, (int, float)): return float(v)
-            # Limpiar formato moneda "$", puntos de miles, espacios
-            try: return float(str(v).replace('$','').replace('.','').replace(',','.').strip())
+            if isinstance(v, (int, float)):
+                # Cap: valores absurdos (fórmulas corruptas) → 0
+                f = float(v)
+                return f if abs(f) < 1e12 else 0.0
+            try:
+                f = float(str(v).replace('$','').replace(' ','').replace(',','.').strip())
+                return f if abs(f) < 1e12 else 0.0
             except: return 0.0
         def s(v):  return str(v).strip() if v else ""
 
@@ -155,7 +159,7 @@ def procesar_excel(contenido: bytes) -> dict:
             "com_dealer":  n(row[46]),
             "rentab_afa":  n(row[52]),  # BA - RENTABILIDAD AUTOFACIL DIRECTO
             "com_seguros": com_seg,
-            "com_parque":  n(row[83]),
+            "com_parque":  n(row[82]),  # CE - PARQUE
             "plazo":       int(row[72]) if row[72] and isinstance(row[72], (int, float)) else 0,
             "mayor_menor": s(row[97]),
             "estado_sp":   s(row[36]),  # AK
@@ -167,7 +171,6 @@ def procesar_excel(contenido: bytes) -> dict:
             "fecha_recepcion_fei":      row[33].strftime("%Y-%m-%d") if row[33] and hasattr(row[33],"day") else s(row[33]),  # AH
             "alerta_recep_fei":         s(row[34]),   # AI
             "alerta_pago_sp":           s(row[37]),   # AL
-            "monto_pago_comision_finan": n(row[62]),  # BK
         })
 
     print(f"   ✓ {len(all_data)} registros procesados")
