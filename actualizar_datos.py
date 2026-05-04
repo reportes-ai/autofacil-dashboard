@@ -136,6 +136,8 @@ def procesar_excel(contenido: bytes) -> dict:
         all_data.append({
             "op":          row[0],
             "mes":         mes_key,
+            "rut":         s(row[3]),   # D - RUT
+            "nombre":      s(row[4]),   # E - NOMBRE
             "ejecutivo":   s(row[6]),
             "financiera":  fin_raw,
             "institucion": institucion,
@@ -146,16 +148,21 @@ def procesar_excel(contenido: bytes) -> dict:
             "monto_financiado": n(row[38]),
             "tasa_cli":    n(row[39]),
             "com_dealer":  n(row[46]),
-            "rentab_afa":  n(row[52]),
+            "rentab_afa":  n(row[52]),  # BA - RENTABILIDAD AUTOFACIL DIRECTO
             "com_seguros": com_seg,
-            "com_parque":  n(row[83]),  # CF = COM PARQUE (no CG=COM PARQUE REAL que está vacío)
+            "com_parque":  n(row[83]),  # CF = COM PARQUE
             "plazo":       int(row[72]) if row[72] and isinstance(row[72], (int, float)) else 0,
             "mayor_menor": s(row[97]),
-        "estado_sp":   s(row[36]),   # AK = ESTADO SP
-        "fecha_ot":    row[17].strftime("%Y-%m-%d") if row[17] and hasattr(row[17],"day") else "",
-        "fecha_estado": row[9].strftime("%Y-%m-%d") if row[9] and hasattr(row[9],"day") else "",  # FECHA EV (col J)
-        "dia_mes":     int(row[10]) if row[10] and str(row[10]).isdigit() else (int(row[10]) if isinstance(row[10], (int,float)) else 0),
-        "dia_semana":  str(row[11]).strip().lower() if row[11] else "",
+            "estado_sp":   s(row[36]),   # AK = ESTADO SP
+            "fecha_ot":    row[17].strftime("%Y-%m-%d") if row[17] and hasattr(row[17],"day") else "",
+            "fecha_estado": row[9].strftime("%Y-%m-%d") if row[9] and hasattr(row[9],"day") else "",
+            "dia_mes":     int(row[10]) if row[10] and str(row[10]).isdigit() else (int(row[10]) if isinstance(row[10], (int,float)) else 0),
+            "dia_semana":  str(row[11]).strip().lower() if row[11] else "",
+            # Campos adicionales para exportación Saldo Precio
+            "alerta_pago_sp":        s(row[37]),   # AL
+            "fecha_recepcion_fei":   row[33].strftime("%Y-%m-%d") if row[33] and hasattr(row[33],"day") else s(row[33]),  # AH
+            "alerta_recep_fei":      s(row[34]),   # AI
+            "monto_pago_comision_finan": n(row[62]),  # BK
         })
 
     print(f"   ✓ {len(all_data)} registros procesados")
