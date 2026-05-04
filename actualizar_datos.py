@@ -116,7 +116,12 @@ def procesar_excel(contenido: bytes) -> dict:
         else:
             continue
 
-        def n(v):  return float(v) if v and isinstance(v, (int, float)) else 0.0
+        def n(v):
+            if v is None: return 0.0
+            if isinstance(v, (int, float)): return float(v)
+            # Limpiar formato moneda "$", puntos de miles, espacios
+            try: return float(str(v).replace('$','').replace('.','').replace(',','.').strip())
+            except: return 0.0
         def s(v):  return str(v).strip() if v else ""
 
         prod      = s(row[19])
@@ -138,30 +143,30 @@ def procesar_excel(contenido: bytes) -> dict:
             "mes":         mes_key,
             "rut":         s(row[3]),   # D - RUT
             "nombre":      s(row[4]),   # E - NOMBRE
-            "ejecutivo":   s(row[6]),
-            "financiera":  fin_raw,
+            "ejecutivo":   s(row[6]),   # G - EJ.COMERCIAL
+            "financiera":  fin_raw,     # H
             "institucion": institucion,
-            "automotora":  s(row[8]),
+            "automotora":  s(row[8]),   # I
             "estado_eval": s(row[16]) if s(row[16]) in ["ANULADO","RECHAZADO"] else s(row[13]),
-            "estado_credito": s(row[16]),
+            "estado_credito": s(row[16]),  # Q
             "saldo_precio":    n(row[22]),
             "monto_financiado": n(row[38]),
             "tasa_cli":    n(row[39]),
             "com_dealer":  n(row[46]),
             "rentab_afa":  n(row[52]),  # BA - RENTABILIDAD AUTOFACIL DIRECTO
             "com_seguros": com_seg,
-            "com_parque":  n(row[83]),  # CF = COM PARQUE
+            "com_parque":  n(row[83]),
             "plazo":       int(row[72]) if row[72] and isinstance(row[72], (int, float)) else 0,
             "mayor_menor": s(row[97]),
-            "estado_sp":   s(row[36]),   # AK = ESTADO SP
-            "fecha_ot":    row[17].strftime("%Y-%m-%d") if row[17] and hasattr(row[17],"day") else "",
+            "estado_sp":   s(row[36]),  # AK
+            "fecha_ot":    row[17].strftime("%Y-%m-%d") if row[17] and hasattr(row[17],"day") else s(row[17]),  # R
             "fecha_estado": row[9].strftime("%Y-%m-%d") if row[9] and hasattr(row[9],"day") else "",
-            "dia_mes":     int(row[10]) if row[10] and str(row[10]).isdigit() else (int(row[10]) if isinstance(row[10], (int,float)) else 0),
+            "dia_mes":     int(row[10]) if row[10] and isinstance(row[10], (int,float)) else 0,
             "dia_semana":  str(row[11]).strip().lower() if row[11] else "",
-            # Campos adicionales para exportación Saldo Precio
-            "alerta_pago_sp":        s(row[37]),   # AL
-            "fecha_recepcion_fei":   row[33].strftime("%Y-%m-%d") if row[33] and hasattr(row[33],"day") else s(row[33]),  # AH
-            "alerta_recep_fei":      s(row[34]),   # AI
+            # Campos exportación Saldo Precio
+            "fecha_recepcion_fei":      row[33].strftime("%Y-%m-%d") if row[33] and hasattr(row[33],"day") else s(row[33]),  # AH
+            "alerta_recep_fei":         s(row[34]),   # AI
+            "alerta_pago_sp":           s(row[37]),   # AL
             "monto_pago_comision_finan": n(row[62]),  # BK
         })
 
