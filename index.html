@@ -39,6 +39,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
 .kpi-strip{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
 .kpi-box{background:#fff;border:1px solid #dce3ed;border-radius:6px;padding:7px 12px;min-width:110px;flex:1}
 .kpi-box.highlight{background:#e3f2fd;border-color:#90caf9}
+.kpi-box.highlight-teal{background:#e0f7fa;border-color:#4fc3f7}
 .kpi-label{font-size:10px;color:#777;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
 .kpi-val{font-size:18px;font-weight:700;color:#1a2a4a;line-height:1.1}
 .kpi-val.big{font-size:22px}
@@ -639,11 +640,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   <div class="kpi-strip" id="kpi2"></div>
   <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-    <div class="kpi-box" style="flex:0 0 120px"><div class="kpi-label">Saldo Precio</div><div class="kpi-val" id="r-saldo">—</div></div>
-    <div class="kpi-box" style="flex:0 0 140px"><div class="kpi-label">Total Com D+P</div><div class="kpi-val" id="r-totcd">—</div><div class="kpi-sub" id="r-totcd-pct"></div></div>
-    <div class="kpi-box highlight" style="flex:0 0 140px"><div class="kpi-label">Ing. Neto AutoFácil</div><div class="kpi-val" id="r-ingnet">—</div><div class="kpi-sub" id="r-ingnet-pct"></div></div>
     <div class="kpi-box" style="flex:0 0 100px"><div class="kpi-label">Plazo Prom.</div><div class="kpi-val" id="r-plazo">—</div></div>
-    <div class="kpi-box" style="flex:0 0 100px"><div class="kpi-label">Finanz. Prom.</div><div class="kpi-val" id="r-finprom">—</div></div>
+    <div class="kpi-box" style="flex:0 0 110px"><div class="kpi-label">Finanz. Prom.</div><div class="kpi-val" id="r-finprom">—</div></div>
+    <div class="kpi-box" style="flex:0 0 120px"><div class="kpi-label">Saldo Precio</div><div class="kpi-val" id="r-saldo">—</div></div>
+    <div class="kpi-box highlight-teal" style="flex:0 0 120px"><div class="kpi-label">Com. Dealer</div><div class="kpi-val" id="r-comdealer">—</div></div>
+    <div class="kpi-box highlight-teal" style="flex:0 0 110px"><div class="kpi-label">Com. Parque</div><div class="kpi-val" id="r-comparque">—</div></div>
+    <div class="kpi-box highlight-teal" style="flex:0 0 150px"><div class="kpi-label">Com. Total (D+P)</div><div class="kpi-val" id="r-totcd">—</div><div class="kpi-sub" id="r-totcd-pct"></div></div>
   </div>
 
   <div class="g3565" style="align-items:stretch">
@@ -1079,20 +1081,20 @@ function buildV2() {
   const avgPlazo = det.length ? Math.round(det.reduce((a,r)=>a+r.plazo,0)/det.length) : 0;
   const avgFin   = totOps ? Math.round(totFin/totOps) : 0;
 
+  const totIN = totIG - totCD_P;
   document.getElementById('kpi2').innerHTML = `
     <div class="kpi-box"><div class="kpi-label">Total Financiado</div><div class="kpi-val big">${fM(totFin)}</div></div>
     <div class="kpi-box"><div class="kpi-label">Operaciones Otorgadas</div><div class="kpi-val big">${totOps}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Com. Dealer</div><div class="kpi-val big">${fM(totCD)}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Com. Parque</div><div class="kpi-val big">${fM(totPar)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Ing. x Colocaciones</div><div class="kpi-val big">${fM(totAFA)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Ing. x Seguros</div><div class="kpi-val big">${fM(totSeg)}</div></div>
-    <div class="kpi-box"><div class="kpi-label">Ingreso Bruto</div><div class="kpi-val big">${fM(totIG)}</div></div>`;
+    <div class="kpi-box highlight"><div class="kpi-label">Ing. Bruto</div><div class="kpi-val big">${fM(totIG)}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Ing. Neto AutoFácil</div><div class="kpi-val big">${fM(totIN)}</div><div class="kpi-sub">${totFin?(totIN/totFin*100).toFixed(1)+'%':''}</div></div>`;
 
   document.getElementById('r-saldo').textContent = fM(totSal);
+  document.getElementById('r-comdealer').textContent = fM(totCD);
+  document.getElementById('r-comparque').textContent = fM(totPar);
   document.getElementById('r-totcd').textContent = fM(totCD_P);
   document.getElementById('r-totcd-pct').textContent = totFin?(totCD_P/totFin*100).toFixed(1)+'%':'';
-  document.getElementById('r-ingnet').textContent = fM(totAFA);
-  document.getElementById('r-ingnet-pct').textContent = totFin?(totAFA/totFin*100).toFixed(1)+'%':'';
   document.getElementById('r-plazo').textContent = avgPlazo+'m';
   document.getElementById('r-finprom').textContent = fM(avgFin);
 
@@ -1248,19 +1250,19 @@ function buildRentabTable() {
   const totOpsF = rows.length;
   const avgPlazoF = totOpsF ? Math.round(rows.reduce((a,r)=>a+r.plazo,0)/totOpsF) : 0;
   const avgFinF   = totOpsF ? Math.round(tot.fin/totOpsF) : 0;
+  const totIN_F = tot.ig - (tot.cd + tot.par);
   document.getElementById('kpi2').innerHTML = `
     <div class="kpi-box"><div class="kpi-label">Total Financiado</div><div class="kpi-val big">${fM(tot.fin)}</div></div>
     <div class="kpi-box"><div class="kpi-label">Operaciones Otorgadas</div><div class="kpi-val big">${totOpsF}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Com. Dealer</div><div class="kpi-val big">${fM(tot.cd)}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Com. Parque</div><div class="kpi-val big">${fM(tot.par)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Ing. x Colocaciones</div><div class="kpi-val big">${fM(tot.afa)}</div></div>
     <div class="kpi-box highlight"><div class="kpi-label">Ing. x Seguros</div><div class="kpi-val big">${fM(tot.seg)}</div></div>
-    <div class="kpi-box"><div class="kpi-label">Ingreso Bruto</div><div class="kpi-val big">${fM(tot.ig)}</div></div>`;
+    <div class="kpi-box highlight"><div class="kpi-label">Ing. Bruto</div><div class="kpi-val big">${fM(tot.ig)}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Ing. Neto AutoFácil</div><div class="kpi-val big">${fM(totIN_F)}</div><div class="kpi-sub">${tot.fin?(totIN_F/tot.fin*100).toFixed(1)+'%':''}</div></div>`;
   document.getElementById('r-saldo').textContent = fM(tot.sal);
+  document.getElementById('r-comdealer').textContent = fM(tot.cd);
+  document.getElementById('r-comparque').textContent = fM(tot.par);
   document.getElementById('r-totcd').textContent = fM(tot.cd + tot.par);
   document.getElementById('r-totcd-pct').textContent = tot.fin ? ((tot.cd+tot.par)/tot.fin*100).toFixed(1)+'%' : '';
-  document.getElementById('r-ingnet').textContent = fM(tot.afa);
-  document.getElementById('r-ingnet-pct').textContent = tot.fin ? (tot.afa/tot.fin*100).toFixed(1)+'%' : '';
   document.getElementById('r-plazo').textContent = avgPlazoF + 'm';
   document.getElementById('r-finprom').textContent = fM(avgFinF);
 }
