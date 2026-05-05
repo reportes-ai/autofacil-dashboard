@@ -130,7 +130,7 @@ def procesar_excel(contenido: bytes) -> dict:
 
         prod      = s(row[19])   # T - PRODUCTO
         fin_raw   = s(row[7])    # H - FINANCIERA
-        com_seg   = n(row[54])   # BC - COM. RDH / CESANTÍA / REPARACIONES
+        com_seg   = n(row[96])   # CS - COM.SEGUROS TOTAL
 
         # Derivar institución desde producto
         if fin_raw == "AUTOFIN" or prod.startswith("AUTOFIN") or prod.startswith("AUTOFACIL"):
