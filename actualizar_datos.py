@@ -160,7 +160,7 @@ def procesar_excel(contenido: bytes) -> dict:
             "rentab_afa":  n(row[47]),   # AV - RENTABILIDAD AFA
             "com_seguros": com_seg,      # BC - COM SEGUROS
             "com_parque":  n(row[83]),   # CF - COM PARQUE
-            "plazo":       int(row[70]) if row[70] and isinstance(row[70], (int, float)) else 0,  # BS
+            "plazo":       int(row[72]) if row[72] and isinstance(row[72], (int, float)) else 0,  # BU
             "mayor_menor": s(row[79]),   # CB - MAYOR/MENOR
             "estado_sp":   s(row[36]),   # AK - ESTADO SP
             "fecha_ot":    row[17].strftime("%Y-%m-%d") if row[17] and hasattr(row[17],"day") else s(row[17]),  # R
