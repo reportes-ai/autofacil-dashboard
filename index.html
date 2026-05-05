@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260505_V3.0 -->
+<!-- v20260505_V3.1 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="topbar">
   <div class="topbar-row1">
-    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.0</span></span></div>
+    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.1</span></span></div>
     <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:8px"></div>
     <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:4px 12px;border-radius:6px;border:1px solid #2a4070;margin-left:8px">
       <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
@@ -3157,6 +3157,8 @@ function buildV7() {
         <div style="font-size:11px;color:#7bafd4;margin-bottom:4px">Perfil</div>
         <select id="edit-perfil" style="width:100%;padding:10px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px">
           <option value="USUARIO">USUARIO</option>
+          <option value="SUPERVISOR">SUPERVISOR</option>
+          <option value="GERENTE GENERAL">GERENTE GENERAL</option>
           <option value="ADMINISTRADOR">ADMINISTRADOR</option>
         </select>
       </div>
@@ -3192,7 +3194,7 @@ const TABS_NAV = [
   { id:'vevol', label:'📊 Evolución' },
   { id:'v2pl',  label:'📋 P&L Operativo' },
 ];
-const PERFILES_SISTEMA = ['USUARIO', 'ADMINISTRADOR'];
+const PERFILES_SISTEMA = ['USUARIO', 'SUPERVISOR', 'GERENTE GENERAL', 'ADMINISTRADOR'];
 
 function aplicarOrdenNavTabs() {
   var tabsContainer = document.querySelector('.tabs');
@@ -3374,8 +3376,8 @@ async function renderTablaAdmin(filtro) {
     var ult = u.ultimoIngreso
       ? new Date(u.ultimoIngreso).toLocaleString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
       : '—';
-    var perfBg = u.perfil === 'ADMINISTRADOR' ? '#1a3a6a' : '#e3f2fd';
-    var perfC  = u.perfil === 'ADMINISTRADOR' ? '#fff' : '#1565c0';
+    var perfBg = u.perfil === 'ADMINISTRADOR' ? '#1a3a6a' : u.perfil === 'GERENTE GENERAL' ? '#4a1a6a' : u.perfil === 'SUPERVISOR' ? '#1a4a2a' : '#e3f2fd';
+    var perfC  = u.perfil === 'ADMINISTRADOR' ? '#fff'   : u.perfil === 'GERENTE GENERAL' ? '#fff'   : u.perfil === 'SUPERVISOR' ? '#fff'   : '#1565c0';
     return '<tr style="border-bottom:1px solid #f0f2f5">' +
       '<td style="padding:7px 8px;font-weight:600">' + u.nombre + '</td>' +
       '<td style="padding:7px 8px;color:#555;font-size:11px">' + u.usuario + '</td>' +
