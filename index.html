@@ -208,6 +208,8 @@ async function checkLogin() {
     sesionActual = data.sesion;
     _sesionToken = uInput;
     sessionStorage.setItem('af_sesion', JSON.stringify({ sesion: data.sesion, token: uInput }));
+    // Guardar permisos de pestañas recibidos desde el servidor
+    if (data.permisos) sessionStorage.setItem('af_tab_permisos', JSON.stringify(data.permisos));
 
     // Guardar credenciales si checkbox marcado
     const chkRec = document.getElementById('chk-recordar');
@@ -2875,7 +2877,7 @@ const PERFILES_SISTEMA = ['USUARIO', 'ADMINISTRADOR'];
 
 function aplicarPermisosNavTabs() {
   if (!sesionActual) return;
-  const permisos = JSON.parse(localStorage.getItem('af_tab_permisos') || '{}');
+  const permisos = JSON.parse(sessionStorage.getItem('af_tab_permisos') || '{}');
   const perfil = sesionActual.perfil;
   TABS_NAV.forEach(function(tab) {
     const el = document.querySelector('.tab[data-viewid="' + tab.id + '"]');
@@ -2903,7 +2905,7 @@ function adminSubTab(sec) {
 }
 
 function renderTablaPermisos() {
-  const permisos = JSON.parse(localStorage.getItem('af_tab_permisos') || '{}');
+  const permisos = JSON.parse(sessionStorage.getItem('af_tab_permisos') || '{}');
   var html = '<thead><tr style="background:#1a3a6a;color:#fff;font-size:11px">' +
     '<th style="padding:10px 12px;text-align:left;width:220px">Pestaña</th>';
   PERFILES_SISTEMA.forEach(function(p) {
@@ -2926,17 +2928,24 @@ function renderTablaPermisos() {
   document.getElementById('t-permisos-tabs').innerHTML = html;
 }
 
-function guardarPermisosTabsAdmin() {
+async function guardarPermisosTabsAdmin() {
   var permisos = {};
   TABS_NAV.forEach(function(tab) { permisos[tab.id] = []; });
   document.querySelectorAll('#t-permisos-tabs input[type=checkbox]').forEach(function(cb) {
     if (cb.checked) permisos[cb.dataset.tab].push(cb.dataset.perfil);
   });
-  localStorage.setItem('af_tab_permisos', JSON.stringify(permisos));
-  aplicarPermisosNavTabs();
-  // Feedback visual
   var btn = document.querySelector('button[onclick="guardarPermisosTabsAdmin()"]');
-  if (btn) { var orig = btn.textContent; btn.textContent = '✅ Guardado'; btn.style.background='#1565c0'; setTimeout(function(){ btn.textContent=orig; btn.style.background='#43a047'; }, 1800); }
+  if (btn) { btn.textContent = '⏳ Guardando...'; btn.disabled = true; }
+  try {
+    const resp = await apiUsuarios({ accion: 'guardar-permisos', permisos }, _sesionToken);
+    if (!resp.ok) throw new Error(resp.error || 'Error al guardar');
+    sessionStorage.setItem('af_tab_permisos', JSON.stringify(permisos));
+    aplicarPermisosNavTabs();
+    if (btn) { btn.textContent = '✅ Guardado'; btn.style.background='#1565c0'; btn.disabled=false; setTimeout(function(){ btn.textContent='💾 Guardar Cambios'; btn.style.background='#43a047'; }, 2000); }
+  } catch(e) {
+    if (btn) { btn.textContent = '❌ Error'; btn.style.background='#e53935'; btn.disabled=false; setTimeout(function(){ btn.textContent='💾 Guardar Cambios'; btn.style.background='#43a047'; }, 2500); }
+    console.error('Error guardando permisos:', e);
+  }
 }
 
 function estadoBadge(estado) {

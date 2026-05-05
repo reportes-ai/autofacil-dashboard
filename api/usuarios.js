@@ -7,6 +7,7 @@ const https = require('https');
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 const GITHUB_REPO  = process.env.GITHUB_REPO;
 const USERS_FILE   = 'data/usuarios.json';
+const PERMISOS_FILE = 'data/tab_permisos.json';
 
 // ── GitHub helpers ────────────────────────────────────────────────────────────
 
@@ -80,6 +81,34 @@ async function leerUsuarios() {
   }
 }
 
+async function leerPermisos() {
+  const apiPath = `/repos/${GITHUB_REPO}/contents/${PERMISOS_FILE}`;
+  const res = await githubRequest('GET', apiPath);
+  if (res.status === 404 || !res.body.content) return { permisos: {}, sha: null };
+  try {
+    const content = Buffer.from(res.body.content.replace(/\n/g, ''), 'base64').toString('utf-8');
+    return { permisos: JSON.parse(content), sha: res.body.sha };
+  } catch(e) { return { permisos: {}, sha: null }; }
+}
+
+async function guardarPermisos(permisos, sha) {
+  const apiPath = `/repos/${GITHUB_REPO}/contents/${PERMISOS_FILE}`;
+  if (!sha) {
+    const check = await githubRequest('GET', apiPath);
+    if (check.body.sha) sha = check.body.sha;
+  }
+  const contenidoB64 = Buffer.from(JSON.stringify(permisos, null, 2)).toString('base64');
+  const result = await githubRequest('PUT', apiPath, {
+    message: 'admin: actualizar permisos de pestañas',
+    content: contenidoB64,
+    branch: 'main',
+    ...(sha ? { sha } : {}),
+  });
+  if (result.status !== 200 && result.status !== 201) {
+    throw new Error(`GitHub PUT permisos falló: ${result.status}`);
+  }
+}
+
 async function guardarUsuarios(usuarios, sha, mensaje = 'usuarios: actualización') {
   const apiPath = `/repos/${GITHUB_REPO}/contents/${USERS_FILE}`;
   // Si no tenemos sha, obtenerlo antes de guardar para evitar conflicto
@@ -136,10 +165,12 @@ module.exports = async function handler(req, res) {
 
       await guardarUsuarios(usuarios, sha, `login: ${usuario}`);
 
+      const { permisos } = await leerPermisos();
       return res.status(200).json({
         ok: true,
         primerIngreso,
         sesion: { nombre: u.nombre, usuario: u.usuario, perfil: u.perfil },
+        permisos,
       });
     }
 
@@ -209,6 +240,23 @@ module.exports = async function handler(req, res) {
       }
       const nuevos = usuarios.filter(u => u.usuario.toLowerCase() !== usuario.toLowerCase());
       await guardarUsuarios(nuevos, sha, `admin: eliminar ${usuario}`);
+      return res.status(200).json({ ok: true });
+    }
+
+    // ── OBTENER PERMISOS (público) ────────────────────────────────────────────
+    if (accion === 'obtener-permisos') {
+      const { permisos } = await leerPermisos();
+      return res.status(200).json({ ok: true, permisos });
+    }
+
+    // ── GUARDAR PERMISOS (admin) ──────────────────────────────────────────────
+    if (accion === 'guardar-permisos') {
+      const authHeader = req.headers.authorization || '';
+      if (!authHeader.startsWith('Bearer ')) return res.status(401).json({ ok: false, error: 'No autorizado' });
+      const { permisos } = req.body || {};
+      if (!permisos || typeof permisos !== 'object') return res.status(400).json({ ok: false, error: 'Permisos inválidos' });
+      const { sha } = await leerPermisos();
+      await guardarPermisos(permisos, sha);
       return res.status(200).json({ ok: true });
     }
 
