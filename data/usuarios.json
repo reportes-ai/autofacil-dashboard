@@ -67,9 +67,9 @@
     "usuario": "fabiola.torres@autofacilchile.cl",
     "clave": "AF2026",
     "perfil": "USUARIO",
-    "estado": "NUNCA INGRESADO",
-    "ultimoIngreso": null,
-    "primerIngreso": true
+    "estado": "ACTIVO",
+    "ultimoIngreso": "2026-05-05T14:25:26.467Z",
+    "primerIngreso": false
   },
   {
     "nombre": "Jorge Vargas",
