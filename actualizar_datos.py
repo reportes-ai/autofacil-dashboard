@@ -159,7 +159,7 @@ def procesar_excel(contenido: bytes) -> dict:
             "com_dealer":  n(row[46]),   # AU - COMDEA $ REAL
             "rentab_afa":  n(row[47]),   # AV - RENTABILIDAD AFA
             "com_seguros": com_seg,      # BC - COM SEGUROS
-            "com_parque":  n(row[48]) + n(row[83]),   # AW + CF - COM PARQUE
+            "com_parque":  n(row[83]),   # CF - COM PARQUE
             "plazo":       int(row[70]) if row[70] and isinstance(row[70], (int, float)) else 0,  # BS
             "mayor_menor": s(row[79]),   # CB - MAYOR/MENOR
             "estado_sp":   s(row[36]),   # AK - ESTADO SP
