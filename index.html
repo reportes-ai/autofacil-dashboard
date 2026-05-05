@@ -2247,10 +2247,11 @@ window.RAW_DATA = [];
 
     // Rebuild vistas activas
     destroyCharts();
-    window._v2 = false; window._v3 = false; window._v4 = false; window._v1b = false; window._v5 = false; window._v6 = false; window._v6_filtro = null; window._v7 = false; window._v8 = false;
+    window._v2 = false; window._v3 = false; window._v4 = false; window._v1b = false; window._v5 = false; window._v6 = false; window._v6_filtro = null; window._v7 = false; window._v8 = false; window._v2pl = false;
     buildV1();
     if (document.getElementById('v1b').classList.contains('active')) { buildV1b(); window._v1b=true; }
     if (document.getElementById('v2').classList.contains('active')) { buildV2(); window._v2 = true; }
+    if (document.getElementById('v2pl') && document.getElementById('v2pl').classList.contains('active')) { buildV2pl(); window._v2pl = true; }
     if (document.getElementById('v3').classList.contains('active')) { buildV3(); window._v3 = true; }
     if (document.getElementById('v4').classList.contains('active')) { buildV4(); window._v4 = true; }
     if (document.getElementById('v6') && document.getElementById('v6').classList.contains('active')) { buildV6(); window._v6 = true; }
@@ -2259,7 +2260,7 @@ window.RAW_DATA = [];
   };
 
   function destroyCharts() {
-    ['ch-donut','ch-donut-ops','ch-d1-mm','ch-d1-plazo','ch-d1-monto','ch-d1-afa','ch-evol','ch-donut1b','ch-donut1b-ops','ch-evol1b','ch-d1b-mm','ch-d1b-plazo','ch-d1b-monto','ch-d1b-afa','ch-donut2','ch-donut3','ch-mm','ch-com','ch-qmes','ch-t1','ch-t2','ch-t3','ch-t4'].forEach(id => {
+    ['ch-donut','ch-donut-ops','ch-d1-mm','ch-d1-plazo','ch-d1-monto','ch-d1-afa','ch-evol','ch-donut1b','ch-donut1b-ops','ch-evol1b','ch-d1b-mm','ch-d1b-plazo','ch-d1b-monto','ch-d1b-afa','ch-donut2','ch-donut3','ch-mm','ch-com','ch-qmes','ch-t1','ch-t2','ch-t3','ch-t4','ch-donut2-pl','ch-donut3-pl','ch-mm-pl','ch-com-pl','ch-qmes-pl'].forEach(id => {
       const el = document.getElementById(id);
       if (el) { const ex = Chart.getChart(el); if (ex) ex.destroy(); }
     });
