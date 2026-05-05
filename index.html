@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260505_V2.9 -->
+<!-- v20260505_V3.0 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="topbar">
   <div class="topbar-row1">
-    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V2.9</span></span></div>
+    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.0</span></span></div>
     <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:8px"></div>
     <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:4px 12px;border-radius:6px;border:1px solid #2a4070;margin-left:8px">
       <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
@@ -3194,15 +3194,34 @@ const TABS_NAV = [
 ];
 const PERFILES_SISTEMA = ['USUARIO', 'ADMINISTRADOR'];
 
+function aplicarOrdenNavTabs() {
+  var tabsContainer = document.querySelector('.tabs');
+  var adminTab = document.getElementById('tab-admin');
+  if (!tabsContainer) return;
+  TABS_NAV.forEach(function(tab) {
+    var el = document.querySelector('.tab[data-viewid="' + tab.id + '"]');
+    if (el) tabsContainer.insertBefore(el, adminTab);
+  });
+}
+
 function aplicarPermisosNavTabs() {
   if (!sesionActual) return;
   const permisos = JSON.parse(sessionStorage.getItem('af_tab_permisos') || '{}');
+  // Aplicar orden guardado
+  if (Array.isArray(permisos._order)) {
+    var ordered = permisos._order.filter(function(id) { return TABS_NAV.find(function(t){ return t.id===id; }); });
+    ordered.forEach(function(id, i) {
+      var idx = TABS_NAV.findIndex(function(t){ return t.id===id; });
+      if (idx !== i) { var t = TABS_NAV.splice(idx,1)[0]; TABS_NAV.splice(i,0,t); }
+    });
+    aplicarOrdenNavTabs();
+  }
+  // Aplicar visibilidad
   const perfil = sesionActual.perfil;
   TABS_NAV.forEach(function(tab) {
     const el = document.querySelector('.tab[data-viewid="' + tab.id + '"]');
     if (!el) return;
     const permitidos = permisos[tab.id];
-    // Sin config → visible para todos
     el.style.display = (!permitidos || permitidos.length === 0 || permitidos.includes(perfil)) ? '' : 'none';
   });
 }
@@ -3226,14 +3245,16 @@ function adminSubTab(sec) {
 function renderTablaPermisos() {
   const permisos = JSON.parse(sessionStorage.getItem('af_tab_permisos') || '{}');
   var html = '<thead><tr style="background:#1a3a6a;color:#fff;font-size:11px">' +
+    '<th style="padding:10px 8px;text-align:center;width:30px"></th>' +
     '<th style="padding:10px 12px;text-align:left;width:220px">Pestaña</th>';
   PERFILES_SISTEMA.forEach(function(p) {
     html += '<th style="padding:10px 16px;text-align:center">' + p + '</th>';
   });
-  html += '</tr></thead><tbody>';
+  html += '</tr></thead><tbody id="tbody-permisos-tabs">';
   TABS_NAV.forEach(function(tab) {
     var permitidos = permisos[tab.id] || PERFILES_SISTEMA.slice();
-    html += '<tr style="border-bottom:1px solid #e8ecf0">';
+    html += '<tr draggable="true" data-tabid="' + tab.id + '" style="border-bottom:1px solid #e8ecf0;cursor:default">';
+    html += '<td style="padding:9px 8px;text-align:center;color:#aaa;font-size:16px;cursor:grab" title="Arrastrar para reordenar">⠿</td>';
     html += '<td style="padding:9px 12px;font-weight:600;font-size:13px">' + tab.label + '</td>';
     PERFILES_SISTEMA.forEach(function(p) {
       var checked = permitidos.includes(p) ? 'checked' : '';
@@ -3245,6 +3266,44 @@ function renderTablaPermisos() {
   });
   html += '</tbody>';
   document.getElementById('t-permisos-tabs').innerHTML = html;
+  initDragTablas();
+}
+
+function initDragTablas() {
+  var tbody = document.getElementById('tbody-permisos-tabs');
+  if (!tbody) return;
+  var dragSrc = null;
+  tbody.querySelectorAll('tr').forEach(function(row) {
+    row.addEventListener('dragstart', function(e) {
+      dragSrc = row;
+      e.dataTransfer.effectAllowed = 'move';
+      row.style.opacity = '0.4';
+    });
+    row.addEventListener('dragend', function() {
+      row.style.opacity = '';
+      tbody.querySelectorAll('tr').forEach(function(r) { r.style.background = ''; });
+    });
+    row.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      tbody.querySelectorAll('tr').forEach(function(r) { r.style.background = ''; });
+      if (row !== dragSrc) row.style.background = '#e3f2fd';
+    });
+    row.addEventListener('drop', function(e) {
+      e.preventDefault();
+      if (!dragSrc || dragSrc === row) return;
+      // Reorder TABS_NAV
+      var srcId = dragSrc.dataset.tabid;
+      var dstId = row.dataset.tabid;
+      var srcIdx = TABS_NAV.findIndex(function(t) { return t.id === srcId; });
+      var dstIdx = TABS_NAV.findIndex(function(t) { return t.id === dstId; });
+      if (srcIdx === -1 || dstIdx === -1) return;
+      var removed = TABS_NAV.splice(srcIdx, 1)[0];
+      TABS_NAV.splice(dstIdx, 0, removed);
+      aplicarOrdenNavTabs();
+      renderTablaPermisos();
+    });
+  });
 }
 
 async function guardarPermisosTabsAdmin() {
@@ -3253,6 +3312,7 @@ async function guardarPermisosTabsAdmin() {
   document.querySelectorAll('#t-permisos-tabs input[type=checkbox]').forEach(function(cb) {
     if (cb.checked) permisos[cb.dataset.tab].push(cb.dataset.perfil);
   });
+  permisos._order = TABS_NAV.map(function(t) { return t.id; });
   var btn = document.querySelector('button[onclick="guardarPermisosTabsAdmin()"]');
   if (btn) { btn.textContent = '⏳ Guardando...'; btn.disabled = true; }
   try {
