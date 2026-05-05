@@ -128,9 +128,9 @@ def procesar_excel(contenido: bytes) -> dict:
             except: return 0.0
         def s(v):  return str(v).strip() if v else ""
 
-        prod      = s(row[19])
-        fin_raw   = s(row[7])
-        com_seg   = n(row[93]) + n(row[94]) + n(row[95])
+        prod      = s(row[19])   # T - PRODUCTO
+        fin_raw   = s(row[7])    # H - FINANCIERA
+        com_seg   = n(row[54])   # BC - COM. RDH / CESANTÍA / REPARACIONES
 
         # Derivar institución desde producto
         if fin_raw == "AUTOFIN" or prod.startswith("AUTOFIN") or prod.startswith("AUTOFACIL"):
@@ -145,32 +145,32 @@ def procesar_excel(contenido: bytes) -> dict:
         all_data.append({
             "op":          row[0],
             "mes":         mes_key,
-            "rut":         s(row[3]),   # D - RUT
-            "nombre":      s(row[4]),   # E - NOMBRE
-            "ejecutivo":   s(row[6]),   # G - EJ.COMERCIAL
-            "financiera":  fin_raw,     # H
+            "rut":         s(row[3]),    # D - RUT
+            "nombre":      s(row[4]),    # E - NOMBRE
+            "ejecutivo":   s(row[6]),    # G - EJ. COMERCIAL
+            "financiera":  fin_raw,      # H - FINANCIERA
             "institucion": institucion,
-            "automotora":  s(row[8]),   # I
-            "estado_eval": s(row[16]) if s(row[16]) in ["ANULADO","RECHAZADO"] else s(row[13]),
-            "estado_credito": s(row[16]),  # Q
-            "saldo_precio":    n(row[22]),
-            "monto_financiado": n(row[38]),
-            "tasa_cli":    n(row[39]),
-            "com_dealer":  n(row[46]),
-            "rentab_afa":  n(row[52]),  # BA - RENTABILIDAD AUTOFACIL DIRECTO
-            "com_seguros": com_seg,
-            "com_parque":  n(row[82]),  # CE - PARQUE
-            "plazo":       int(row[72]) if row[72] and isinstance(row[72], (int, float)) else 0,
-            "mayor_menor": s(row[97]),
-            "estado_sp":   s(row[36]),  # AK
+            "automotora":  s(row[8]),    # I - AUTOMOTORA
+            "estado_eval": s(row[16]) if s(row[16]) in ["ANULADO","RECHAZADO"] else s(row[13]),  # Q / N
+            "estado_credito": s(row[16]),   # Q - ESTADO CRÉDITO
+            "saldo_precio":    n(row[22]),   # W - SALDO PRECIO
+            "monto_financiado": n(row[38]),  # AM - MONTO FINANCIADO INDEXA
+            "tasa_cli":    n(row[39]),   # AN - TASCLI REAL
+            "com_dealer":  n(row[46]),   # AU - COMDEA $ REAL
+            "rentab_afa":  n(row[47]),   # AV - RENTABILIDAD AFA
+            "com_seguros": com_seg,      # BC - COM SEGUROS
+            "com_parque":  n(row[48]),   # AW - COM PARQUE
+            "plazo":       int(row[70]) if row[70] and isinstance(row[70], (int, float)) else 0,  # BS
+            "mayor_menor": s(row[79]),   # CB - MAYOR/MENOR
+            "estado_sp":   s(row[36]),   # AK - ESTADO SP
             "fecha_ot":    row[17].strftime("%Y-%m-%d") if row[17] and hasattr(row[17],"day") else s(row[17]),  # R
-            "fecha_estado": row[9].strftime("%Y-%m-%d") if row[9] and hasattr(row[9],"day") else "",
+            "fecha_estado": row[14].strftime("%Y-%m-%d") if row[14] and hasattr(row[14],"day") else "",  # O
             "dia_mes":     int(row[10]) if row[10] and isinstance(row[10], (int,float)) else 0,
             "dia_semana":  str(row[11]).strip().lower() if row[11] else "",
             # Campos exportación Saldo Precio
-            "fecha_recepcion_fei":      row[33].strftime("%Y-%m-%d") if row[33] and hasattr(row[33],"day") else s(row[33]),  # AH
-            "alerta_recep_fei":         s(row[34]),   # AI
-            "alerta_pago_sp":           s(row[37]),   # AL
+            "fecha_recepcion_fei":  row[33].strftime("%Y-%m-%d") if row[33] and hasattr(row[33],"day") else s(row[33]),  # AH
+            "alerta_recep_fei":     s(row[34]),   # AI
+            "alerta_pago_sp":       s(row[37]),   # AL
         })
 
     print(f"   ✓ {len(all_data)} registros procesados")
