@@ -244,6 +244,7 @@ function actualizarTopbarUsuario() {
   }
   const tabAdmin = document.getElementById('tab-admin');
   if (tabAdmin) tabAdmin.style.display = sesionActual.perfil === 'ADMINISTRADOR' ? 'flex' : 'none';
+  aplicarPermisosNavTabs();
 }
 
 function cerrarSesion() {
@@ -283,17 +284,17 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
   <div class="topbar-row2">
     <div class="tabs">
-      <div class="tab active" onclick="showV('v1b',this)">✅ Otorgados</div>
-      <div class="tab" onclick="showV('v1',this)">📊 Aprobados</div>
-      <div class="tab" onclick="showV('v2',this)">💰 Rentabilidades</div>
-      <div class="tab" onclick="showV('v3',this)">📈 Tendencia</div>
-      <div class="tab" onclick="showV('v5',this)">👤 Ejecutivos</div>
-      <div class="tab" onclick="showV('v7',this)">🔻 Funnel</div>
-      <div class="tab" onclick="showV('v6',this)">💳 Saldo Precio</div>
-      <div class="tab" onclick="showV('v8',this)">📋 Comparativo</div>
-      <div class="tab" onclick="showV('vhist',this)">📅 Historia</div>
-      <div class="tab" onclick="showV('vppto',this)">🎯 Presupuesto</div>
-      <div class="tab" onclick="showV('vevol',this)">📊 Evolución</div>
+      <div class="tab active" data-viewid="v1b" onclick="showV('v1b',this)">✅ Otorgados</div>
+      <div class="tab" data-viewid="v1" onclick="showV('v1',this)">📊 Aprobados</div>
+      <div class="tab" data-viewid="v2" onclick="showV('v2',this)">💰 Rentabilidades</div>
+      <div class="tab" data-viewid="v3" onclick="showV('v3',this)">📈 Tendencia</div>
+      <div class="tab" data-viewid="v5" onclick="showV('v5',this)">👤 Ejecutivos</div>
+      <div class="tab" data-viewid="v7" onclick="showV('v7',this)">🔻 Funnel</div>
+      <div class="tab" data-viewid="v6" onclick="showV('v6',this)">💳 Saldo Precio</div>
+      <div class="tab" data-viewid="v8" onclick="showV('v8',this)">📋 Comparativo</div>
+      <div class="tab" data-viewid="vhist" onclick="showV('vhist',this)">📅 Historia</div>
+      <div class="tab" data-viewid="vppto" onclick="showV('vppto',this)">🎯 Presupuesto</div>
+      <div class="tab" data-viewid="vevol" onclick="showV('vevol',this)">📊 Evolución</div>
       <div class="tab" id="tab-admin" onclick="showV('vadmin',this)" style="display:none;border-left:1px solid #2a4070;margin-left:8px">⚙️ Admin</div>
     </div>
   </div>
@@ -2760,24 +2761,55 @@ function buildV7() {
 <!-- VISTA ADMIN: GESTIÓN DE USUARIOS -->
 <div id="vadmin" class="view">
   <div class="dash-header">
-    <div class="dash-title">⚙️ Administración de Usuarios</div>
+    <div class="dash-title">⚙️ Administración</div>
     <div style="display:flex;align-items:center;gap:12px">
       <div class="logo-block"><div class="logo-text">Auto<span>Fácil</span></div><div class="logo-sub">Crédito Automotriz</div></div>
     </div>
   </div>
 
-  <div class="card" style="margin-top:10px">
-    <div class="card-head" style="display:flex;align-items:center;justify-content:space-between">
-      <span>Usuarios del Sistema</span>
-      <div style="display:flex;gap:8px">
-        <input id="admin-search" placeholder="🔍 Buscar..." onkeyup="filtrarUsuariosAdmin()"
-          style="padding:4px 10px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:12px;width:180px"/>
-        <button onclick="nuevoUsuario()" style="background:#43a047;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer">➕ Nuevo Usuario</button>
-        <button onclick="exportarUsuarios()" style="background:#1565C0;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer">📥 Exportar</button>
+  <!-- Sub-pestañas Admin -->
+  <div style="display:flex;gap:4px;margin:10px 0 0 0;border-bottom:2px solid #1a3a6a">
+    <button id="adm-tab-usuarios" onclick="adminSubTab('usuarios')"
+      style="padding:7px 20px;border:none;border-radius:6px 6px 0 0;background:#1a3a6a;color:#fff;font-size:12px;font-weight:600;cursor:pointer">
+      👥 Usuarios
+    </button>
+    <button id="adm-tab-permisos" onclick="adminSubTab('permisos')"
+      style="padding:7px 20px;border:none;border-radius:6px 6px 0 0;background:#0d1627;color:#7bafd4;font-size:12px;font-weight:600;cursor:pointer">
+      🔒 Permisos de Pestañas
+    </button>
+  </div>
+
+  <!-- Sección: Usuarios -->
+  <div id="adm-sec-usuarios">
+    <div class="card" style="margin-top:10px">
+      <div class="card-head" style="display:flex;align-items:center;justify-content:space-between">
+        <span>Usuarios del Sistema</span>
+        <div style="display:flex;gap:8px">
+          <input id="admin-search" placeholder="🔍 Buscar..." onkeyup="filtrarUsuariosAdmin()"
+            style="padding:4px 10px;border-radius:6px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:12px;width:180px"/>
+          <button onclick="nuevoUsuario()" style="background:#43a047;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer">➕ Nuevo Usuario</button>
+          <button onclick="exportarUsuarios()" style="background:#1565C0;color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:11px;cursor:pointer">📥 Exportar</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="t-admin-users" style="width:100%;border-collapse:collapse;font-size:12px"></table>
       </div>
     </div>
-    <div style="overflow-x:auto">
-      <table id="t-admin-users" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+  </div>
+
+  <!-- Sección: Permisos de Pestañas -->
+  <div id="adm-sec-permisos" style="display:none">
+    <div class="card" style="margin-top:10px">
+      <div class="card-head" style="display:flex;align-items:center;justify-content:space-between">
+        <span>🔒 Control de Acceso por Pestaña</span>
+        <button onclick="guardarPermisosTabsAdmin()" style="background:#43a047;color:#fff;border:none;border-radius:6px;padding:5px 16px;font-size:12px;font-weight:600;cursor:pointer">💾 Guardar Cambios</button>
+      </div>
+      <div style="padding:10px 4px;font-size:11px;color:#7bafd4;margin-bottom:4px">
+        Marca qué perfiles pueden ver cada pestaña. Los cambios se aplican al iniciar sesión.
+      </div>
+      <div style="overflow-x:auto">
+        <table id="t-permisos-tabs" style="width:100%;border-collapse:collapse;font-size:13px"></table>
+      </div>
     </div>
   </div>
 
@@ -2825,9 +2857,86 @@ function buildV7() {
   </div>
 </div>
 <script>
+// ======== CONFIG DE PESTAÑAS ========
+const TABS_NAV = [
+  { id:'v1b',   label:'✅ Otorgados' },
+  { id:'v1',    label:'📊 Aprobados' },
+  { id:'v2',    label:'💰 Rentabilidades' },
+  { id:'v3',    label:'📈 Tendencia' },
+  { id:'v5',    label:'👤 Ejecutivos' },
+  { id:'v7',    label:'🔻 Funnel' },
+  { id:'v6',    label:'💳 Saldo Precio' },
+  { id:'v8',    label:'📋 Comparativo' },
+  { id:'vhist', label:'📅 Historia' },
+  { id:'vppto', label:'🎯 Presupuesto' },
+  { id:'vevol', label:'📊 Evolución' },
+];
+const PERFILES_SISTEMA = ['USUARIO', 'ADMINISTRADOR'];
+
+function aplicarPermisosNavTabs() {
+  if (!sesionActual) return;
+  const permisos = JSON.parse(localStorage.getItem('af_tab_permisos') || '{}');
+  const perfil = sesionActual.perfil;
+  TABS_NAV.forEach(function(tab) {
+    const el = document.querySelector('.tab[data-viewid="' + tab.id + '"]');
+    if (!el) return;
+    const permitidos = permisos[tab.id];
+    // Sin config → visible para todos
+    el.style.display = (!permitidos || permitidos.length === 0 || permitidos.includes(perfil)) ? '' : 'none';
+  });
+}
+
 // ======== ADMIN DE USUARIOS ========
 async function buildVAdmin() {
+  adminSubTab('usuarios');
   setTimeout(async function() { await renderTablaAdmin(); }, 50);
+}
+
+function adminSubTab(sec) {
+  document.getElementById('adm-sec-usuarios').style.display  = sec === 'usuarios'  ? '' : 'none';
+  document.getElementById('adm-sec-permisos').style.display  = sec === 'permisos'  ? '' : 'none';
+  var btnU = document.getElementById('adm-tab-usuarios');
+  var btnP = document.getElementById('adm-tab-permisos');
+  if (btnU) { btnU.style.background = sec==='usuarios' ? '#1a3a6a' : '#0d1627'; btnU.style.color = sec==='usuarios' ? '#fff' : '#7bafd4'; }
+  if (btnP) { btnP.style.background = sec==='permisos' ? '#1a3a6a' : '#0d1627'; btnP.style.color = sec==='permisos' ? '#fff' : '#7bafd4'; }
+  if (sec === 'permisos') renderTablaPermisos();
+}
+
+function renderTablaPermisos() {
+  const permisos = JSON.parse(localStorage.getItem('af_tab_permisos') || '{}');
+  var html = '<thead><tr style="background:#1a3a6a;color:#fff;font-size:11px">' +
+    '<th style="padding:10px 12px;text-align:left;width:220px">Pestaña</th>';
+  PERFILES_SISTEMA.forEach(function(p) {
+    html += '<th style="padding:10px 16px;text-align:center">' + p + '</th>';
+  });
+  html += '</tr></thead><tbody>';
+  TABS_NAV.forEach(function(tab) {
+    var permitidos = permisos[tab.id] || PERFILES_SISTEMA.slice();
+    html += '<tr style="border-bottom:1px solid #e8ecf0">';
+    html += '<td style="padding:9px 12px;font-weight:600;font-size:13px">' + tab.label + '</td>';
+    PERFILES_SISTEMA.forEach(function(p) {
+      var checked = permitidos.includes(p) ? 'checked' : '';
+      html += '<td style="padding:9px 16px;text-align:center">' +
+        '<input type="checkbox" data-tab="' + tab.id + '" data-perfil="' + p + '" ' + checked +
+        ' style="width:16px;height:16px;cursor:pointer"/></td>';
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('t-permisos-tabs').innerHTML = html;
+}
+
+function guardarPermisosTabsAdmin() {
+  var permisos = {};
+  TABS_NAV.forEach(function(tab) { permisos[tab.id] = []; });
+  document.querySelectorAll('#t-permisos-tabs input[type=checkbox]').forEach(function(cb) {
+    if (cb.checked) permisos[cb.dataset.tab].push(cb.dataset.perfil);
+  });
+  localStorage.setItem('af_tab_permisos', JSON.stringify(permisos));
+  aplicarPermisosNavTabs();
+  // Feedback visual
+  var btn = document.querySelector('button[onclick="guardarPermisosTabsAdmin()"]');
+  if (btn) { var orig = btn.textContent; btn.textContent = '✅ Guardado'; btn.style.background='#1565c0'; setTimeout(function(){ btn.textContent=orig; btn.style.background='#43a047'; }, 1800); }
 }
 
 function estadoBadge(estado) {
