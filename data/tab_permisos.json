@@ -1,1 +1,45 @@
-{}
+{
+  "v1b": [
+    "USUARIO",
+    "ADMINISTRADOR"
+  ],
+  "v1": [
+    "USUARIO",
+    "ADMINISTRADOR"
+  ],
+  "v2": [
+    "ADMINISTRADOR"
+  ],
+  "v3": [
+    "USUARIO",
+    "ADMINISTRADOR"
+  ],
+  "v5": [
+    "USUARIO",
+    "ADMINISTRADOR"
+  ],
+  "v7": [
+    "USUARIO",
+    "ADMINISTRADOR"
+  ],
+  "v6": [
+    "USUARIO",
+    "ADMINISTRADOR"
+  ],
+  "v8": [
+    "USUARIO",
+    "ADMINISTRADOR"
+  ],
+  "vhist": [
+    "USUARIO",
+    "ADMINISTRADOR"
+  ],
+  "vppto": [
+    "USUARIO",
+    "ADMINISTRADOR"
+  ],
+  "vevol": [
+    "USUARIO",
+    "ADMINISTRADOR"
+  ]
+}
