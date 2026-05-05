@@ -1,10 +1,14 @@
 {
   "v1b": [
     "USUARIO",
+    "SUPERVISOR",
+    "GERENTE GENERAL",
     "ADMINISTRADOR"
   ],
   "v1": [
     "USUARIO",
+    "SUPERVISOR",
+    "GERENTE GENERAL",
     "ADMINISTRADOR"
   ],
   "v2": [
@@ -12,34 +16,56 @@
   ],
   "v3": [
     "USUARIO",
+    "SUPERVISOR",
+    "GERENTE GENERAL",
     "ADMINISTRADOR"
   ],
   "v5": [
     "USUARIO",
+    "SUPERVISOR",
+    "GERENTE GENERAL",
     "ADMINISTRADOR"
   ],
   "v7": [
     "USUARIO",
+    "SUPERVISOR",
+    "GERENTE GENERAL",
     "ADMINISTRADOR"
   ],
   "v6": [
     "USUARIO",
+    "SUPERVISOR",
+    "GERENTE GENERAL",
     "ADMINISTRADOR"
   ],
   "v8": [
     "USUARIO",
+    "SUPERVISOR",
+    "GERENTE GENERAL",
     "ADMINISTRADOR"
   ],
   "vhist": [
     "USUARIO",
+    "SUPERVISOR",
+    "GERENTE GENERAL",
     "ADMINISTRADOR"
   ],
   "vppto": [
     "USUARIO",
+    "SUPERVISOR",
+    "GERENTE GENERAL",
     "ADMINISTRADOR"
   ],
   "vevol": [
     "USUARIO",
+    "SUPERVISOR",
+    "GERENTE GENERAL",
+    "ADMINISTRADOR"
+  ],
+  "v2pl": [
+    "USUARIO",
+    "SUPERVISOR",
+    "GERENTE GENERAL",
     "ADMINISTRADOR"
   ]
 }
