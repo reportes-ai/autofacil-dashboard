@@ -40,9 +40,9 @@
     "usuario": "cristina.pena@autofacilchile.cl",
     "clave": "AF2026",
     "perfil": "USUARIO",
-    "estado": "NUNCA INGRESADO",
-    "ultimoIngreso": null,
-    "primerIngreso": true
+    "estado": "ACTIVO",
+    "ultimoIngreso": "2026-05-05T21:32:43.845Z",
+    "primerIngreso": false
   },
   {
     "nombre": "Dagoberto Irribarra",
