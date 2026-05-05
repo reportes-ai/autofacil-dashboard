@@ -41,5 +41,8 @@
   "vevol": [
     "USUARIO",
     "ADMINISTRADOR"
+  ],
+  "v2pl": [
+    "ADMINISTRADOR"
   ]
 }
