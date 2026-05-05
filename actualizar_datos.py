@@ -157,7 +157,7 @@ def procesar_excel(contenido: bytes) -> dict:
             "monto_financiado": n(row[38]),  # AM - MONTO FINANCIADO INDEXA
             "tasa_cli":    n(row[39]),   # AN - TASCLI REAL
             "com_dealer":  n(row[46]),   # AU - COMDEA $ REAL
-            "rentab_afa":  n(row[47]),   # AV - RENTABILIDAD AFA
+            "rentab_afa":  n(row[62]),   # BK - MONTO DE PAGO COMISION FINAN.
             "com_seguros": com_seg,      # BC - COM SEGUROS
             "com_parque":  n(row[83]),   # CF - COM PARQUE
             "plazo":       int(row[72]) if row[72] and isinstance(row[72], (int, float)) else 0,  # BU
