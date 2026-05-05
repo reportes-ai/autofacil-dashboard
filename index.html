@@ -907,6 +907,7 @@ function showV(id, el) {
   }
   if(id==='v2pl') {
     destroyCharts();
+    if (!window.DASH?.feb?.detalle_v2?.length) window.aplicarFiltro();
     buildV2pl();
     window._v2pl=true;
   }
