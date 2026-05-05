@@ -297,6 +297,7 @@ document.addEventListener('DOMContentLoaded', function() {
       <div class="tab" data-viewid="vhist" onclick="showV('vhist',this)">📅 Historia</div>
       <div class="tab" data-viewid="vppto" onclick="showV('vppto',this)">🎯 Presupuesto</div>
       <div class="tab" data-viewid="vevol" onclick="showV('vevol',this)">📊 Evolución</div>
+      <div class="tab" data-viewid="v2pl" onclick="showV('v2pl',this)">📋 P&L Operativo</div>
       <div class="tab" id="tab-admin" onclick="showV('vadmin',this)" style="display:none;border-left:1px solid #2a4070;margin-left:8px">⚙️ Admin</div>
     </div>
   </div>
@@ -731,6 +732,105 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 </div>
 
+<!-- ============================================================ VISTA P&L OPERATIVO (copia de v2) ============================================================ -->
+<div id="v2pl" class="view">
+  <div class="dash-header">
+    <div class="dash-title">P&L Operativo</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="logo-block"><div class="logo-text">Auto<span>Fácil</span></div><div class="logo-sub">Crédito Automotriz</div></div>
+    </div>
+  </div>
+
+  <div class="kpi-strip" id="kpi2-pl"></div>
+  <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+    <div class="kpi-box" style="flex:0 0 100px"><div class="kpi-label">Plazo Prom.</div><div class="kpi-val" id="r-plazo-pl">—</div></div>
+    <div class="kpi-box" style="flex:0 0 110px"><div class="kpi-label">Finanz. Prom.</div><div class="kpi-val" id="r-finprom-pl">—</div></div>
+    <div class="kpi-box" style="flex:0 0 120px"><div class="kpi-label">Saldo Precio</div><div class="kpi-val" id="r-saldo-pl">—</div></div>
+    <div class="kpi-box highlight-teal" style="flex:0 0 120px"><div class="kpi-label">Com. Dealer</div><div class="kpi-val" id="r-comdealer-pl">—</div></div>
+    <div class="kpi-box highlight-teal" style="flex:0 0 110px"><div class="kpi-label">Com. Parque</div><div class="kpi-val" id="r-comparque-pl">—</div></div>
+    <div class="kpi-box highlight-teal" style="flex:0 0 150px"><div class="kpi-label">Com. Total (D+P)</div><div class="kpi-val" id="r-totcd-pl">—</div><div class="kpi-sub" id="r-totcd-pct-pl"></div></div>
+  </div>
+
+  <div class="g3565" style="align-items:stretch">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="card">
+          <div class="card-head light">Ingresos AutoFácil</div>
+          <div class="donut-section" style="padding:8px">
+            <div class="donut-wrap" style="width:100px;height:100px"><canvas id="ch-donut2-pl"></canvas>
+              <div class="donut-center"><div class="donut-center-val" id="donut2-pct-pl">—</div><div class="donut-center-lbl">MAYOR</div></div>
+            </div>
+            <div class="donut-legend-list" id="donut2-leg-pl"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-head" style="background:#00838f">Composición Colocaciones</div>
+          <div class="donut-section" style="padding:8px">
+            <div class="donut-wrap" style="width:100px;height:100px"><canvas id="ch-donut3-pl"></canvas>
+              <div class="donut-center"><div class="donut-center-val" id="donut3-pct-pl">—</div><div class="donut-center-lbl">MAYOR</div></div>
+            </div>
+            <div class="donut-legend-list" id="donut3-leg-pl"></div>
+          </div>
+        </div>
+      </div>
+      <!-- Filtros -->
+      <div class="card">
+        <div class="card-head">Filtros</div>
+        <div class="card-body">
+          <div style="margin-bottom:8px">
+            <div style="font-size:10px;color:#888;margin-bottom:4px;text-transform:uppercase">Concesionario</div>
+            <select id="fil-ccs-pl" class="pill" style="width:100%;border-radius:4px;padding:4px;font-size:11px;border:1px solid #dce3ed">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div style="margin-bottom:8px">
+            <div style="font-size:10px;color:#888;margin-bottom:4px;text-transform:uppercase">&gt;= 200 UF</div>
+            <div class="pills">
+              <div class="pill active" onclick="setFilPL('mm','',this)">Todos</div>
+              <div class="pill" onclick="setFilPL('mm','>',this)">&gt; 200 UF</div>
+              <div class="pill" onclick="setFilPL('mm','<',this)">&lt; 200 UF</div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:10px;color:#888;margin-bottom:4px;text-transform:uppercase">Institución</div>
+            <div class="pills">
+              <div class="pill active" onclick="setFilPL('fin','',this)">Todos</div>
+              <div class="pill" onclick="setFilPL('fin','AUTOFIN',this)">AUTOFIN</div>
+              <div class="pill" onclick="setFilPL('fin','UNIDAD',this)">UNIDAD</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Estado eval riesgo -->
+      <div class="card">
+        <div class="card-head">Estado Eval. Riesgo</div>
+        <div class="card-body" style="padding:0">
+          <table class="sumtbl" id="t-estado2-pl"></table>
+        </div>
+      </div>
+      <!-- Charts lateral -->
+      <div class="card">
+        <div class="card-head teal">Ing. AFA vs Total Fin.</div>
+        <div class="ch" style="height:120px;padding:8px"><canvas id="ch-mm-pl"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head teal">Com. por tipo</div>
+        <div class="ch" style="height:100px;padding:8px"><canvas id="ch-com-pl"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-head teal">Ops por mes (Q)</div>
+        <div class="ch" style="height:100px;padding:8px"><canvas id="ch-qmes-pl"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head" id="titulo-detalle-v2-pl">Detalle Operaciones Otorgadas</div>
+      <div class="scroll-t" style="max-height:980px;overflow-y:auto">
+        <table class="tbl" id="t-rentab-pl"></table>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============================================================ VISTA 3 ============================================================ -->
 <div id="v3" class="view">
   <div class="dash-header">
@@ -805,6 +905,11 @@ function showV(id, el) {
     buildV2();
     window._v2=true;
   }
+  if(id==='v2pl') {
+    destroyCharts();
+    buildV2pl();
+    window._v2pl=true;
+  }
   if(id==='v3'&&!window._v3) { buildV3(); window._v3=true; }
   if(id==='v4') { buildV4(); window._v4=true; }
   if(id==='v5'&&!window._v5) { buildV5(); window._v5=true; }
@@ -830,6 +935,7 @@ function showV(id, el) {
 
 // ======== FILTERS v2 ========
 const fil = {mm:'', fin:'', ccs:''};
+const fil_pl = {mm:'', fin:'', ccs:''};
 function setFil(k, v, el) {
   fil[k]=v;
   const parent = el.parentElement;
@@ -1268,6 +1374,216 @@ function buildRentabTable() {
   document.getElementById('r-totcd-pct').textContent = tot.fin ? ((tot.cd+tot.par)/tot.fin*100).toFixed(1)+'%' : '';
   document.getElementById('r-plazo').textContent = avgPlazoF + 'm';
   document.getElementById('r-finprom').textContent = fM(avgFinF);
+}
+
+// ======== P&L OPERATIVO (copia independiente de v2) ========
+function setFilPL(k, v, el) {
+  fil_pl[k] = v;
+  el.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  buildRentabTablePL();
+}
+
+function buildV2pl() {
+  const D = window.DASH;
+  const det = (D.feb && D.feb.detalle_v2) ? D.feb.detalle_v2 : (D.detalle_v2 || []);
+
+  const lbl = document.getElementById('periodo-label')?.textContent || '';
+  const tituloEl = document.getElementById('titulo-detalle-v2-pl');
+  if (tituloEl) tituloEl.textContent = 'Detalle Operaciones Otorgadas — ' + lbl;
+
+  const totFin = det.reduce((a,r)=>a+r.total_a_financiar,0);
+  const totSal = det.reduce((a,r)=>a+r.saldo_precio,0);
+  const totAFA = det.reduce((a,r)=>a+r.ing_autofacil,0);
+  const totCD  = det.reduce((a,r)=>a+r.com_dealer,0);
+  const totSeg = det.reduce((a,r)=>a+r.com_seguros,0);
+  const totPar = det.reduce((a,r)=>a+r.com_par,0);
+  const totIG  = det.reduce((a,r)=>a+r.ingreso_bruto,0);
+  const totCD_P= totCD+totPar;
+  const totOps = det.length;
+  const avgPlazo = det.length ? Math.round(det.reduce((a,r)=>a+r.plazo,0)/det.length) : 0;
+  const avgFin   = totOps ? Math.round(totFin/totOps) : 0;
+  const totIN = totIG - totCD_P;
+
+  document.getElementById('kpi2-pl').innerHTML = `
+    <div class="kpi-box"><div class="kpi-label">Total Financiado</div><div class="kpi-val big">${fM(totFin)}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Operaciones Otorgadas</div><div class="kpi-val big">${totOps}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Ing. x Colocaciones</div><div class="kpi-val big">${fM(totAFA)}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Ing. x Seguros</div><div class="kpi-val big">${fM(totSeg)}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Ing. Bruto</div><div class="kpi-val big">${fM(totIG)}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Ing. Neto AutoFácil</div><div class="kpi-val big">${fM(totIN)}</div><div class="kpi-sub">${totFin?(totIN/totFin*100).toFixed(1)+'%':''}</div></div>`;
+
+  document.getElementById('r-saldo-pl').textContent = fM(totSal);
+  document.getElementById('r-comdealer-pl').textContent = fM(totCD);
+  document.getElementById('r-comparque-pl').textContent = fM(totPar);
+  document.getElementById('r-totcd-pl').textContent = fM(totCD_P);
+  document.getElementById('r-totcd-pct-pl').textContent = totFin?(totCD_P/totFin*100).toFixed(1)+'%':'';
+  document.getElementById('r-plazo-pl').textContent = avgPlazo+'m';
+  document.getElementById('r-finprom-pl').textContent = fM(avgFin);
+
+  const mayor = det.filter(r=>r.mm==='>');
+  const menor = det.filter(r=>r.mm==='<');
+  const dv2 = [mayor.reduce((a,r)=>a+r.ing_autofacil,0), menor.reduce((a,r)=>a+r.ing_autofacil,0)];
+  const dt2 = dv2.reduce((a,b)=>a+b,0);
+  document.getElementById('donut2-pct-pl').textContent = dt2?(dv2[0]/dt2*100).toFixed(1)+'%':'—';
+  const ec2 = Chart.getChart(document.getElementById('ch-donut2-pl')); if(ec2) ec2.destroy();
+  new Chart(document.getElementById('ch-donut2-pl'),{
+    type:'doughnut',
+    data:{labels:['MAYOR','MENOR'],datasets:[{data:dv2,backgroundColor:[C.blue,C.teal],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fM(ctx.raw)}}},animation:{duration:500},responsive:true,maintainAspectRatio:false}
+  });
+  document.getElementById('donut2-leg-pl').innerHTML = ['MAYOR 200UF','MENOR 200UF'].map((l,i)=>`
+    <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,C.teal][i]}"></div>
+    <div><div style="font-size:10px;color:#555">${l}</div>
+    <span class="dleg-val">${fM(dv2[i])}</span>
+    <div style="font-size:11px;color:#888">${dt2?(dv2[i]/dt2*100).toFixed(1):0}%</div></div></div>`).join('');
+
+  const dv3ops = [mayor.length, menor.length];
+  const dv3sal = [mayor.reduce((a,r)=>a+r.saldo_precio,0), menor.reduce((a,r)=>a+r.saldo_precio,0)];
+  const dt3 = dv3ops.reduce((a,b)=>a+b,0);
+  document.getElementById('donut3-pct-pl').textContent = dt3?(dv3ops[0]/dt3*100).toFixed(1)+'%':'—';
+  const ec3 = Chart.getChart(document.getElementById('ch-donut3-pl')); if(ec3) ec3.destroy();
+  new Chart(document.getElementById('ch-donut3-pl'),{
+    type:'doughnut',
+    data:{labels:['MAYOR 200UF','MENOR 200UF'],datasets:[{data:dv3ops,backgroundColor:[C.blue,C.teal],borderWidth:2,borderColor:'#fff'}]},
+    options:{cutout:'65%',plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.raw} ops`}}},animation:{duration:500},responsive:true,maintainAspectRatio:false}
+  });
+  document.getElementById('donut3-leg-pl').innerHTML = ['MAYOR 200UF','MENOR 200UF'].map((l,i)=>`
+    <div class="dleg"><div class="dleg-dot" style="background:${[C.blue,C.teal][i]}"></div>
+    <div><div style="font-size:10px;color:#555">${l}</div>
+    <span class="dleg-val">${dv3ops[i]} ops</span>
+    <span class="dleg-pct"> ${dt3?(dv3ops[i]/dt3*100).toFixed(1):0}%</span>
+    <div style="font-size:10px;color:#888">${fM(dv3sal[i])}</div></div></div>`).join('');
+
+  document.getElementById('t-estado2-pl').innerHTML = `
+    <thead><tr><th>Estado Eval. Riesgo</th><th>OP</th></tr></thead>
+    <tbody>
+      <tr><td>✓ OTORGADO</td><td>${det.length}</td></tr>
+      <tr><td>✓ ANULADO</td><td>1</td></tr>
+    </tbody>`;
+
+  const ecMM = Chart.getChart(document.getElementById('ch-mm-pl')); if(ecMM) ecMM.destroy();
+  new Chart(document.getElementById('ch-mm-pl'),{
+    type:'bar',
+    data:{labels:['MAYOR','MENOR'],datasets:[
+      {label:'Ing.AFA+Seg',data:dv2,backgroundColor:[C.blue+'bb',C.teal+'bb'],borderRadius:4},
+      {label:'Total Fin.',data:[mayor.reduce((a,r)=>a+r.total_a_financiar,0),menor.reduce((a,r)=>a+r.total_a_financiar,0)],backgroundColor:[C.red+'bb',C.orange+'99'],borderRadius:4}
+    ]},
+    options:{...chOpts(),plugins:{...chOpts().plugins,legend:{display:true,labels:{color:'#555',font:{size:9},boxWidth:10}}}}
+  });
+
+  const ecCom = Chart.getChart(document.getElementById('ch-com-pl')); if(ecCom) ecCom.destroy();
+  new Chart(document.getElementById('ch-com-pl'),{
+    type:'bar',
+    data:{labels:['Ing.AFA','Com.Seguros','Ing.AFA+Seg'],datasets:[{data:[totAFA,totSeg,totAFA+totSeg],backgroundColor:[C.blue+'bb',C.teal+'bb',C.green+'bb'],borderRadius:4}]},
+    options:{...chOpts(),indexAxis:'y'}
+  });
+
+  const last8 = D.tendencia.slice(-8);
+  const ecQ = Chart.getChart(document.getElementById('ch-qmes-pl')); if(ecQ) ecQ.destroy();
+  new Chart(document.getElementById('ch-qmes-pl'),{
+    type:'bar',
+    data:{labels:last8.map(t=>t.mes),datasets:[{data:last8.map(t=>t.otorgados),backgroundColor:C.yellow+'cc',borderRadius:3}]},
+    options:{...chOpts()}
+  });
+
+  fil_pl.mm=''; fil_pl.fin=''; fil_pl.ccs='';
+  document.querySelectorAll('#v2pl .pill').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#v2pl .pill:first-child').forEach(p=>p.classList.add('active'));
+
+  const ccsUniq = [...new Set(det.map(r=>r.ccs))].sort();
+  const filCcsPL = document.getElementById('fil-ccs-pl');
+  if (filCcsPL) {
+    filCcsPL.innerHTML = '<option value="">Todos</option>' + ccsUniq.map(c=>`<option value="${c}">${c}</option>`).join('');
+    filCcsPL.onchange = function(){ fil_pl.ccs=this.value; buildRentabTablePL(); };
+  }
+
+  buildRentabTablePL();
+}
+
+function buildRentabTablePL() {
+  const D = window.DASH;
+  const det = (D.feb && D.feb.detalle_v2) ? D.feb.detalle_v2 : (D.detalle_v2 || []);
+  let rows = det;
+  if(fil_pl.mm)  rows = rows.filter(r=>r.mm===fil_pl.mm);
+  if(fil_pl.ccs) rows = rows.filter(r=>r.ccs===fil_pl.ccs);
+  if(fil_pl.fin) rows = rows.filter(r=>r.financiera===fil_pl.fin);
+
+  const pClass = p => p>=25?'pct-ok':p>=15?'pct-hi':p>=8?'pct-warn':'pct-bad';
+  const trs = rows.map(r=>`<tr>
+    <td>${r.op||'—'}</td>
+    <td><span class="${r.mm==='>'?'tag-may':'tag-men'}">${r.mm==='>'?'MAYOR':'MENOR'}</span></td>
+    <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;text-align:left">${r.ccs.length>24?r.ccs.substring(0,24)+'…':r.ccs}</td>
+    <td><span class="${r.financiera==='AUTOFIN'?'tag-men':'tag-may'}">${r.financiera||'—'}</span></td>
+    <td>${fN(r.saldo_precio)}</td>
+    <td>${fN(r.total_a_financiar)}</td>
+    <td>${r.plazo}</td>
+    <td>${fN(r.ing_autofacil)}</td>
+    <td><span class="${pClass(r.pct_a)}">${r.pct_a}%</span></td>
+    <td>${fN(r.com_dealer)}</td>
+    <td><span class="${pClass(r.pct_d)}">${r.pct_d}%</span></td>
+    <td>${fN(r.com_par)}</td>
+    <td>0,0%</td>
+    <td>${fN(r.total_com_broke)}</td>
+    <td><span class="${pClass(r.pct_t)}">${r.pct_t}%</span></td>
+    <td>${fN(r.com_seguros)}</td>
+    <td>${fN(r.ingreso_bruto)}</td>
+    <td><span class="${pClass(r.pct_b)}">${r.pct_b}%</span></td>
+  </tr>`).join('');
+
+  const tot = rows.reduce((a,r)=>({
+    sal:a.sal+r.saldo_precio, fin:a.fin+r.total_a_financiar,
+    afa:a.afa+r.ing_autofacil, cd:a.cd+r.com_dealer, par:a.par+r.com_par,
+    tcb:a.tcb+r.total_com_broke, seg:a.seg+r.com_seguros, ig:a.ig+r.ingreso_bruto
+  }),{sal:0,fin:0,afa:0,cd:0,par:0,tcb:0,seg:0,ig:0});
+  const totOpsR = rows.length;
+  const tAfaPct = tot.fin?(tot.afa/tot.fin*100).toFixed(1):0;
+  const tCdPct  = tot.fin?(tot.cd/tot.fin*100).toFixed(1):0;
+  const tTcbPct = tot.fin?(tot.tcb/tot.fin*100).toFixed(1):0;
+  const tIgPct  = tot.fin?(tot.ig/tot.fin*100).toFixed(1):0;
+
+  document.getElementById('t-rentab-pl').innerHTML = `
+    <thead><tr>
+      <th>OP</th><th>&gt;=200UF</th><th style="text-align:left">Ccs</th><th>Financiera</th>
+      <th>Saldo Precio</th><th>Total a Fin.</th><th>Plazo</th>
+      <th>Ing.AutoFácil</th><th>%_A</th>
+      <th>Com.Dealer</th><th>%_D</th>
+      <th>Com Par</th><th>%_P</th>
+      <th>Total Com Broke</th><th>%_t</th>
+      <th>Com.Seguros</th>
+      <th>Ingreso Bruto</th><th>%_B</th>
+    </tr></thead>
+    <tbody>${trs}</tbody>
+    <tfoot><tr>
+      <td colspan="4">Total / Prom.</td>
+      <td>${fN(tot.sal)}</td><td>${fN(tot.fin)}</td>
+      <td>${totOpsR?Math.round(rows.reduce((a,r)=>a+r.plazo,0)/totOpsR):'—'}m</td>
+      <td>${fN(tot.afa)}</td><td><span class="${pClass(parseFloat(tAfaPct))}">${tAfaPct}%</span></td>
+      <td>${fN(tot.cd)}</td><td><span class="${pClass(parseFloat(tCdPct))}">${tCdPct}%</span></td>
+      <td>${fN(tot.par)}</td><td>0%</td>
+      <td>${fN(tot.tcb)}</td><td><span class="${pClass(parseFloat(tTcbPct))}">${tTcbPct}%</span></td>
+      <td>${fN(tot.seg)}</td>
+      <td>${fN(tot.ig)}</td><td><span class="${pClass(parseFloat(tIgPct))}">${tIgPct}%</span></td>
+    </tr></tfoot>`;
+
+  const totOpsF = rows.length;
+  const avgPlazoF = totOpsF ? Math.round(rows.reduce((a,r)=>a+r.plazo,0)/totOpsF) : 0;
+  const avgFinF   = totOpsF ? Math.round(tot.fin/totOpsF) : 0;
+  const totIN_F = tot.ig - (tot.cd + tot.par);
+  document.getElementById('kpi2-pl').innerHTML = `
+    <div class="kpi-box"><div class="kpi-label">Total Financiado</div><div class="kpi-val big">${fM(tot.fin)}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Operaciones Otorgadas</div><div class="kpi-val big">${totOpsF}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Ing. x Colocaciones</div><div class="kpi-val big">${fM(tot.afa)}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Ing. x Seguros</div><div class="kpi-val big">${fM(tot.seg)}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Ing. Bruto</div><div class="kpi-val big">${fM(tot.ig)}</div></div>
+    <div class="kpi-box highlight"><div class="kpi-label">Ing. Neto AutoFácil</div><div class="kpi-val big">${fM(totIN_F)}</div><div class="kpi-sub">${tot.fin?(totIN_F/tot.fin*100).toFixed(1)+'%':''}</div></div>`;
+  document.getElementById('r-saldo-pl').textContent = fM(tot.sal);
+  document.getElementById('r-comdealer-pl').textContent = fM(tot.cd);
+  document.getElementById('r-comparque-pl').textContent = fM(tot.par);
+  document.getElementById('r-totcd-pl').textContent = fM(tot.cd + tot.par);
+  document.getElementById('r-totcd-pct-pl').textContent = tot.fin?((tot.cd+tot.par)/tot.fin*100).toFixed(1)+'%':'';
+  document.getElementById('r-plazo-pl').textContent = avgPlazoF+'m';
+  document.getElementById('r-finprom-pl').textContent = fM(avgFinF);
 }
 
 // ======== VISTA 3 ========
@@ -2872,6 +3188,7 @@ const TABS_NAV = [
   { id:'vhist', label:'📅 Historia' },
   { id:'vppto', label:'🎯 Presupuesto' },
   { id:'vevol', label:'📊 Evolución' },
+  { id:'v2pl',  label:'📋 P&L Operativo' },
 ];
 const PERFILES_SISTEMA = ['USUARIO', 'ADMINISTRADOR'];
 
