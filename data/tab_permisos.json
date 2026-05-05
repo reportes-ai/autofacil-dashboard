@@ -18,6 +18,12 @@
   "v2pl": [
     "ADMINISTRADOR"
   ],
+  "vppto": [
+    "USUARIO",
+    "SUPERVISOR",
+    "GERENTE GENERAL",
+    "ADMINISTRADOR"
+  ],
   "v3": [
     "USUARIO",
     "SUPERVISOR",
@@ -36,25 +42,19 @@
     "GERENTE GENERAL",
     "ADMINISTRADOR"
   ],
-  "v6": [
-    "USUARIO",
-    "SUPERVISOR",
-    "GERENTE GENERAL",
-    "ADMINISTRADOR"
-  ],
   "v8": [
     "USUARIO",
     "SUPERVISOR",
     "GERENTE GENERAL",
     "ADMINISTRADOR"
   ],
-  "vhist": [
+  "v6": [
     "USUARIO",
     "SUPERVISOR",
     "GERENTE GENERAL",
     "ADMINISTRADOR"
   ],
-  "vppto": [
+  "vhist": [
     "USUARIO",
     "SUPERVISOR",
     "GERENTE GENERAL",
@@ -71,13 +71,13 @@
     "v1",
     "v2",
     "v2pl",
+    "vppto",
     "v3",
     "v5",
     "v7",
-    "v6",
     "v8",
+    "v6",
     "vhist",
-    "vppto",
     "vevol"
   ]
 }
