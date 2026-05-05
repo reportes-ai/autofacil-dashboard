@@ -15,6 +15,7 @@
     "ADMINISTRADOR"
   ],
   "v2pl": [
+    "SUPERVISOR",
     "ADMINISTRADOR"
   ],
   "v3": [
@@ -60,12 +61,6 @@
     "ADMINISTRADOR"
   ],
   "vevol": [
-    "USUARIO",
-    "SUPERVISOR",
-    "GERENTE GENERAL",
-    "ADMINISTRADOR"
-  ],
-  "v2pl": [
     "USUARIO",
     "SUPERVISOR",
     "GERENTE GENERAL",
