@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260505_V3.1 -->
+<!-- v20260505_V3.2 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="topbar">
   <div class="topbar-row1">
-    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.1</span></span></div>
+    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.2</span></span></div>
     <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:8px"></div>
     <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:4px 12px;border-radius:6px;border:1px solid #2a4070;margin-left:8px">
       <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
@@ -2571,7 +2571,14 @@ function buildV5() {
 <!-- VISTA 6: ESTADO SALDO PRECIO -->
 <div id="v6" class="view">
   <div class="dash-header">
-    <div class="dash-title">Estado Saldo Precio</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="dash-title">Estado Saldo Precio</div>
+      <div style="display:flex;gap:6px;margin-left:6px">
+        <button id="btn-fin-v6-all"   onclick="toggleFinV6(null)"          style="padding:5px 16px;border-radius:20px;border:2px solid #4fc3f7;background:#4fc3f7;color:#0d1627;font-size:11px;font-weight:700;cursor:pointer;transition:.15s">TODAS</button>
+        <button id="btn-fin-v6-af"    onclick="toggleFinV6('AUTOFIN')"     style="padding:5px 16px;border-radius:20px;border:2px solid #2196F3;background:transparent;color:#2196F3;font-size:11px;font-weight:700;cursor:pointer;transition:.15s">AUTOFIN</button>
+        <button id="btn-fin-v6-uc"    onclick="toggleFinV6('UNIDAD')"      style="padding:5px 16px;border-radius:20px;border:2px solid #ff7043;background:transparent;color:#ff7043;font-size:11px;font-weight:700;cursor:pointer;transition:.15s">UNIDAD</button>
+      </div>
+    </div>
     <div style="display:flex;align-items:center;gap:12px">
       <button onclick="exportarDetalleV6()" id="btn-exportar-v6"
         style="display:flex;align-items:center;gap:6px;background:#1B5E20;color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Roboto',sans-serif;transition:.15s"
@@ -2593,6 +2600,20 @@ function buildV5() {
 <script>
 
 // ======== VISTA 6: ESTADO SALDO PRECIO ========
+window._v6_fin = null; // null = todas, 'AUTOFIN', 'UNIDAD'
+
+function toggleFinV6(fin) {
+  window._v6_fin = fin;
+  // Estilo botones
+  var btnAll = document.getElementById('btn-fin-v6-all');
+  var btnAF  = document.getElementById('btn-fin-v6-af');
+  var btnUC  = document.getElementById('btn-fin-v6-uc');
+  if (btnAll) { btnAll.style.background = fin===null ? '#4fc3f7' : 'transparent'; btnAll.style.color = fin===null ? '#0d1627' : '#4fc3f7'; }
+  if (btnAF)  { btnAF.style.background  = fin==='AUTOFIN' ? '#2196F3' : 'transparent'; btnAF.style.color  = fin==='AUTOFIN' ? '#fff' : '#2196F3'; }
+  if (btnUC)  { btnUC.style.background  = fin==='UNIDAD'  ? '#ff7043' : 'transparent'; btnUC.style.color  = fin==='UNIDAD'  ? '#fff' : '#ff7043'; }
+  buildV6();
+}
+
 const ESTADOS_SP_COLS = ["FONDOS RECIBIDOS", "FUNDANTE EN PROCESO", "FUNDANTE PENDIENTE", "LIBERADO A PAGO", "PAGADO", "RETENIDO", "SUJETO A PRENDA", "ANULADO"];
 const SP_COLOR = {
   'PAGADO':              { bg:'#C8E6C9', txt:'#1B5E20', dark:'#43a047' },
@@ -2613,8 +2634,15 @@ function buildV6() {
   document.getElementById('titulo-v6').textContent =
     'Estado Saldo Precio — Créditos Otorgados' + (lbl ? ' — ' + lbl : '');
 
+  const finFiltro = window._v6_fin;
   const ot = window.RAW_DATA
-    .filter(r => r.estado_eval === 'OTORGADO' && r.mes >= desde && r.mes <= hasta)
+    .filter(r => {
+      if (r.estado_eval !== 'OTORGADO') return false;
+      if (r.mes < desde || r.mes > hasta) return false;
+      if (finFiltro === 'AUTOFIN'  && r.institucion !== 'AUTOFIN') return false;
+      if (finFiltro === 'UNIDAD'   && r.institucion !== 'UNIDAD DE CREDITO') return false;
+      return true;
+    })
     .map(r => ({...r, estado_sp: r.estado_sp || 'SIN ESTADO'}));
 
   if (!ot.length) {
