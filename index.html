@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260505_V3.2 -->
+<!-- v20260505_V3.3 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="topbar">
   <div class="topbar-row1">
-    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.2</span></span></div>
+    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.3</span></span></div>
     <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:8px"></div>
     <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:4px 12px;border-radius:6px;border:1px solid #2a4070;margin-left:8px">
       <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
@@ -643,13 +643,8 @@ document.addEventListener('DOMContentLoaded', function() {
   </div>
 
   <div class="kpi-strip" id="kpi2"></div>
-  <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-    <div class="kpi-box" style="flex:0 0 100px"><div class="kpi-label">Plazo Prom.</div><div class="kpi-val" id="r-plazo">—</div></div>
-    <div class="kpi-box" style="flex:0 0 110px"><div class="kpi-label">Finanz. Prom.</div><div class="kpi-val" id="r-finprom">—</div></div>
-    <div class="kpi-box" style="flex:0 0 120px"><div class="kpi-label">Saldo Precio</div><div class="kpi-val" id="r-saldo">—</div></div>
-    <div class="kpi-box highlight-teal" style="flex:0 0 120px"><div class="kpi-label">Com. Dealer</div><div class="kpi-val" id="r-comdealer">—</div></div>
-    <div class="kpi-box highlight-teal" style="flex:0 0 110px"><div class="kpi-label">Com. Parque</div><div class="kpi-val" id="r-comparque">—</div></div>
-    <div class="kpi-box highlight-teal" style="flex:0 0 150px"><div class="kpi-label">Com. Total (D+P)</div><div class="kpi-val" id="r-totcd">—</div><div class="kpi-sub" id="r-totcd-pct"></div></div>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <div class="kpi-box highlight" style="min-width:200px;flex:0 0 auto"><div class="kpi-label">Ingreso Neto AutoFácil</div><div class="kpi-val big" id="r-ingneto">—</div></div>
   </div>
 
   <div class="g3565" style="align-items:stretch">
@@ -1192,21 +1187,14 @@ function buildV2() {
   const avgFin   = totOps ? Math.round(totFin/totOps) : 0;
 
   const totIN = totIG - totCD_P;
+  const totSpread = totAFA - totCD - totPar;
   document.getElementById('kpi2').innerHTML = `
-    <div class="kpi-box"><div class="kpi-label">Total Financiado</div><div class="kpi-val big">${fM(totFin)}</div></div>
-    <div class="kpi-box"><div class="kpi-label">Operaciones Otorgadas</div><div class="kpi-val big">${totOps}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Ing. x Colocaciones</div><div class="kpi-val big">${fM(totAFA)}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Ing. x Seguros</div><div class="kpi-val big">${fM(totSeg)}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Ing. Bruto</div><div class="kpi-val big">${fM(totIG)}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Ing. Neto AutoFácil</div><div class="kpi-val big">${fM(totIN)}</div><div class="kpi-sub">${totFin?(totIN/totFin*100).toFixed(1)+'%':''}</div></div>`;
-
-  document.getElementById('r-saldo').textContent = fM(totSal);
-  document.getElementById('r-comdealer').textContent = fM(totCD);
-  document.getElementById('r-comparque').textContent = fM(totPar);
-  document.getElementById('r-totcd').textContent = fM(totCD_P);
-  document.getElementById('r-totcd-pct').textContent = totFin?(totCD_P/totFin*100).toFixed(1)+'%':'';
-  document.getElementById('r-plazo').textContent = avgPlazo+'m';
-  document.getElementById('r-finprom').textContent = fM(avgFin);
+    <div class="kpi-box"><div class="kpi-label">Ingreso Bruto</div><div class="kpi-val big">${fM(totIG)}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Comisión Dealer</div><div class="kpi-val big">${fM(totCD)}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Comisión Parque</div><div class="kpi-val big">${fM(totPar)}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Spread AutoFácil</div><div class="kpi-val big">${fM(totSpread)}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Comisión Seguros</div><div class="kpi-val big">${fM(totSeg)}</div></div>`;
+  document.getElementById('r-ingneto').textContent = fM(totIN);
 
   // Donut mayor/menor
   const mayor = det.filter(r=>r.mm==='>');
@@ -1361,20 +1349,14 @@ function buildRentabTable() {
   const avgPlazoF = totOpsF ? Math.round(rows.reduce((a,r)=>a+r.plazo,0)/totOpsF) : 0;
   const avgFinF   = totOpsF ? Math.round(tot.fin/totOpsF) : 0;
   const totIN_F = tot.ig - (tot.cd + tot.par);
+  const totSpread_F = tot.afa - tot.cd - tot.par;
   document.getElementById('kpi2').innerHTML = `
-    <div class="kpi-box"><div class="kpi-label">Total Financiado</div><div class="kpi-val big">${fM(tot.fin)}</div></div>
-    <div class="kpi-box"><div class="kpi-label">Operaciones Otorgadas</div><div class="kpi-val big">${totOpsF}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Ing. x Colocaciones</div><div class="kpi-val big">${fM(tot.afa)}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Ing. x Seguros</div><div class="kpi-val big">${fM(tot.seg)}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Ing. Bruto</div><div class="kpi-val big">${fM(tot.ig)}</div></div>
-    <div class="kpi-box highlight"><div class="kpi-label">Ing. Neto AutoFácil</div><div class="kpi-val big">${fM(totIN_F)}</div><div class="kpi-sub">${tot.fin?(totIN_F/tot.fin*100).toFixed(1)+'%':''}</div></div>`;
-  document.getElementById('r-saldo').textContent = fM(tot.sal);
-  document.getElementById('r-comdealer').textContent = fM(tot.cd);
-  document.getElementById('r-comparque').textContent = fM(tot.par);
-  document.getElementById('r-totcd').textContent = fM(tot.cd + tot.par);
-  document.getElementById('r-totcd-pct').textContent = tot.fin ? ((tot.cd+tot.par)/tot.fin*100).toFixed(1)+'%' : '';
-  document.getElementById('r-plazo').textContent = avgPlazoF + 'm';
-  document.getElementById('r-finprom').textContent = fM(avgFinF);
+    <div class="kpi-box"><div class="kpi-label">Ingreso Bruto</div><div class="kpi-val big">${fM(tot.ig)}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Comisión Dealer</div><div class="kpi-val big">${fM(tot.cd)}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Comisión Parque</div><div class="kpi-val big">${fM(tot.par)}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Spread AutoFácil</div><div class="kpi-val big">${fM(totSpread_F)}</div></div>
+    <div class="kpi-box"><div class="kpi-label">Comisión Seguros</div><div class="kpi-val big">${fM(tot.seg)}</div></div>`;
+  document.getElementById('r-ingneto').textContent = fM(totIN_F);
 }
 
 // ======== P&L OPERATIVO (copia independiente de v2) ========
