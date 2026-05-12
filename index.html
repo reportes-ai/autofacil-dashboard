@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260505_V3.5 -->
+<!-- v20260505_V3.6 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="topbar">
   <div class="topbar-row1">
-    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.5</span></span></div>
+    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.6</span></span></div>
     <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:8px"></div>
     <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:4px 12px;border-radius:6px;border:1px solid #2a4070;margin-left:8px">
       <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
@@ -2575,7 +2575,16 @@ function buildV5() {
   </div>
   <div class="kpi-strip" id="kpi6"></div>
   <div class="card" style="margin-top:10px">
-    <div class="card-head" id="titulo-v6">Estado Saldo Precio — Créditos Otorgados</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#1a3a6a;border-radius:6px 6px 0 0;padding:0 12px">
+      <div class="card-head" id="titulo-v6" style="background:transparent;border-radius:0;margin:0;flex:1">Estado Saldo Precio — Créditos Otorgados</div>
+      <div style="display:flex;align-items:center;gap:6px;white-space:nowrap">
+        <span style="font-size:10px;color:#7bafd4;font-weight:500">Agrupar por:</span>
+        <button id="btn-grp-dealer" onclick="toggleGrupoV6('dealer')"
+          style="padding:3px 12px;border-radius:12px;border:1.5px solid #4fc3f7;background:#4fc3f7;color:#0d1627;font-size:10px;font-weight:700;cursor:pointer;transition:.15s">DEALER</button>
+        <button id="btn-grp-ej" onclick="toggleGrupoV6('ejecutivo')"
+          style="padding:3px 12px;border-radius:12px;border:1.5px solid #4fc3f7;background:transparent;color:#4fc3f7;font-size:10px;font-weight:700;cursor:pointer;transition:.15s">EJECUTIVO</button>
+      </div>
+    </div>
     <div style="overflow-x:auto;max-height:980px;overflow-y:auto">
       <table class="tbl" id="t-sp" style="min-width:900px;font-size:11px"></table>
     </div>
@@ -2584,7 +2593,17 @@ function buildV5() {
 <script>
 
 // ======== VISTA 6: ESTADO SALDO PRECIO ========
-window._v6_fin = null; // null = todas, 'AUTOFIN', 'UNIDAD'
+window._v6_fin   = null;      // null = todas, 'AUTOFIN', 'UNIDAD'
+window._v6_grupo = 'dealer';  // 'dealer' | 'ejecutivo'
+
+function toggleGrupoV6(g) {
+  window._v6_grupo = g;
+  var bD = document.getElementById('btn-grp-dealer');
+  var bE = document.getElementById('btn-grp-ej');
+  if (bD) { bD.style.background = g==='dealer'    ? '#4fc3f7' : 'transparent'; bD.style.color = g==='dealer'    ? '#0d1627' : '#4fc3f7'; }
+  if (bE) { bE.style.background = g==='ejecutivo' ? '#4fc3f7' : 'transparent'; bE.style.color = g==='ejecutivo' ? '#0d1627' : '#4fc3f7'; }
+  buildV6();
+}
 
 function toggleFinV6(fin) {
   window._v6_fin = fin;
@@ -2715,17 +2734,20 @@ function renderTablaV6(ot, colsSP, bysp, totOps, totSaldo) {
   const totF = otFiltrado.length;
   const salF = otFiltrado.reduce((a,r)=>a+r.saldo_precio,0);
 
-  // Pivot
+  // Pivot — agrupación dinámica
+  const porEj = window._v6_grupo === 'ejecutivo';
   const pivot = {};
   otFiltrado.forEach(r => {
-    const a = r.automotora || 'SIN AUTOMOTORA';
-    if (!pivot[a]) pivot[a] = { ops:[], saldo:0, por_sp:{} };
-    pivot[a].ops.push(r.op);
-    pivot[a].saldo += r.saldo_precio;
+    const key = porEj
+      ? (r.ejecutivo ? r.ejecutivo.trim().split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ') : 'SIN EJECUTIVO')
+      : (r.automotora || 'SIN AUTOMOTORA');
+    if (!pivot[key]) pivot[key] = { ops:[], saldo:0, por_sp:{} };
+    pivot[key].ops.push(r.op);
+    pivot[key].saldo += r.saldo_precio;
     const sp = r.estado_sp;
-    if (!pivot[a].por_sp[sp]) pivot[a].por_sp[sp] = { ops:[], saldo:0 };
-    pivot[a].por_sp[sp].ops.push(r.op);
-    pivot[a].por_sp[sp].saldo += r.saldo_precio;
+    if (!pivot[key].por_sp[sp]) pivot[key].por_sp[sp] = { ops:[], saldo:0 };
+    pivot[key].por_sp[sp].ops.push(r.op);
+    pivot[key].por_sp[sp].saldo += r.saldo_precio;
   });
 
   const auts = Object.entries(pivot).sort((a,b) => b[1].saldo - a[1].saldo);
@@ -2756,11 +2778,16 @@ function renderTablaV6(ot, colsSP, bysp, totOps, totSaldo) {
         if (col !== sp) return `<td style="background:#fafafa;border-right:1px solid #f0f2f5"></td>`;
         return `<td style="text-align:center;background:${c.bg}55;color:${c.txt};padding:3px 6px;border-right:1px solid #f0f2f5;font-size:10px">${fN(r.saldo_precio)}</td>`;
       }).join('');
+      const ejFmt = (r.ejecutivo||'').trim().split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' ');
+      const autFmt = r.automotora || '';
+      const subLabel = porEj
+        ? `${op} — ${autFmt.length>30?autFmt.substring(0,30)+'…':autFmt}`
+        : `${op} — ${ejFmt}`;
       return `<tr style="border-bottom:1px solid #f5f5f5" data-op="${r.op}">
         <td style="padding:3px 6px 3px 16px;font-size:10px;color:#777;white-space:nowrap">
           <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
             <input type="checkbox" class="chk-sp-op" data-op="${r.op}" style="cursor:pointer;accent-color:#1565C0;width:12px;height:12px"/>
-            ${op} — ${(() => { const n=(r.ejecutivo||"").trim(); return n.split(" ").map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(" "); })()}
+            ${subLabel}
           </label>
         </td>
         ${opCells}
@@ -2787,7 +2814,7 @@ function renderTablaV6(ot, colsSP, bysp, totOps, totSaldo) {
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500">
           <input type="checkbox" id="chk-sp-all" onchange="toggleTodosV6(this.checked)"
             style="cursor:pointer;accent-color:#4fc3f7;width:13px;height:13px"/>
-          Dealer / N° OP ${filtroActivo ? `<span style="font-size:9px;background:#fff2;padding:1px 6px;border-radius:3px;margin-left:6px">🔍 ${filtroActivo}</span>` : ''}
+          ${porEj ? 'Ejecutivo' : 'Dealer'} / N° OP ${filtroActivo ? `<span style="font-size:9px;background:#fff2;padding:1px 6px;border-radius:3px;margin-left:6px">🔍 ${filtroActivo}</span>` : ''}
         </label>
       </th>
       ${thSP}
