@@ -142,5 +142,14 @@
     "estado": "ACTIVO",
     "ultimoIngreso": "2026-05-20T15:24:35.049Z",
     "primerIngreso": false
+  },
+  {
+    "nombre": "Mauricio Torres",
+    "usuario": "mauricio.torres@cfccorporacion.com",
+    "clave": "AF2026",
+    "perfil": "GERENTE GENERAL",
+    "estado": "NUNCA INGRESADO",
+    "primerIngreso": true,
+    "ultimoIngreso": null
   }
 ]
