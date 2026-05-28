@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260505_V3.7 -->
+<!-- v20260505_V3.8 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -127,7 +127,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
     <div style="font-family:'Roboto',sans-serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:4px">
       Auto<span style="color:#2196F3">Fácil</span>
     </div>
-    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v3.7</span></div>
+    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v3.8</span></div>
     <div id="login-error" style="background:#ef444420;color:#ef4444;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:16px;display:none"></div>
     <input id="login-user" type="email" placeholder="Usuario (correo)" autocomplete="username"
       style="width:100%;padding:12px 16px;border-radius:8px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;font-family:'Roboto',sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px"
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="topbar">
   <div class="topbar-row1">
-    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.7</span></span></div>
+    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.8</span></span></div>
     <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:8px"></div>
     <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:4px 12px;border-radius:6px;border:1px solid #2a4070;margin-left:8px">
       <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
@@ -1116,11 +1116,16 @@ function buildV1() {
     <tfoot><tr><td>Total</td><td>${totCC.ops}</td><td>${fM(totCC.saldo)}</td><td>—</td><td>${fM(totCC.saldo)}</td><td>${fM(totCC.cd)}</td><td>—</td></tr></tfoot>`;
 
   // Tabla ejecutivos
-  const ejRows = f.ejecutivos.map((e,i)=>`<tr>
-    <td><span class="rank">${i+1}.</span>${e.nombre.length>24?e.nombre.substring(0,24)+'…':e.nombre}</td>
+  const ejRows = f.ejecutivos.map((e,i)=>{
+    const ejEnc = e.nombre.replace(/'/g,"\\'");
+    const ejCorto = e.nombre.length>24?e.nombre.substring(0,24)+'…':e.nombre;
+    return `<tr>
+    <td><span class="rank">${i+1}.</span><span onclick="showEjDetalleV1('${ejEnc}')"
+      style="cursor:pointer;color:#1565C0;text-decoration:underline dotted;text-underline-offset:2px"
+      title="Ver detalle de créditos aprobados">${ejCorto}</span></td>
     <td>${e.ops}</td><td>${fM(e.saldo)}</td><td>${fM(e.saldo/e.ops)}</td>
     <td>${fM(e.saldo)}</td><td>${fM(e.com_dealer)}</td><td>${fM(e.rentab_afa)}</td>
-  </tr>`).join('');
+  </tr>`;}).join('');
   const totEJ = f.ejecutivos.reduce((a,e)=>({ops:a.ops+e.ops,saldo:a.saldo+e.saldo,cd:a.cd+e.com_dealer}),{ops:0,saldo:0,cd:0});
   document.getElementById('t-ej').innerHTML = `
     <thead><tr><th>Ejecutivo</th><th>Record</th><th>Total a Financiar</th><th>Prem a Fin</th><th>Saldo Precio</th><th>Com Dealer</th><th>Ing. x Colocaciones</th></tr></thead>
@@ -4624,6 +4629,112 @@ function buildVEvol() {
       }
     }
   });
+}
+</script>
+
+<!-- Modal detalle ejecutivo aprobados -->
+<div id="modal-ej-v1" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#0008;z-index:9999;overflow-y:auto">
+  <div style="background:#fff;max-width:1000px;margin:40px auto 40px;border-radius:10px;overflow:hidden;box-shadow:0 20px 60px #0006">
+    <div style="background:#1a3a6a;color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between">
+      <span id="modal-ej-v1-titulo" style="font-weight:700;font-size:14px"></span>
+      <button onclick="document.getElementById('modal-ej-v1').style.display='none'"
+        style="background:#e53935;color:#fff;border:none;border-radius:4px;padding:4px 14px;cursor:pointer;font-size:13px;font-weight:600">✕ Cerrar</button>
+    </div>
+    <div id="modal-ej-v1-kpis" style="display:flex;gap:10px;padding:12px 16px;background:#f5f7fa;border-bottom:1px solid #dce3ed;flex-wrap:wrap"></div>
+    <div style="overflow-x:auto;max-height:520px;overflow-y:auto">
+      <table id="modal-ej-v1-tabla" style="width:100%;border-collapse:collapse;font-size:12px"></table>
+    </div>
+  </div>
+</div>
+
+<script>
+const ESTADOS_APROBADOS = ['APROBADO','OTORGADO','SOLICITUD EN EVALUACION','CURSADO','PENDIENTE'];
+
+function showEjDetalleV1(nombre) {
+  const desde = document.getElementById('sel-desde')?.value || '';
+  const hasta  = document.getElementById('sel-hasta')?.value  || '';
+  const lbl    = document.getElementById('periodo-label')?.textContent || '';
+
+  const ops = window.RAW_DATA.filter(r =>
+    r.ejecutivo === nombre &&
+    r.mes >= desde && r.mes <= hasta &&
+    ESTADOS_APROBADOS.includes(r.estado_eval)
+  ).sort((a,b) => b.saldo_precio - a.saldo_precio);
+
+  if (!ops.length) { alert('Sin créditos aprobados para ' + nombre + ' en el período seleccionado.'); return; }
+
+  document.getElementById('modal-ej-v1-titulo').textContent = nombre + (lbl ? '  ·  ' + lbl : '') + '  ·  APROBADOS';
+
+  const totOps = ops.length;
+  const totFin = ops.reduce((a,r)=>a+r.monto_financiado,0);
+  const totSal = ops.reduce((a,r)=>a+r.saldo_precio,0);
+  const totCD  = ops.reduce((a,r)=>a+r.com_dealer,0);
+  const totAFA = ops.reduce((a,r)=>a+r.rentab_afa,0);
+  const avgPlazo = Math.round(ops.reduce((a,r)=>a+(r.plazo||0),0)/totOps);
+
+  const estadoColor = {
+    'OTORGADO':                  {bg:'#e8f5e9',txt:'#2e7d32'},
+    'APROBADO':                  {bg:'#e3f2fd',txt:'#1565C0'},
+    'SOLICITUD EN EVALUACION':   {bg:'#fff9e6',txt:'#f57f17'},
+    'CURSADO':                   {bg:'#e8eaf6',txt:'#3949ab'},
+    'PENDIENTE':                 {bg:'#fff3e0',txt:'#e65100'},
+  };
+
+  document.getElementById('modal-ej-v1-kpis').innerHTML = [
+    ['Operaciones',  totOps,       ''],
+    ['Total Fin.',   fM(totFin),   ''],
+    ['Saldo Precio', fM(totSal),   ''],
+    ['Plazo Prom.',  avgPlazo+'m', ''],
+    ['Com. Dealer',  fM(totCD),    ''],
+    ['Ing. x Col.',  fM(totAFA),   'highlight'],
+  ].map(([l,v,cls])=>
+    `<div class="kpi-box ${cls}" style="flex:1;min-width:100px">
+       <div class="kpi-label">${l}</div><div class="kpi-val">${v}</div>
+     </div>`
+  ).join('');
+
+  const rows = ops.map(r => {
+    const ec = estadoColor[r.estado_eval] || {bg:'#f5f5f5',txt:'#666'};
+    const fin = r.institucion==='AUTOFIN' ? {bg:'#e3f2fd',txt:'#1565C0'} : {bg:'#fbe9e7',txt:'#bf360c'};
+    const finLabel = r.institucion==='AUTOFIN'?'AUTOFIN':r.institucion==='UNIDAD DE CREDITO'?'UNIDAD':'—';
+    return `<tr style="border-bottom:1px solid #f0f2f5">
+      <td style="padding:5px 8px;font-weight:600">${r.op}</td>
+      <td style="padding:5px 8px"><span style="background:${ec.bg};color:${ec.txt};padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">${r.estado_eval}</span></td>
+      <td style="padding:5px 8px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.automotora||''}">${(r.automotora||'—').length>20?(r.automotora).substring(0,20)+'…':r.automotora||'—'}</td>
+      <td style="padding:5px 8px"><span style="background:${fin.bg};color:${fin.txt};padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700">${finLabel}</span></td>
+      <td style="padding:5px 8px;text-align:right">${fN(r.saldo_precio)}</td>
+      <td style="padding:5px 8px;text-align:right">${fN(r.monto_financiado)}</td>
+      <td style="padding:5px 8px;text-align:center">${r.plazo||'—'}${r.plazo?'m':''}</td>
+      <td style="padding:5px 8px;text-align:right">${fN(r.com_dealer)}</td>
+      <td style="padding:5px 8px;text-align:right;color:#1565C0;font-weight:600">${fN(r.rentab_afa)}</td>
+    </tr>`;
+  }).join('');
+
+  const totRow = `<tr style="background:#1a3a6a;color:#fff;font-weight:700">
+    <td style="padding:5px 8px" colspan="4">TOTAL · ${totOps} op${totOps>1?'s':''}</td>
+    <td style="padding:5px 8px;text-align:right">${fN(totSal)}</td>
+    <td style="padding:5px 8px;text-align:right">${fN(totFin)}</td>
+    <td style="padding:5px 8px;text-align:center">${avgPlazo}m</td>
+    <td style="padding:5px 8px;text-align:right">${fN(totCD)}</td>
+    <td style="padding:5px 8px;text-align:right">${fN(totAFA)}</td>
+  </tr>`;
+
+  document.getElementById('modal-ej-v1-tabla').innerHTML = `
+    <thead><tr style="background:#1a3a6a;color:#fff;font-size:11px;position:sticky;top:0">
+      <th style="padding:6px 8px;text-align:left">N° OP</th>
+      <th style="padding:6px 8px;text-align:left">Estado</th>
+      <th style="padding:6px 8px;text-align:left">Automotora</th>
+      <th style="padding:6px 8px;text-align:left">Financiera</th>
+      <th style="padding:6px 8px;text-align:right">Saldo Precio</th>
+      <th style="padding:6px 8px;text-align:right">Total Fin.</th>
+      <th style="padding:6px 8px;text-align:center">Plazo</th>
+      <th style="padding:6px 8px;text-align:right">Com. Dealer</th>
+      <th style="padding:6px 8px;text-align:right">Ing. x Col.</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot>${totRow}</tfoot>`;
+
+  document.getElementById('modal-ej-v1').style.display = 'block';
 }
 </script>
 
