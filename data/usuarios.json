@@ -148,8 +148,8 @@
     "usuario": "mauricio.torres@cfccorporacion.com",
     "clave": "AF2026",
     "perfil": "GERENTE GENERAL",
-    "estado": "NUNCA INGRESADO",
-    "primerIngreso": true,
-    "ultimoIngreso": null
+    "estado": "ACTIVO",
+    "primerIngreso": false,
+    "ultimoIngreso": "2026-05-28T22:13:35.462Z"
   }
 ]
