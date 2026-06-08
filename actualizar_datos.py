@@ -142,35 +142,73 @@ def procesar_excel(contenido: bytes) -> dict:
 
         mes_key = f"{mes_raw.year}-{mes_raw.month:02d}"
 
+        def d(v):
+            """Formatea fecha → string YYYY-MM-DD, o cadena vacía si es nula/texto."""
+            if v and hasattr(v, "day"):
+                return v.strftime("%Y-%m-%d")
+            return s(v)
+
         all_data.append({
-            "op":          row[0],
-            "mes":         mes_key,
-            "rut":         s(row[3]),    # D - RUT
-            "nombre":      s(row[4]),    # E - NOMBRE
-            "ejecutivo":   s(row[6]),    # G - EJ. COMERCIAL
-            "financiera":  fin_raw,      # H - FINANCIERA
-            "institucion": institucion,
-            "automotora":  s(row[8]),    # I - AUTOMOTORA
-            "estado_eval": s(row[16]) if s(row[16]) in ["ANULADO","RECHAZADO"] else s(row[13]),  # Q / N
-            "estado_credito": s(row[16]),   # Q - ESTADO CRÉDITO
-            "saldo_precio":    n(row[22]),   # W - SALDO PRECIO
-            "monto_financiado": n(row[38]),  # AM - MONTO FINANCIADO INDEXA
-            "tasa_cli":    n(row[39]),   # AN - TASCLI REAL
-            "com_dealer":  n(row[46]),   # AU - COMDEA $ REAL
-            "rentab_afa":  n(row[62]),   # BK - MONTO DE PAGO COMISION FINAN.
-            "com_seguros": com_seg,      # BC - COM SEGUROS
-            "com_parque":  n(row[83]),   # CF - COM PARQUE
-            "plazo":       int(row[72]) if row[72] and isinstance(row[72], (int, float)) else 0,  # BU
-            "mayor_menor": s(row[97]),   # CT - MAYOR/MENOR
-            "estado_sp":   s(row[36]),   # AK - ESTADO SP
-            "fecha_ot":    row[17].strftime("%Y-%m-%d") if row[17] and hasattr(row[17],"day") else s(row[17]),  # R
-            "fecha_estado": row[14].strftime("%Y-%m-%d") if row[14] and hasattr(row[14],"day") else "",  # O
-            "dia_mes":     int(row[10]) if row[10] and isinstance(row[10], (int,float)) else 0,
-            "dia_semana":  str(row[11]).strip().lower() if row[11] else "",
-            # Campos exportación Saldo Precio
-            "fecha_recepcion_fei":  row[33].strftime("%Y-%m-%d") if row[33] and hasattr(row[33],"day") else s(row[33]),  # AH
-            "alerta_recep_fei":     s(row[34]),   # AI
-            "alerta_pago_sp":       s(row[37]),   # AL
+            # ── Identificadores ──────────────────────────────────────────────
+            "op":               row[0],                # A  - OP
+            "id_financiera":    row[102] if row[102] else None,  # CY - ID FINANCIERA (llave externa)
+            "mes":              mes_key,               # B  - MES (derivado)
+            "rut":              s(row[3]),             # D  - RUT cliente
+            "nombre":           s(row[4]),             # E  - NOMBRE cliente
+            "ejecutivo":        s(row[6]),             # G  - EJ. COMERCIAL  ← NO MODIFICAR
+            # ── Financiera / automotora ───────────────────────────────────
+            "financiera":       fin_raw,               # H  - FINANCIERA
+            "institucion":      institucion,           # derivado de H + T
+            "producto":         prod,                  # T  - PRODUCTO
+            "automotora":       s(row[8]),             # I  - AUTOMOTORA
+            "nombre_local":     s(row[124]),           # DS - NOMBRE LOCAL (nombre comercial dealer)
+            # ── Estado ──────────────────────────────────────────────────
+            "estado_eval":      s(row[16]) if s(row[16]) in ["ANULADO","RECHAZADO"] else s(row[13]),  # Q / N
+            "estado_credito":   s(row[16]),            # Q  - ESTADO CRÉDITO
+            "resultado_negocio": s(row[88]),           # CK - RESULTADO NEGOCIO (GANANCIA / PÉRDIDA)
+            # ── Montos vehículo ──────────────────────────────────────────
+            "valor_vehiculo":   n(row[20]),            # U  - VALOR VEHICULO
+            "pie":              n(row[21]),            # V  - PIE
+            "saldo_precio":     n(row[22]),            # W  - SALDO PRECIO
+            "monto_financiado": n(row[38]),            # AM - MONTO FINANCIADO INDEXA
+            "monto_capitalizado": n(row[98]),          # CU - MONTO CAPITALIZADO (con gastos)
+            "gastos":           n(row[27]),            # AB - GASTOS operacionales
+            "impuesto":         n(row[24]),            # Y  - IMPUESTO
+            "pct_financiado":   n(row[23]),            # X  - % FINANCIADO
+            # ── Tasas ────────────────────────────────────────────────────
+            "tasa_cli":         n(row[39]),            # AN - TASCLI REAL
+            "tasa_piso":        n(row[42]),            # AQ - TASAF PISO INDEXA
+            "tasa_fin":         n(row[45]),            # AT - TASFIN PIZARRA
+            # ── Comisiones e ingresos ────────────────────────────────────
+            "com_dealer":       n(row[46]),            # AU - COMDEA $ REAL
+            "com_ejecutivo":    n(row[49]),            # AX - COMEJ $ (comisión del ejecutivo)
+            "rentab_afa":       n(row[62]),            # BK - MONTO DE PAGO COMISION FINAN.
+            "rentab_directo":   n(row[52]),            # BA - RENTABILIDAD AUTOFACIL DIRECTO
+            "ingreso_neto_af":  n(row[87]),            # CJ - INGRESO NETO TOTAL AF
+            "com_seguros":      com_seg,               # CS - COM.SEGUROS TOTAL
+            "com_rdh":          n(row[93]),            # CP - COM.RDH
+            "com_cesantia":     n(row[94]),            # CQ - COM.CESANTIA
+            "com_reparaciones": n(row[95]),            # CR - COM.REPARACIONES
+            "com_parque":       n(row[83]),            # CF - COM PARQUE
+            "arriendo_parque":  n(row[86]),            # CI - ARRIENDO PARQUE
+            "bono_total":       n(row[113]),           # DH - BONO TOTAL ejecutivo
+            # ── Crédito ──────────────────────────────────────────────────
+            "plazo":            int(row[72]) if row[72] and isinstance(row[72], (int, float)) else 0,  # BU - PLAZO
+            "mayor_menor":      s(row[97]),            # CT - MAYOR/MENOR UF
+            "prepago":          s(row[122]),           # DO - PREPAGO
+            # ── Estados de pago y fundante ───────────────────────────────
+            "estado_sp":        s(row[36]),            # AK - ESTADO SP
+            "fecha_pago_sp":    d(row[35]),            # AJ - FECHA DE PAGO SALDO PRECIO
+            "alerta_pago_sp":   s(row[37]),            # AL - ALERTA PAGO SP
+            "fecha_recepcion_fei": d(row[33]),         # AH - FECHA RECEPCION FEI
+            "alerta_recep_fei": s(row[34]),            # AI - ALERTA RECEP FEI
+            # ── Fechas ───────────────────────────────────────────────────
+            "fecha_ot":         d(row[17]),            # R  - FECHA OTORGADO
+            "fecha_estado":     d(row[14]),            # O  - FECHA ESTADO
+            "fecha_primer_cuota": d(row[101]),         # CX - FECHA PRIMERA CUOTA
+            "dia_mes":          int(row[10]) if row[10] and isinstance(row[10], (int,float)) else 0,  # K
+            "dia_semana":       str(row[11]).strip().lower() if row[11] else "",  # L
+            "dias_curse":       int(row[18]) if row[18] and isinstance(row[18], (int,float)) else 0,  # S - DIAS CURSE
         })
 
     print(f"   ✓ {len(all_data)} registros procesados")
