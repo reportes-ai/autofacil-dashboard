@@ -157,8 +157,8 @@
     "usuario": "alvaro.vargas@autofacilchile.cl",
     "clave": "Av2027",
     "perfil": "USUARIO",
-    "estado": "NUNCA INGRESADO",
-    "primerIngreso": true,
-    "ultimoIngreso": null
+    "estado": "ACTIVO",
+    "primerIngreso": false,
+    "ultimoIngreso": "2026-06-08T15:45:55.629Z"
   }
 ]
