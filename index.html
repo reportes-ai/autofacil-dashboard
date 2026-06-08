@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260505_V3.9 -->
+<!-- v20260505_V3.10 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -128,7 +128,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
     <div style="font-family:'Roboto',sans-serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:4px">
       Auto<span style="color:#2196F3">Fácil</span>
     </div>
-    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v3.9</span></div>
+    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v3.10</span></div>
     <div id="login-error" style="background:#ef444420;color:#ef4444;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:16px;display:none"></div>
     <input id="login-user" type="email" placeholder="Usuario (correo)" autocomplete="username"
       style="width:100%;padding:12px 16px;border-radius:8px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;font-family:'Roboto',sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px"
@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="topbar">
   <div class="topbar-row1">
-    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.9</span></span></div>
+    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.10</span></span></div>
     <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:8px"></div>
     <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:4px 12px;border-radius:6px;border:1px solid #2a4070;margin-left:8px">
       <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
@@ -3698,16 +3698,59 @@ function descargarExcelCreditos(tipo) {
   if (datos.length === 0) { alert('No hay registros para el filtro seleccionado.'); return; }
 
   // Etiquetas amigables para las columnas
+  // IMPORTANTE: los nombres deben coincidir con lo que espera el credit-system en Carga Masiva
   var ETIQUETAS = {
-    mes:'Mes', ejecutivo:'Ejecutivo', automotora:'Automotora', institucion:'Financiera',
-    estado_eval:'Estado', n_operacion:'N° Operación', saldo_precio:'Saldo Precio',
-    monto_financiado:'Total Financiado', plazo:'Plazo (meses)', com_dealer:'Comisión Dealer',
-    com_seguros:'Comisión Seguros', com_parque:'Comisión Parque',
-    rentab_afa:'Spread AutoFácil', mayor_menor:'Mayor/Menor UF',
-    modelo:'Modelo', marca:'Marca', anio:'Año',
-    tipo_credito:'Tipo Crédito', region:'Región', canal:'Canal',
-    fecha_otorgamiento:'Fecha Otorgamiento', rut_cliente:'RUT Cliente',
-    nombre_cliente:'Nombre Cliente',
+    op:               'OP',
+    id_financiera:    'ID FINANCIERA',          // ← llave de matching en credit-system
+    mes:              'Mes',
+    rut:              'RUT',
+    nombre:           'NOMBRE',
+    ejecutivo:        'EJ.COMERCIAL',
+    financiera:       'FINANCIERA',
+    institucion:      'Institución',
+    producto:         'PRODUCTO',
+    automotora:       'AUTOMOTORA',
+    nombre_local:     'NOMBRE LOCAL',
+    estado_eval:      'ESTADO EVAL. RIESGO',
+    estado_credito:   'ESTADO CREDITO',
+    resultado_negocio:'RESULTADO NEGOCIO',
+    valor_vehiculo:   'VALOR VEHICULO',
+    pie:              'PIE',
+    saldo_precio:     'SALDO PRECIO',
+    monto_financiado: 'MONTO FINANCIADO INDEXA',
+    monto_capitalizado:'MONTO CAPITALIZADO',
+    gastos:           'GASTOS',
+    impuesto:         'IMPUESTO',
+    pct_financiado:   '% FINANCIADO',
+    tasa_cli:         'TASCLI REAL',
+    tasa_piso:        'TASAF PISO INDEXA',
+    tasa_fin:         'TASFIN PIZARRA',
+    com_dealer:       'COMDEA $ REAL',
+    com_ejecutivo:    'COMEJ $',
+    rentab_afa:       'MONTO DE PAGO COMISION FINAN.',
+    rentab_directo:   'RENTABILIDAD AUTOFACIL DIRECTO',
+    ingreso_neto_af:  'INGRESO NETO TOTAL AF',
+    com_seguros:      'COM.SEGUROS TOTAL',
+    com_rdh:          'COM.RDH',
+    com_cesantia:     'COM.CESANTIA',
+    com_reparaciones: 'COM.REPARACIONES',
+    com_parque:       'COM PARQUE',
+    arriendo_parque:  'ARRIENDO PARQUE',
+    bono_total:       'BONO TOTAL',
+    plazo:            'PLAZO',
+    mayor_menor:      'MAYOR/MENOR',
+    prepago:          'PREPAGO',
+    estado_sp:        'ESTADO SP',
+    fecha_pago_sp:    'FECHA DE PAGO SALDO PRECIO',
+    alerta_pago_sp:   'ALERTA PAGO SP',
+    fecha_recepcion_fei:'FECHA RECEPCION FEI',
+    alerta_recep_fei: 'ALERTA RECEP FEI',
+    fecha_ot:         'FECHA OTORGADO',
+    fecha_estado:     'FECHA ESTADO',
+    fecha_primer_cuota:'FECHA PRIMERA CUOTA',
+    dia_mes:          'DIA MES',
+    dia_semana:       'DIA SEMANA',
+    dias_curse:       'DIAS CURSE',
   };
 
   // Construir filas con etiquetas amigables
