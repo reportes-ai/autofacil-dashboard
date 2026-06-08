@@ -2,10 +2,11 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260505_V3.8 -->
+<!-- v20260505_V3.9 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -127,7 +128,7 @@ body{font-family:'Roboto',sans-serif;background:#f0f2f5;font-size:12px;color:#33
     <div style="font-family:'Roboto',sans-serif;font-size:32px;font-weight:700;color:#fff;margin-bottom:4px">
       Auto<span style="color:#2196F3">Fácil</span>
     </div>
-    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v3.8</span></div>
+    <div style="color:#7bafd4;font-size:13px;margin-bottom:28px">Dashboard Créditos <span style="color:#4fc3f7;font-size:10px;opacity:0.7">v3.9</span></div>
     <div id="login-error" style="background:#ef444420;color:#ef4444;border-radius:6px;padding:8px 12px;font-size:12px;margin-bottom:16px;display:none"></div>
     <input id="login-user" type="email" placeholder="Usuario (correo)" autocomplete="username"
       style="width:100%;padding:12px 16px;border-radius:8px;border:1px solid #2a4070;background:#0d1627;color:#fff;font-size:13px;font-family:'Roboto',sans-serif;box-sizing:border-box;outline:none;margin-bottom:10px"
@@ -272,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="topbar">
   <div class="topbar-row1">
-    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.8</span></span></div>
+    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.9</span></span></div>
     <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:8px"></div>
     <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:4px 12px;border-radius:6px;border:1px solid #2a4070;margin-left:8px">
       <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
@@ -3145,6 +3146,10 @@ function buildV7() {
       style="padding:7px 20px;border:none;border-radius:6px 6px 0 0;background:#0d1627;color:#7bafd4;font-size:12px;font-weight:600;cursor:pointer">
       🔒 Permisos de Pestañas
     </button>
+    <button id="adm-tab-exportar" onclick="adminSubTab('exportar')"
+      style="padding:7px 20px;border:none;border-radius:6px 6px 0 0;background:#0d1627;color:#7bafd4;font-size:12px;font-weight:600;cursor:pointer">
+      📥 Exportar Datos
+    </button>
   </div>
 
   <!-- Sección: Usuarios -->
@@ -3177,6 +3182,69 @@ function buildV7() {
       </div>
       <div style="overflow-x:auto">
         <table id="t-permisos-tabs" style="width:100%;border-collapse:collapse;font-size:13px"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección: Exportar Datos -->
+  <div id="adm-sec-exportar" style="display:none">
+    <div class="card" style="margin-top:10px">
+      <div class="card-head">📥 Exportar Base de Datos a Excel</div>
+      <div style="padding:24px 16px">
+
+        <!-- KPI strip -->
+        <div id="exp-kpis" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px"></div>
+
+        <!-- Opciones de descarga -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
+
+          <!-- Todos los créditos -->
+          <div style="background:#0d1627;border:1px solid #1a3a6a;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:14px;font-weight:700;color:#fff">📋 Base Completa</div>
+            <div style="font-size:11px;color:#7bafd4;line-height:1.5">Todos los registros de la base de datos, incluyendo todos los estados (aprobados, rechazados, en evaluación, etc.).</div>
+            <button onclick="descargarExcelCreditos('todos')"
+              style="margin-top:8px;padding:10px 0;background:linear-gradient(135deg,#1565C0,#1976D2);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.2s"
+              onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+              ⬇️ Descargar Todo (.xlsx)
+            </button>
+          </div>
+
+          <!-- Solo Otorgados -->
+          <div style="background:#0d1627;border:1px solid #1a3a6a;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:14px;font-weight:700;color:#fff">✅ Solo Otorgados</div>
+            <div style="font-size:11px;color:#7bafd4;line-height:1.5">Únicamente créditos con estado <strong style="color:#43a047">OTORGADO</strong>. Incluye todos los campos del detalle (comisiones, spreads, financieras, etc.).</div>
+            <button onclick="descargarExcelCreditos('otorgados')"
+              style="margin-top:8px;padding:10px 0;background:linear-gradient(135deg,#2e7d32,#43a047);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.2s"
+              onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+              ⬇️ Descargar Otorgados (.xlsx)
+            </button>
+          </div>
+
+          <!-- Por período -->
+          <div style="background:#0d1627;border:1px solid #1a3a6a;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:14px;font-weight:700;color:#fff">📅 Por Período</div>
+            <div style="font-size:11px;color:#7bafd4;line-height:1.5">Exportar usando el período seleccionado en el dashboard (Desde / Hasta del filtro principal). Todos los estados.</div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px">
+              <div style="font-size:11px;color:#7bafd4">Desde:</div>
+              <input id="exp-desde" type="month" style="padding:5px 8px;border-radius:6px;border:1px solid #2a4070;background:#1a2a4a;color:#fff;font-size:12px"/>
+              <div style="font-size:11px;color:#7bafd4">Hasta:</div>
+              <input id="exp-hasta" type="month" style="padding:5px 8px;border-radius:6px;border:1px solid #2a4070;background:#1a2a4a;color:#fff;font-size:12px"/>
+            </div>
+            <button onclick="descargarExcelCreditos('periodo')"
+              style="margin-top:4px;padding:10px 0;background:linear-gradient(135deg,#6a1b9a,#8e24aa);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:opacity 0.2s"
+              onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+              ⬇️ Descargar Período (.xlsx)
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Columnas incluidas -->
+        <div style="margin-top:20px;background:#0d1627;border:1px solid #1a3a6a;border-radius:8px;padding:14px">
+          <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px">📌 Campos incluidos en la exportación:</div>
+          <div id="exp-cols" style="font-size:10px;color:#aac4e8;line-height:1.8;display:flex;flex-wrap:wrap;gap:4px 14px"></div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -3285,11 +3353,15 @@ async function buildVAdmin() {
 function adminSubTab(sec) {
   document.getElementById('adm-sec-usuarios').style.display  = sec === 'usuarios'  ? '' : 'none';
   document.getElementById('adm-sec-permisos').style.display  = sec === 'permisos'  ? '' : 'none';
+  document.getElementById('adm-sec-exportar').style.display  = sec === 'exportar'  ? '' : 'none';
   var btnU = document.getElementById('adm-tab-usuarios');
   var btnP = document.getElementById('adm-tab-permisos');
+  var btnE = document.getElementById('adm-tab-exportar');
   if (btnU) { btnU.style.background = sec==='usuarios' ? '#1a3a6a' : '#0d1627'; btnU.style.color = sec==='usuarios' ? '#fff' : '#7bafd4'; }
   if (btnP) { btnP.style.background = sec==='permisos' ? '#1a3a6a' : '#0d1627'; btnP.style.color = sec==='permisos' ? '#fff' : '#7bafd4'; }
+  if (btnE) { btnE.style.background = sec==='exportar' ? '#1a3a6a' : '#0d1627'; btnE.style.color = sec==='exportar' ? '#fff' : '#7bafd4'; }
   if (sec === 'permisos') renderTablaPermisos();
+  if (sec === 'exportar') initExportarPanel();
 }
 
 function renderTablaPermisos() {
@@ -3557,6 +3629,122 @@ async function exportarUsuarios() {
   a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
   a.download = 'usuarios_autofacil.csv';
   a.click();
+}
+
+// ======== EXPORTAR DATOS A EXCEL ========
+
+function initExportarPanel() {
+  var raw = window.RAW_DATA || [];
+  var otorg = raw.filter(function(r){ return r.estado_eval === 'OTORGADO'; });
+
+  // KPIs
+  var fM = function(v){ return new Intl.NumberFormat('es-CL',{style:'currency',currency:'CLP',maximumFractionDigits:0}).format(v||0); };
+  var kpis = [
+    { label:'Total registros', val: raw.length.toLocaleString('es-CL'), color:'#1565C0' },
+    { label:'Créditos Otorgados', val: otorg.length.toLocaleString('es-CL'), color:'#2e7d32' },
+    { label:'Total Financiado (Otorgados)', val: fM(otorg.reduce(function(s,r){ return s+(r.monto_financiado||0); },0)), color:'#6a1b9a' },
+    { label:'Saldo Precio (Otorgados)', val: fM(otorg.reduce(function(s,r){ return s+(r.saldo_precio||0); },0)), color:'#e65100' },
+    { label:'Períodos disponibles', val: [...new Set(raw.map(function(r){return r.mes;}).filter(Boolean))].sort().length + ' meses', color:'#00838f' },
+  ];
+  var kEl = document.getElementById('exp-kpis');
+  if (kEl) kEl.innerHTML = kpis.map(function(k){
+    return '<div style="background:#0d1627;border:1px solid #1a3a6a;border-radius:8px;padding:12px 18px;min-width:160px">' +
+      '<div style="font-size:10px;color:#7bafd4;margin-bottom:4px">' + k.label + '</div>' +
+      '<div style="font-size:15px;font-weight:700;color:' + k.color + '">' + k.val + '</div></div>';
+  }).join('');
+
+  // Sincronizar fechas con el filtro del dashboard
+  var desde = document.getElementById('sel-desde');
+  var hasta  = document.getElementById('sel-hasta');
+  var eD = document.getElementById('exp-desde');
+  var eH = document.getElementById('exp-hasta');
+  if (eD && desde && desde.value) eD.value = desde.value;
+  if (eH && hasta  && hasta.value)  eH.value = hasta.value;
+
+  // Columnas
+  if (raw.length > 0) {
+    var cols = Object.keys(raw[0]);
+    var cEl = document.getElementById('exp-cols');
+    if (cEl) cEl.innerHTML = cols.map(function(c){
+      return '<span style="background:#1a2a4a;padding:2px 8px;border-radius:4px;border:1px solid #2a4070">' + c + '</span>';
+    }).join('');
+  }
+}
+
+function descargarExcelCreditos(tipo) {
+  var raw = window.RAW_DATA || [];
+  if (raw.length === 0) { alert('No hay datos cargados aún. Espera a que el dashboard termine de cargar.'); return; }
+
+  var datos;
+  var fileName;
+  var hoy = new Date().toISOString().slice(0,10).replace(/-/g,'');
+
+  if (tipo === 'otorgados') {
+    datos = raw.filter(function(r){ return r.estado_eval === 'OTORGADO'; });
+    fileName = 'autofacil_otorgados_' + hoy + '.xlsx';
+  } else if (tipo === 'periodo') {
+    var eD = document.getElementById('exp-desde');
+    var eH = document.getElementById('exp-hasta');
+    var desde = eD ? eD.value : '';
+    var hasta  = eH ? eH.value  : '';
+    if (!desde || !hasta) { alert('Selecciona un período Desde y Hasta.'); return; }
+    datos = raw.filter(function(r){ return r.mes >= desde && r.mes <= hasta; });
+    fileName = 'autofacil_periodo_' + desde.replace('-','') + '_' + hasta.replace('-','') + '_' + hoy + '.xlsx';
+  } else {
+    datos = raw.slice();
+    fileName = 'autofacil_base_completa_' + hoy + '.xlsx';
+  }
+
+  if (datos.length === 0) { alert('No hay registros para el filtro seleccionado.'); return; }
+
+  // Etiquetas amigables para las columnas
+  var ETIQUETAS = {
+    mes:'Mes', ejecutivo:'Ejecutivo', automotora:'Automotora', institucion:'Financiera',
+    estado_eval:'Estado', n_operacion:'N° Operación', saldo_precio:'Saldo Precio',
+    monto_financiado:'Total Financiado', plazo:'Plazo (meses)', com_dealer:'Comisión Dealer',
+    com_seguros:'Comisión Seguros', com_parque:'Comisión Parque',
+    rentab_afa:'Spread AutoFácil', mayor_menor:'Mayor/Menor UF',
+    modelo:'Modelo', marca:'Marca', anio:'Año',
+    tipo_credito:'Tipo Crédito', region:'Región', canal:'Canal',
+    fecha_otorgamiento:'Fecha Otorgamiento', rut_cliente:'RUT Cliente',
+    nombre_cliente:'Nombre Cliente',
+  };
+
+  // Construir filas con etiquetas amigables
+  var filas = datos.map(function(r) {
+    var fila = {};
+    Object.keys(r).forEach(function(k) {
+      fila[ETIQUETAS[k] || k] = r[k];
+    });
+    return fila;
+  });
+
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.json_to_sheet(filas);
+
+  // Estilos básicos de cabecera (ancho de columnas)
+  var cols = Object.keys(filas[0]);
+  ws['!cols'] = cols.map(function(c) {
+    var maxLen = Math.max(c.length, 10);
+    filas.forEach(function(f){ var v = String(f[c]||''); if(v.length > maxLen) maxLen = v.length; });
+    return { wch: Math.min(maxLen + 2, 40) };
+  });
+
+  var sheetName = tipo === 'otorgados' ? 'Otorgados' : tipo === 'periodo' ? 'Período' : 'Base Completa';
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+  // Hoja de resumen
+  var resumen = [
+    { Campo: 'Tipo de exportación', Valor: sheetName },
+    { Campo: 'Total registros exportados', Valor: datos.length },
+    { Campo: 'Fecha generación', Valor: new Date().toLocaleString('es-CL') },
+    { Campo: 'Generado por', Valor: (sesionActual && sesionActual.nombre) || 'Administrador' },
+  ];
+  var wsRes = XLSX.utils.json_to_sheet(resumen);
+  wsRes['!cols'] = [{ wch: 30 }, { wch: 40 }];
+  XLSX.utils.book_append_sheet(wb, wsRes, 'Info');
+
+  XLSX.writeFile(wb, fileName);
 }
 
 function mostrarModalCambioClave() {
