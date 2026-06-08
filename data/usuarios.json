@@ -151,5 +151,14 @@
     "estado": "ACTIVO",
     "primerIngreso": false,
     "ultimoIngreso": "2026-05-28T22:13:50.848Z"
+  },
+  {
+    "nombre": "Alvaro VArgas",
+    "usuario": "alvaro.vargas@autofacilchile.cl",
+    "clave": "AL2028",
+    "perfil": "USUARIO",
+    "estado": "NUNCA INGRESADO",
+    "primerIngreso": true,
+    "ultimoIngreso": null
   }
 ]
