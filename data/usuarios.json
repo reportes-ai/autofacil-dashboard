@@ -160,5 +160,14 @@
     "estado": "ACTIVO",
     "primerIngreso": false,
     "ultimoIngreso": "2026-06-22T00:19:42.776Z"
+  },
+  {
+    "nombre": "Pamela Flores",
+    "usuario": "pamela.flores@ecoilpet.com.ec",
+    "clave": "Pflores$$1",
+    "perfil": "USUARIO",
+    "estado": "NUNCA INGRESADO",
+    "primerIngreso": true,
+    "ultimoIngreso": null
   }
 ]
