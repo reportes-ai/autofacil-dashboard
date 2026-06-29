@@ -166,8 +166,8 @@
     "usuario": "pamela.flores@ecoilpet.com.ec",
     "clave": "Pflores$$1",
     "perfil": "GERENTE GENERAL",
-    "estado": "NUNCA INGRESADO",
-    "primerIngreso": true,
-    "ultimoIngreso": null
+    "estado": "ACTIVO",
+    "primerIngreso": false,
+    "ultimoIngreso": "2026-06-29T15:14:26.728Z"
   }
 ]
