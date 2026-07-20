@@ -3678,10 +3678,10 @@ function initExportarPanel() {
   var clusterCard = document.getElementById('exp-card-cluster');
   var kpisWrap = document.getElementById('exp-kpis');
   var colsWrap = document.getElementById('exp-cols-wrap');
-  if (adminCards) adminCards.style.display = esAdmin ? '' : 'none';
-  if (clusterCard) clusterCard.style.display = (esAdmin || esBICluster) ? '' : 'none';
-  if (kpisWrap) kpisWrap.style.display = esAdmin ? '' : 'none';
-  if (colsWrap) colsWrap.style.display = esAdmin ? '' : 'none';
+  if (adminCards) adminCards.style.display = esAdmin ? 'grid' : 'none';
+  if (clusterCard) clusterCard.style.display = (esAdmin || esBICluster) ? 'block' : 'none';
+  if (kpisWrap) kpisWrap.style.display = esAdmin ? 'flex' : 'none';
+  if (colsWrap) colsWrap.style.display = esAdmin ? 'block' : 'none';
 
   // Fecha cluster: ayer (día cerrado)
   var fechaEl = document.getElementById('exp-cluster-fecha');
