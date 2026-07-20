@@ -175,8 +175,8 @@
     "usuario": "palermo.silva@ecoilpet.com.ec",
     "clave": "Palermo2026#",
     "perfil": "BI CLUSTER CARTERA",
-    "estado": "NUNCA INGRESADO",
-    "primerIngreso": true,
-    "ultimoIngreso": null
+    "estado": "ACTIVO",
+    "primerIngreso": false,
+    "ultimoIngreso": "2026-07-20T19:54:17.478Z"
   }
 ]
