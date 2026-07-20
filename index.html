@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<!-- v20260608_V3.11 -->
+<!-- v20260720_V3.12 -->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AutoFácil — Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -246,7 +246,7 @@ function actualizarTopbarUsuario() {
       <button onclick="cerrarSesion()" style="background:#1a3a6a;border:1px solid #2a4070;color:#aac4e8;border-radius:4px;padding:2px 8px;font-size:10px;cursor:pointer;margin-left:6px">Salir</button>`;
   }
   const tabAdmin = document.getElementById('tab-admin');
-  if (tabAdmin) tabAdmin.style.display = sesionActual.perfil === 'ADMINISTRADOR' ? 'flex' : 'none';
+  if (tabAdmin) tabAdmin.style.display = (sesionActual.perfil === 'ADMINISTRADOR' || sesionActual.perfil === 'BI CLUSTER CARTERA') ? 'flex' : 'none';
   aplicarPermisosNavTabs();
 }
 
@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <div class="topbar">
   <div class="topbar-row1">
-    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.11</span></span></div>
+    <div style="display:flex;flex-direction:column;line-height:1.2"><div class="brand">Auto<span>Fácil</span></div><span style="font-size:9px;font-weight:300;color:#7bafd4;margin-left:1px">Dashboard <span style="color:#4fc3f7;font-weight:600">V3.12</span></span></div>
     <div id="ultima-act" style="font-size:10px;color:#4fc3f7;margin-left:8px"></div>
     <div id="date-selector" style="display:flex;align-items:center;gap:8px;background:#0f1e38;padding:4px 12px;border-radius:6px;border:1px solid #2a4070;margin-left:8px">
       <span style="color:#7bafd4;font-size:11px;white-space:nowrap">📅 Período:</span>
@@ -916,12 +916,15 @@ function showV(id, el) {
   if(id==='vppto') { buildVPpto(); }
   if(id==='vevol') { buildVEvol(); }
   if(id==='vadmin') {
-    // Verificar que solo admin puede acceder
-    if (!sesionActual || sesionActual.perfil !== 'ADMINISTRADOR') {
+    if (!sesionActual || (sesionActual.perfil !== 'ADMINISTRADOR' && sesionActual.perfil !== 'BI CLUSTER CARTERA')) {
       alert('Acceso denegado.');
       return;
     }
-    buildVAdmin();
+    if (sesionActual.perfil === 'BI CLUSTER CARTERA') {
+      buildVAdminCluster();
+    } else {
+      buildVAdmin();
+    }
   }
   if(id==='v6') {
     const sd = document.getElementById('sel-desde');
@@ -3195,8 +3198,8 @@ function buildV7() {
         <!-- KPI strip -->
         <div id="exp-kpis" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px"></div>
 
-        <!-- Opciones de descarga -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
+        <!-- Opciones de descarga (solo ADMINISTRADOR) -->
+        <div id="exp-cards-admin" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
 
           <!-- Todos los créditos -->
           <div style="background:#0d1627;border:1px solid #1a3a6a;border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:10px">
@@ -3239,8 +3242,30 @@ function buildV7() {
 
         </div>
 
-        <!-- Columnas incluidas -->
-        <div style="margin-top:20px;background:#0d1627;border:1px solid #1a3a6a;border-radius:8px;padding:14px">
+        <!-- Card BDD Cluster Comercial (BI CLUSTER CARTERA + ADMINISTRADOR) -->
+        <div id="exp-card-cluster" style="display:none;margin-top:16px">
+          <div style="background:linear-gradient(135deg,#002419,#004d40);border:1px solid #00695c;border-radius:10px;padding:24px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <div style="font-size:22px">📊</div>
+              <div>
+                <div style="font-size:15px;font-weight:700;color:#e0f2f1">BDD Cluster Comercial</div>
+                <div style="font-size:11px;color:#80cbc4;margin-top:2px">AutoFácil — Base de datos completa para análisis cluster</div>
+              </div>
+            </div>
+            <div id="exp-cluster-fecha" style="font-size:12px;color:#4db6ac;font-style:italic"></div>
+            <div style="font-size:11px;color:#80cbc4;line-height:1.6">
+              Exporta todos los créditos otorgados con campos comerciales, financieros y de seguros. Incluye comisiones, primas, tasas y rentabilidades.
+            </div>
+            <button onclick="descargarClusterComercial()"
+              style="margin-top:4px;padding:12px 0;background:linear-gradient(135deg,#00695c,#00897b);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;transition:opacity 0.2s;letter-spacing:.3px"
+              onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+              ⬇️ Descargar BDD Cluster Comercial (.xlsx)
+            </button>
+          </div>
+        </div>
+
+        <!-- Columnas incluidas (solo ADMINISTRADOR) -->
+        <div id="exp-cols-wrap" style="margin-top:20px;background:#0d1627;border:1px solid #1a3a6a;border-radius:8px;padding:14px">
           <div style="font-size:11px;font-weight:700;color:#7bafd4;margin-bottom:8px">📌 Campos incluidos en la exportación:</div>
           <div id="exp-cols" style="font-size:10px;color:#aac4e8;line-height:1.8;display:flex;flex-wrap:wrap;gap:4px 14px"></div>
         </div>
@@ -3276,6 +3301,7 @@ function buildV7() {
           <option value="SUPERVISOR">SUPERVISOR</option>
           <option value="GERENTE GENERAL">GERENTE GENERAL</option>
           <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+          <option value="BI CLUSTER CARTERA">BI CLUSTER CARTERA</option>
         </select>
       </div>
       <div style="margin-bottom:20px">
@@ -3310,7 +3336,7 @@ const TABS_NAV = [
   { id:'vevol', label:'📊 Evolución' },
   { id:'v2pl',  label:'📋 P&L Operativo' },
 ];
-const PERFILES_SISTEMA = ['USUARIO', 'SUPERVISOR', 'GERENTE GENERAL', 'ADMINISTRADOR'];
+const PERFILES_SISTEMA = ['USUARIO', 'SUPERVISOR', 'GERENTE GENERAL', 'ADMINISTRADOR', 'BI CLUSTER CARTERA'];
 
 function aplicarOrdenNavTabs() {
   var tabsContainer = document.querySelector('.tabs');
@@ -3348,6 +3374,15 @@ function aplicarPermisosNavTabs() {
 async function buildVAdmin() {
   adminSubTab('usuarios');
   setTimeout(async function() { await renderTablaAdmin(); }, 50);
+}
+
+function buildVAdminCluster() {
+  // BI CLUSTER CARTERA: solo ve Exportar Datos
+  var btnU = document.getElementById('adm-tab-usuarios');
+  var btnP = document.getElementById('adm-tab-permisos');
+  if (btnU) btnU.style.display = 'none';
+  if (btnP) btnP.style.display = 'none';
+  adminSubTab('exportar');
 }
 
 function adminSubTab(sec) {
@@ -3496,8 +3531,8 @@ async function renderTablaAdmin(filtro) {
     var ult = u.ultimoIngreso
       ? new Date(u.ultimoIngreso).toLocaleString('es-CL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
       : '—';
-    var perfBg = u.perfil === 'ADMINISTRADOR' ? '#1a3a6a' : u.perfil === 'GERENTE GENERAL' ? '#4a1a6a' : u.perfil === 'SUPERVISOR' ? '#1a4a2a' : '#e3f2fd';
-    var perfC  = u.perfil === 'ADMINISTRADOR' ? '#fff'   : u.perfil === 'GERENTE GENERAL' ? '#fff'   : u.perfil === 'SUPERVISOR' ? '#fff'   : '#1565c0';
+    var perfBg = u.perfil === 'ADMINISTRADOR' ? '#1a3a6a' : u.perfil === 'GERENTE GENERAL' ? '#4a1a6a' : u.perfil === 'SUPERVISOR' ? '#1a4a2a' : u.perfil === 'BI CLUSTER CARTERA' ? '#004d40' : '#e3f2fd';
+    var perfC  = u.perfil === 'ADMINISTRADOR' ? '#fff'   : u.perfil === 'GERENTE GENERAL' ? '#fff'   : u.perfil === 'SUPERVISOR' ? '#fff'   : u.perfil === 'BI CLUSTER CARTERA' ? '#80cbc4' : '#1565c0';
     return '<tr style="border-bottom:1px solid #f0f2f5">' +
       '<td style="padding:7px 8px;font-weight:600">' + u.nombre + '</td>' +
       '<td style="padding:7px 8px;color:#555;font-size:11px">' + u.usuario + '</td>' +
@@ -3635,6 +3670,32 @@ async function exportarUsuarios() {
 
 function initExportarPanel() {
   var raw = window.RAW_DATA || [];
+  var esAdmin = sesionActual && sesionActual.perfil === 'ADMINISTRADOR';
+  var esBICluster = sesionActual && sesionActual.perfil === 'BI CLUSTER CARTERA';
+
+  // Visibilidad según perfil
+  var adminCards = document.getElementById('exp-cards-admin');
+  var clusterCard = document.getElementById('exp-card-cluster');
+  var kpisWrap = document.getElementById('exp-kpis');
+  var colsWrap = document.getElementById('exp-cols-wrap');
+  if (adminCards) adminCards.style.display = esAdmin ? '' : 'none';
+  if (clusterCard) clusterCard.style.display = (esAdmin || esBICluster) ? '' : 'none';
+  if (kpisWrap) kpisWrap.style.display = esAdmin ? '' : 'none';
+  if (colsWrap) colsWrap.style.display = esAdmin ? '' : 'none';
+
+  // Fecha cluster: ayer (día cerrado)
+  var fechaEl = document.getElementById('exp-cluster-fecha');
+  if (fechaEl && (esAdmin || esBICluster)) {
+    var ayer = new Date();
+    ayer.setDate(ayer.getDate() - 1);
+    var dd = String(ayer.getDate()).padStart(2,'0');
+    var mm = String(ayer.getMonth()+1).padStart(2,'0');
+    var yyyy = ayer.getFullYear();
+    fechaEl.textContent = '🕐 Actualizado al ' + dd + '-' + mm + '-' + yyyy + ' (día cerrado)';
+  }
+
+  if (!esAdmin) return; // lo siguiente solo para ADMINISTRADOR
+
   var otorg = raw.filter(function(r){ return r.estado_eval === 'OTORGADO'; });
 
   // KPIs
@@ -3790,6 +3851,112 @@ function descargarExcelCreditos(tipo) {
   wsRes['!cols'] = [{ wch: 30 }, { wch: 40 }];
   XLSX.utils.book_append_sheet(wb, wsRes, 'Info');
 
+  XLSX.writeFile(wb, fileName);
+}
+
+function descargarClusterComercial() {
+  var raw = window.RAW_DATA || [];
+  if (raw.length === 0) { alert('No hay datos cargados aún. Espera a que el dashboard termine de cargar.'); return; }
+
+  // Solo otorgados
+  var datos = raw.filter(function(r){ return r.estado_eval === 'OTORGADO'; });
+  if (datos.length === 0) { alert('No hay registros otorgados disponibles.'); return; }
+
+  // Fecha: ayer (día cerrado)
+  var ayer = new Date();
+  ayer.setDate(ayer.getDate() - 1);
+  var dd = String(ayer.getDate()).padStart(2,'0');
+  var mm = String(ayer.getMonth()+1).padStart(2,'0');
+  var yyyy = ayer.getFullYear();
+  var fechaLabel = dd + '-' + mm + '-' + yyyy;
+
+  var ETIQUETAS_CLUSTER = {
+    op:               'OP',
+    id_financiera:    'ID FINANCIERA',
+    mes:              'Mes',
+    rut:              'RUT',
+    nombre:           'NOMBRE',
+    ejecutivo:        'EJ.COMERCIAL',
+    financiera:       'FINANCIERA',
+    institucion:      'Institución',
+    producto:         'PRODUCTO',
+    automotora:       'AUTOMOTORA',
+    nombre_local:     'NOMBRE LOCAL',
+    estado_eval:      'ESTADO EVAL. RIESGO',
+    estado_credito:   'ESTADO CREDITO',
+    resultado_negocio:'RESULTADO NEGOCIO',
+    valor_vehiculo:   'VALOR VEHICULO',
+    pie:              'PIE',
+    saldo_precio:     'SALDO PRECIO',
+    monto_financiado: 'MONTO FINANCIADO',
+    monto_capitalizado:'MONTO CAPITALIZADO',
+    gastos:           'GASTOS',
+    impuesto:         'IMPUESTO',
+    pct_financiado:   '% FINANCIADO',
+    tasa_cli:         'TASCLI REAL',
+    tasa_piso:        'TASAF PISO',
+    tasa_fin:         'TASFIN PIZARRA',
+    com_dealer:       'COMDEA $',
+    com_ejecutivo:    'COMEJ $',
+    rentab_afa:       'COM. FINANCIERA',
+    rentab_directo:   'RENTAB. AF DIRECTO',
+    ingreso_neto_af:  'INGRESO NETO AF',
+    com_seguros:      'COM.SEGUROS TOTAL',
+    com_rdh:          'COM.RDH',
+    com_cesantia:     'COM.CESANTIA',
+    com_reparaciones: 'COM.REPARACIONES',
+    prima_rdh:        'SEGURO RDH+E',
+    prima_cesantia:   'SEG.CESANTIA',
+    prima_rep_menor:  'SEG. REP MENOR',
+    com_parque:       'COM PARQUE',
+    arriendo_parque:  'ARRIENDO PARQUE',
+    bono_total:       'BONO TOTAL',
+    plazo:            'PLAZO',
+    mayor_menor:      'MAYOR/MENOR',
+    prepago:          'PREPAGO',
+    estado_sp:        'ESTADO SP',
+    fecha_pago_sp:    'FECHA PAGO SP',
+    fecha_recepcion_fei:'FECHA RECEPCION FEI',
+    fecha_ot:         'FECHA OTORGADO',
+    fecha_estado:     'FECHA ESTADO',
+    fecha_primer_cuota:'FECHA PRIMERA CUOTA',
+    dia_mes:          'DIA MES',
+    dia_semana:       'DIA SEMANA',
+    dias_curse:       'DIAS CURSE',
+  };
+
+  var filas = datos.map(function(r) {
+    var fila = {};
+    Object.keys(ETIQUETAS_CLUSTER).forEach(function(k) {
+      fila[ETIQUETAS_CLUSTER[k]] = r[k] !== undefined ? r[k] : '';
+    });
+    return fila;
+  });
+
+  var wb = XLSX.utils.book_new();
+  var ws = XLSX.utils.json_to_sheet(filas);
+
+  var cols = Object.keys(filas[0]);
+  ws['!cols'] = cols.map(function(c) {
+    var maxLen = Math.max(c.length, 8);
+    filas.forEach(function(f){ var v = String(f[c]||''); if(v.length > maxLen) maxLen = v.length; });
+    return { wch: Math.min(maxLen + 2, 40) };
+  });
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Cluster Comercial');
+
+  var resumen = [
+    { Campo: 'Informe', Valor: 'BDD Cluster Comercial AutoFácil' },
+    { Campo: 'Actualizado al', Valor: fechaLabel + ' (día cerrado)' },
+    { Campo: 'Total registros', Valor: datos.length },
+    { Campo: 'Generado el', Valor: new Date().toLocaleString('es-CL') },
+    { Campo: 'Generado por', Valor: (sesionActual && sesionActual.nombre) || '' },
+  ];
+  var wsRes = XLSX.utils.json_to_sheet(resumen);
+  wsRes['!cols'] = [{ wch: 25 }, { wch: 40 }];
+  XLSX.utils.book_append_sheet(wb, wsRes, 'Info');
+
+  var fileName = 'BDD_CLUSTER COMERCIAL - AUTOFACIL - actualizado al ' + fechaLabel + '.xlsx';
   XLSX.writeFile(wb, fileName);
 }
 
