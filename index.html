@@ -3858,103 +3858,83 @@ function descargarClusterComercial() {
   var raw = window.RAW_DATA || [];
   if (raw.length === 0) { alert('No hay datos cargados aún. Espera a que el dashboard termine de cargar.'); return; }
 
-  // Solo otorgados
-  var datos = raw.filter(function(r){ return r.estado_eval === 'OTORGADO'; });
-  if (datos.length === 0) { alert('No hay registros otorgados disponibles.'); return; }
+  var otorg = raw.filter(function(r){ return r.estado_eval === 'OTORGADO' && r.mes && r.dia_mes != null; });
+  if (otorg.length === 0) { alert('No hay registros otorgados disponibles.'); return; }
 
-  // Fecha: ayer (día cerrado)
+  // Semana según día del mes
+  function getSemana(dia) {
+    if (dia <= 7)  return 1;
+    if (dia <= 14) return 2;
+    if (dia <= 21) return 3;
+    return 4;
+  }
+
+  // Agrupar por AÑO-MES-SEMANA
+  var grupos = {};
+  var mesesSet = {};
+  otorg.forEach(function(r) {
+    var parts = r.mes.split('-');
+    var anio = parseInt(parts[0]);
+    var mes  = parseInt(parts[1]);
+    var sem  = getSemana(r.dia_mes);
+    var gKey = anio + '|' + mes + '|' + sem;
+    var mKey = anio + '|' + mes;
+    if (!grupos[gKey]) grupos[gKey] = { anio: anio, mes: mes, semana: sem, count: 0, monto: 0 };
+    grupos[gKey].count++;
+    grupos[gKey].monto += (r.monto_financiado || 0);
+    if (!mesesSet[mKey]) mesesSet[mKey] = { anio: anio, mes: mes, key: mKey };
+  });
+
+  // Ordenar meses cronológicamente
+  var mesesOrdenados = Object.values(mesesSet).sort(function(a, b) {
+    return a.anio !== b.anio ? a.anio - b.anio : a.mes - b.mes;
+  });
+
+  // Generar filas: 4 semanas por mes (solo las que tienen créditos)
+  var filas = [];
+  var id = 1;
+  mesesOrdenados.forEach(function(m) {
+    for (var s = 1; s <= 4; s++) {
+      var g = grupos[m.anio + '|' + m.mes + '|' + s];
+      if (!g || g.count === 0) return;
+      filas.push({
+        'ID':       id++,
+        'EMPRESA':  'AUTOFACIL',
+        'AÑO':      m.anio,
+        'MES':      m.mes,
+        'SEMANA':   s,
+        'PPSTO #':  null,
+        'PPSTO $':  null,
+        'REAL #':   g.count,
+        'REAL $':   Math.round(g.monto),
+      });
+    }
+  });
+
+  if (filas.length === 0) { alert('Sin datos para generar el informe.'); return; }
+
+  // Fecha ayer (día cerrado)
   var ayer = new Date();
   ayer.setDate(ayer.getDate() - 1);
-  var dd = String(ayer.getDate()).padStart(2,'0');
-  var mm = String(ayer.getMonth()+1).padStart(2,'0');
+  var dd   = String(ayer.getDate()).padStart(2,'0');
+  var mm   = String(ayer.getMonth()+1).padStart(2,'0');
   var yyyy = ayer.getFullYear();
   var fechaLabel = dd + '-' + mm + '-' + yyyy;
 
-  var ETIQUETAS_CLUSTER = {
-    op:               'OP',
-    id_financiera:    'ID FINANCIERA',
-    mes:              'Mes',
-    rut:              'RUT',
-    nombre:           'NOMBRE',
-    ejecutivo:        'EJ.COMERCIAL',
-    financiera:       'FINANCIERA',
-    institucion:      'Institución',
-    producto:         'PRODUCTO',
-    automotora:       'AUTOMOTORA',
-    nombre_local:     'NOMBRE LOCAL',
-    estado_eval:      'ESTADO EVAL. RIESGO',
-    estado_credito:   'ESTADO CREDITO',
-    resultado_negocio:'RESULTADO NEGOCIO',
-    valor_vehiculo:   'VALOR VEHICULO',
-    pie:              'PIE',
-    saldo_precio:     'SALDO PRECIO',
-    monto_financiado: 'MONTO FINANCIADO',
-    monto_capitalizado:'MONTO CAPITALIZADO',
-    gastos:           'GASTOS',
-    impuesto:         'IMPUESTO',
-    pct_financiado:   '% FINANCIADO',
-    tasa_cli:         'TASCLI REAL',
-    tasa_piso:        'TASAF PISO',
-    tasa_fin:         'TASFIN PIZARRA',
-    com_dealer:       'COMDEA $',
-    com_ejecutivo:    'COMEJ $',
-    rentab_afa:       'COM. FINANCIERA',
-    rentab_directo:   'RENTAB. AF DIRECTO',
-    ingreso_neto_af:  'INGRESO NETO AF',
-    com_seguros:      'COM.SEGUROS TOTAL',
-    com_rdh:          'COM.RDH',
-    com_cesantia:     'COM.CESANTIA',
-    com_reparaciones: 'COM.REPARACIONES',
-    prima_rdh:        'SEGURO RDH+E',
-    prima_cesantia:   'SEG.CESANTIA',
-    prima_rep_menor:  'SEG. REP MENOR',
-    com_parque:       'COM PARQUE',
-    arriendo_parque:  'ARRIENDO PARQUE',
-    bono_total:       'BONO TOTAL',
-    plazo:            'PLAZO',
-    mayor_menor:      'MAYOR/MENOR',
-    prepago:          'PREPAGO',
-    estado_sp:        'ESTADO SP',
-    fecha_pago_sp:    'FECHA PAGO SP',
-    fecha_recepcion_fei:'FECHA RECEPCION FEI',
-    fecha_ot:         'FECHA OTORGADO',
-    fecha_estado:     'FECHA ESTADO',
-    fecha_primer_cuota:'FECHA PRIMERA CUOTA',
-    dia_mes:          'DIA MES',
-    dia_semana:       'DIA SEMANA',
-    dias_curse:       'DIAS CURSE',
-  };
-
-  var filas = datos.map(function(r) {
-    var fila = {};
-    Object.keys(ETIQUETAS_CLUSTER).forEach(function(k) {
-      fila[ETIQUETAS_CLUSTER[k]] = r[k] !== undefined ? r[k] : '';
-    });
-    return fila;
-  });
-
   var wb = XLSX.utils.book_new();
   var ws = XLSX.utils.json_to_sheet(filas);
-
-  var cols = Object.keys(filas[0]);
-  ws['!cols'] = cols.map(function(c) {
-    var maxLen = Math.max(c.length, 8);
-    filas.forEach(function(f){ var v = String(f[c]||''); if(v.length > maxLen) maxLen = v.length; });
-    return { wch: Math.min(maxLen + 2, 40) };
-  });
-
-  XLSX.utils.book_append_sheet(wb, ws, 'Cluster Comercial');
-
-  var resumen = [
-    { Campo: 'Informe', Valor: 'BDD Cluster Comercial AutoFácil' },
-    { Campo: 'Actualizado al', Valor: fechaLabel + ' (día cerrado)' },
-    { Campo: 'Total registros', Valor: datos.length },
-    { Campo: 'Generado el', Valor: new Date().toLocaleString('es-CL') },
-    { Campo: 'Generado por', Valor: (sesionActual && sesionActual.nombre) || '' },
+  ws['!cols'] = [
+    {wch:5},  // ID
+    {wch:12}, // EMPRESA
+    {wch:6},  // AÑO
+    {wch:5},  // MES
+    {wch:8},  // SEMANA
+    {wch:9},  // PPSTO #
+    {wch:14}, // PPSTO $
+    {wch:9},  // REAL #
+    {wch:16}, // REAL $
   ];
-  var wsRes = XLSX.utils.json_to_sheet(resumen);
-  wsRes['!cols'] = [{ wch: 25 }, { wch: 40 }];
-  XLSX.utils.book_append_sheet(wb, wsRes, 'Info');
+  XLSX.utils.book_append_sheet(wb, ws, 'BDD');
 
   var fileName = 'BDD_CLUSTER COMERCIAL - AUTOFACIL - actualizado al ' + fechaLabel + '.xlsx';
   XLSX.writeFile(wb, fileName);
