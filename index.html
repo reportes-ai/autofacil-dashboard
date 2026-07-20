@@ -3934,6 +3934,15 @@ function descargarClusterComercial() {
     {wch:9},  // REAL #
     {wch:16}, // REAL $
   ];
+  // Formato pesos (sin decimales, con separador de miles) a columnas PPSTO $ y REAL $
+  var range = XLSX.utils.decode_range(ws['!ref']);
+  for (var R = range.s.r + 1; R <= range.e.r; R++) {
+    ['G', 'I'].forEach(function(col) {
+      var addr = col + (R + 1);
+      if (ws[addr] && ws[addr].t === 'n') ws[addr].z = '#,##0';
+    });
+  }
+
   XLSX.utils.book_append_sheet(wb, ws, 'BDD');
 
   var fileName = 'BDD_CLUSTER COMERCIAL - AUTOFACIL - actualizado al ' + fechaLabel + '.xlsx';
