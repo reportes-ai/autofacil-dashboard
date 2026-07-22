@@ -3850,10 +3850,33 @@ function descargarClusterComercial() {
   var raw = window.RAW_DATA || [];
   if (raw.length === 0) { alert('No hay datos cargados aún. Espera a que el dashboard termine de cargar.'); return; }
 
-  var otorg = raw.filter(function(r){ return r.estado_eval === 'OTORGADO' && r.mes && r.dia_mes != null; });
-  if (otorg.length === 0) { alert('No hay registros otorgados disponibles.'); return; }
+  var PPSTO_BDD = {
+    '2025|1|1':{n:17.1,m:116280000},'2025|1|2':{n:22.5,m:153000000},'2025|1|3':{n:18.9,m:128520000},'2025|1|4':{n:31.5,m:214200000},
+    '2025|2|1':{n:18.43,m:125324000},'2025|2|2':{n:24.25,m:164900000},'2025|2|3':{n:20.37,m:138516000},'2025|2|4':{n:33.95,m:230860000},
+    '2025|3|1':{n:19.76,m:134368000},'2025|3|2':{n:26,m:176800000},'2025|3|3':{n:21.84,m:148512000},'2025|3|4':{n:36.4,m:247520000},
+    '2025|4|1':{n:21.09,m:143412000},'2025|4|2':{n:27.75,m:188700000},'2025|4|3':{n:23.31,m:158508000},'2025|4|4':{n:38.85,m:264180000},
+    '2025|5|1':{n:22.42,m:152456000},'2025|5|2':{n:29.5,m:200600000},'2025|5|3':{n:24.78,m:168504000},'2025|5|4':{n:41.3,m:280840000},
+    '2025|6|1':{n:23.75,m:161500000},'2025|6|2':{n:31.25,m:212500000},'2025|6|3':{n:26.25,m:178500000},'2025|6|4':{n:43.75,m:297500000},
+    '2025|7|1':{n:25.08,m:170544000},'2025|7|2':{n:33,m:224400000},'2025|7|3':{n:27.72,m:188496000},'2025|7|4':{n:46.2,m:314160000},
+    '2025|8|1':{n:32.11,m:233738000},'2025|8|2':{n:42.25,m:307550000},'2025|8|3':{n:35.49,m:258342000},'2025|8|4':{n:59.15,m:430570000},
+    '2025|9|1':{n:33.44,m:242782000},'2025|9|2':{n:44,m:319450000},'2025|9|3':{n:36.96,m:268338000},'2025|9|4':{n:61.6,m:447230000},
+    '2025|10|1':{n:34.77,m:251826000},'2025|10|2':{n:45.75,m:331350000},'2025|10|3':{n:38.43,m:278334000},'2025|10|4':{n:64.05,m:463890000},
+    '2025|11|1':{n:36.1,m:260870000},'2025|11|2':{n:47.5,m:343250000},'2025|11|3':{n:39.9,m:288330000},'2025|11|4':{n:66.5,m:480550000},
+    '2025|12|1':{n:37.43,m:269914000},'2025|12|2':{n:49.25,m:355150000},'2025|12|3':{n:41.37,m:298326000},'2025|12|4':{n:68.95,m:497210000},
+    '2026|1|1':{n:17.29,m:117572000},'2026|1|2':{n:22.75,m:154700000},'2026|1|3':{n:19.11,m:129948000},'2026|1|4':{n:31.85,m:216580000},
+    '2026|2|1':{n:17.29,m:117572000},'2026|2|2':{n:22.75,m:154700000},'2026|2|3':{n:19.11,m:129948000},'2026|2|4':{n:31.85,m:216580000},
+    '2026|3|1':{n:20.71,m:138244000},'2026|3|2':{n:27.25,m:181900000},'2026|3|3':{n:22.89,m:152796000},'2026|3|4':{n:38.15,m:254660000},
+    '2026|4|1':{n:25.27,m:167960000},'2026|4|2':{n:33.25,m:221000000},'2026|4|3':{n:27.93,m:185640000},'2026|4|4':{n:46.55,m:309400000},
+    '2026|5|1':{n:30.59,m:204136000},'2026|5|2':{n:40.25,m:268600000},'2026|5|3':{n:33.81,m:225624000},'2026|5|4':{n:56.35,m:376040000},
+    '2026|6|1':{n:32.11,m:217056000},'2026|6|2':{n:42.25,m:285600000},'2026|6|3':{n:35.49,m:239904000},'2026|6|4':{n:59.15,m:399840000},
+    '2026|7|1':{n:33.63,m:229976000},'2026|7|2':{n:44.25,m:302600000},'2026|7|3':{n:37.17,m:254184000},'2026|7|4':{n:61.95,m:423640000},
+    '2026|8|1':{n:34.39,m:235144000},'2026|8|2':{n:45.25,m:309400000},'2026|8|3':{n:38.01,m:259896000},'2026|8|4':{n:63.35,m:433160000},
+    '2026|9|1':{n:34.39,m:235144000},'2026|9|2':{n:45.25,m:309400000},'2026|9|3':{n:38.01,m:259896000},'2026|9|4':{n:63.35,m:433160000},
+    '2026|10|1':{n:34.39,m:235144000},'2026|10|2':{n:45.25,m:309400000},'2026|10|3':{n:38.01,m:259896000},'2026|10|4':{n:63.35,m:433160000},
+    '2026|11|1':{n:34.39,m:235144000},'2026|11|2':{n:45.25,m:309400000},'2026|11|3':{n:38.01,m:259896000},'2026|11|4':{n:63.35,m:433160000},
+    '2026|12|1':{n:34.39,m:235144000},'2026|12|2':{n:45.25,m:309400000},'2026|12|3':{n:38.01,m:259896000},'2026|12|4':{n:63.35,m:433160000}
+  };
 
-  // Semana según día del mes
   function getSemana(dia) {
     if (dia <= 7)  return 1;
     if (dia <= 14) return 2;
@@ -3861,84 +3884,63 @@ function descargarClusterComercial() {
     return 4;
   }
 
-  // Agrupar por AÑO-MES-SEMANA
+  // Agrupar otorgados por AÑO|MES|SEMANA
   var grupos = {};
-  var mesesSet = {};
-  otorg.forEach(function(r) {
-    var parts = r.mes.split('-');
-    var anio = parseInt(parts[0]);
-    var mes  = parseInt(parts[1]);
-    var sem  = getSemana(r.dia_mes);
-    var gKey = anio + '|' + mes + '|' + sem;
-    var mKey = anio + '|' + mes;
-    if (!grupos[gKey]) grupos[gKey] = { anio: anio, mes: mes, semana: sem, count: 0, monto: 0 };
-    grupos[gKey].count++;
-    grupos[gKey].monto += (r.monto_financiado || 0);
-    if (!mesesSet[mKey]) mesesSet[mKey] = { anio: anio, mes: mes, key: mKey };
+  raw.filter(function(r){ return r.estado_eval === 'OTORGADO' && r.mes && r.dia_mes != null; })
+    .forEach(function(r) {
+      var p = r.mes.split('-');
+      var key = parseInt(p[0]) + '|' + parseInt(p[1]) + '|' + getSemana(r.dia_mes);
+      if (!grupos[key]) grupos[key] = { count: 0, monto: 0 };
+      grupos[key].count++;
+      grupos[key].monto += (r.monto_financiado || 0);
+    });
+
+  // Unión de claves PPSTO + claves reales, ordenadas cronológicamente
+  var todasLasClaves = {};
+  Object.keys(PPSTO_BDD).forEach(function(k){ todasLasClaves[k] = true; });
+  Object.keys(grupos).forEach(function(k){ todasLasClaves[k] = true; });
+  var clavesOrdenadas = Object.keys(todasLasClaves).sort(function(a, b) {
+    var pa = a.split('|').map(Number), pb = b.split('|').map(Number);
+    return pa[0] !== pb[0] ? pa[0]-pb[0] : pa[1] !== pb[1] ? pa[1]-pb[1] : pa[2]-pb[2];
   });
 
-  // Ordenar meses cronológicamente
-  var mesesOrdenados = Object.values(mesesSet).sort(function(a, b) {
-    return a.anio !== b.anio ? a.anio - b.anio : a.mes - b.mes;
-  });
-
-  // Generar filas: 4 semanas por mes (solo las que tienen créditos)
   var filas = [];
   var id = 1;
-  mesesOrdenados.forEach(function(m) {
-    for (var s = 1; s <= 4; s++) {
-      var g = grupos[m.anio + '|' + m.mes + '|' + s];
-      if (!g || g.count === 0) return;
-      filas.push({
-        'ID':       id++,
-        'EMPRESA':  'AUTOFACIL',
-        'AÑO':      m.anio,
-        'MES':      m.mes,
-        'SEMANA':   s,
-        'PPSTO #':  null,
-        'PPSTO $':  null,
-        'REAL #':   g.count,
-        'REAL $':   Math.round(g.monto),
-      });
-    }
+  clavesOrdenadas.forEach(function(k) {
+    var p  = k.split('|');
+    var pp = PPSTO_BDD[k] || null;
+    var rr = grupos[k]    || null;
+    filas.push({
+      'ID':      id++,
+      'EMPRESA': 'AUTOFACIL',
+      'AÑO':     parseInt(p[0]),
+      'MES':     parseInt(p[1]),
+      'SEMANA':  parseInt(p[2]),
+      'PPSTO #': pp ? pp.n : null,
+      'PPSTO $': pp ? pp.m : null,
+      'REAL #':  rr ? rr.count : null,
+      'REAL $':  rr ? Math.round(rr.monto) : null,
+    });
   });
 
-  if (filas.length === 0) { alert('Sin datos para generar el informe.'); return; }
-
-  // Fecha ayer (día cerrado)
   var ayer = new Date();
   ayer.setDate(ayer.getDate() - 1);
-  var dd   = String(ayer.getDate()).padStart(2,'0');
-  var mm   = String(ayer.getMonth()+1).padStart(2,'0');
-  var yyyy = ayer.getFullYear();
-  var fechaLabel = dd + '-' + mm + '-' + yyyy;
+  var fechaLabel = String(ayer.getDate()).padStart(2,'0') + '-' + String(ayer.getMonth()+1).padStart(2,'0') + '-' + ayer.getFullYear();
 
   var wb = XLSX.utils.book_new();
   var ws = XLSX.utils.json_to_sheet(filas);
-  ws['!cols'] = [
-    {wch:5},  // ID
-    {wch:12}, // EMPRESA
-    {wch:6},  // AÑO
-    {wch:5},  // MES
-    {wch:8},  // SEMANA
-    {wch:9},  // PPSTO #
-    {wch:14}, // PPSTO $
-    {wch:9},  // REAL #
-    {wch:16}, // REAL $
-  ];
-  // Formato pesos (sin decimales, con separador de miles) a columnas PPSTO $ y REAL $
+  ws['!cols'] = [{wch:5},{wch:12},{wch:6},{wch:5},{wch:8},{wch:9},{wch:14},{wch:9},{wch:16}];
+
   var range = XLSX.utils.decode_range(ws['!ref']);
   for (var R = range.s.r + 1; R <= range.e.r; R++) {
-    ['G', 'I'].forEach(function(col) {
+    ['G','I'].forEach(function(col) {
       var addr = col + (R + 1);
       if (ws[addr] && ws[addr].t === 'n') ws[addr].z = '#,##0';
     });
   }
 
   XLSX.utils.book_append_sheet(wb, ws, 'BDD');
-
-  var fileName = 'BDD_CLUSTER COMERCIAL - AUTOFACIL - actualizado al ' + fechaLabel + '.xlsx';
-  XLSX.writeFile(wb, fileName);
+  XLSX.writeFile(wb, 'BDD_CLUSTER COMERCIAL - AUTOFACIL - actualizado al ' + fechaLabel + '.xlsx');
 }
 
 function mostrarModalCambioClave() {
