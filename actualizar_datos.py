@@ -189,8 +189,12 @@ def procesar_excel(contenido: bytes) -> dict:
             "com_rdh":          n(row[93]),            # CP - COM.RDH
             "com_cesantia":     n(row[94]),            # CQ - COM.CESANTIA
             "com_reparaciones": n(row[95]),            # CR - COM.REPARACIONES
-            "com_parque":       n(row[83]),            # CF - COM PARQUE
-            "arriendo_parque":  n(row[86]),            # CI - ARRIENDO PARQUE
+            "prima_rdh":        n(row[29]),            # AD - SEGURO RDH+E (prima cliente)
+            "prima_cesantia":   n(row[30]),            # AE - SEG.CESANTIA (prima cliente)
+            "prima_rep_menor":  n(row[31]),            # AF - SEG. REP MENOR (prima cliente)
+            "parque":           s(row[82]),            # CF - PARQUE (nombre parque o NO APLICA)
+            "com_parque":       n(row[83]),            # CG - COM PARQUE
+            "arriendo_parque":  n(row[86]),            # CJ - ARRIENDO PARQUE
             "bono_total":       n(row[113]),           # DH - BONO TOTAL ejecutivo
             # ── Crédito ──────────────────────────────────────────────────
             "plazo":            int(row[72]) if row[72] and isinstance(row[72], (int, float)) else 0,  # BU - PLAZO
